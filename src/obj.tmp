@@ -1,0 +1,6 @@
+string_tools.o:./common/string_tools.cpp
+	g++ -c ./common/string_tools.cpp -o string_tools.o
+ctm.o:./ctm.cpp
+	g++ -c ./ctm.cpp -o ctm.o
+Thread.o:./thread/Thread.cpp
+	g++ -c ./thread/Thread.cpp -o Thread.o

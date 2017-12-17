@@ -1,5 +1,8 @@
-#include <common/Singleton.h>
+#include "common/Singleton.h"
+#include "common/string_tools.h"
 #include <iostream>
+#include <ctype.h>
+
 using namespace ctm;
 using namespace std;
 
@@ -11,6 +14,8 @@ public:
 
 int main(int argc, char **argv)
 {
+	string a("\r\n**}&\n");
+	cout<<Trimmed(a)<<endl;
 	TestSingleton::getInstance()->hello();
 	return 0;
 }

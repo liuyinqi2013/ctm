@@ -2,6 +2,7 @@
 #define _h_ctm_common_singleton_h
 
 #include "macro.h"
+#include <stdio.h>
 
 namespace ctm
 {
