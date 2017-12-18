@@ -3,15 +3,13 @@ CP=cp -rf
 CC=g++
 CFLAGS= -c -Wall -g
 
-TARGET=test_unit
+TARGET=ctm
 BIN_PATH=../bin
 INSTALL=
 
 SUBDIRS=$(shell find . -type d)
-SRCDIRS=$(shell find ../src -type d)
 INC_SUBDIRS=$(shell find . -type d | awk -F' ' '{print "-I"$$0}')
-INC_SRCDIS=$(shell find ../src -type d | awk -F' ' '{print "-I"$$0}')
-INC_PATH=$(INC_SUBDIRS) $(INC_SRCDIS)
+INC_PATH=$(INC_SUBDIRS)
 LIB_PATH=/usr/lib64/mysql/libmysqlclient.a
 LIB= -lpthread -ldl -lz
 
@@ -20,10 +18,10 @@ C_SRC=$(shell find . -type f | grep .c$$ | grep -v grep)
 C_OBJ=$(patsubst %.c, %.o, $(C_SRC))
 CPP_SRC=$(shell find . -type f | grep .cpp$$ | grep -v grep)
 #CPP_SRC=$(notdir $(CPP_SRC_NAME)) 
-CPP_OBJ=$(patsubst %.cpp, %.o, $(CPP_SRC)) ../src/common/string_tools.o
+CPP_OBJ=$(patsubst %.cpp, %.o, $(CPP_SRC))
 OBJS=$(C_OBJ) $(CPP_OBJ)
 
-VPATH=$(SUBDIRS) $(SRCDIRS)
+VPATH=$(SUBDIRS)
 #---------------------------------------------------------------------------------------------
 
 .PHONY:all
