@@ -7,8 +7,8 @@ namespace ctm
 
 #define NOCOPY(T) \
 protected:\
-	T(const T&);\
-	T& operator= (const T&);
+	T(const T&){};\
+	T& operator= (const T&){};
 
 }
 

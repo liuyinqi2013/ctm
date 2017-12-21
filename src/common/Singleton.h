@@ -11,7 +11,7 @@ namespace ctm
 	class Singleton  
 	{
 
-	NOCOPY(Singleton)
+		NOCOPY(Singleton)
 	
 	public:  
 	    static T* getInstance()  
