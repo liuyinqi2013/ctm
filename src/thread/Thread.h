@@ -22,6 +22,12 @@ namespace ctm
 			t_pause = 2,
 			t_suspend = 3,
 		} tstatus;
+
+		typedef enum
+		{
+			t_succeed = 0,
+			t_error   = 1,
+		} terrno;
 		
 		Thread() : 
 			m_iStatus(t_stop), 
@@ -37,15 +43,15 @@ namespace ctm
 		{
 		}
 		
-		virtual ~Thread(){};
+		virtual ~Thread(){}
 		
-		bool Start();
+		int Start();
 		
-		bool Stop();
+		int Stop();
 
-		bool Join();
+		int Join();
 
-		bool Detach();
+		int Detach();
 
 		int GetStatus() const 
 		{
@@ -55,6 +61,16 @@ namespace ctm
 		const std::string& GetName() const
 		{
 			return m_strName;
+		}
+
+		void SetName(const std::string& name)
+		{
+			m_strName = name;
+		}
+
+		unsigned int GetThreadId() const
+		{
+			return m_thread;
 		}
 		
 	protected:

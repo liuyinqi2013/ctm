@@ -1,5 +1,7 @@
 #include "common/Singleton.h"
 #include "common/string_tools.h"
+#include "common/time_tools.h"
+
 #include <iostream>
 #include <ctype.h>
 
@@ -16,6 +18,9 @@ int main(int argc, char **argv)
 {
 	string a("\r\n**}&\n");
 	cout<<Trimmed(a)<<endl;
+	cout<<Sec()<<endl;
+	cout<<Usec()<<endl;
+	cout<<DateTime()<<endl;
 	TestSingleton::getInstance()->hello();
 	return 0;
 }

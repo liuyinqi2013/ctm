@@ -1,5 +1,5 @@
-#ifndef _h_ctm_common_string_tools_H
-#define _h_ctm_common_string_tools_H
+#ifndef _h_ctm_common_string_tools_h
+#define _h_ctm_common_string_tools_h
 
 #include <vector>
 #include <string>

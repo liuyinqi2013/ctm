@@ -15,6 +15,11 @@ public:
 protected:
 	int Run()
 	{
+		cout<<"thread id : "<<GetThreadId()<<endl;
+		cout<<"thread self : "<<pthread_self()<<endl;
+		cout<<"thread name : "<<GetName()<<endl;
+		cout<<"thread status : "<<GetStatus()<<endl;
+		
 		while(1)
 		{
 			cout<<"I am TestSingleton thread"<<endl;
@@ -28,7 +33,6 @@ int main(int argc, char **argv)
 {
 	TestSingleton::getInstance()->hello();
 	TestSingleton::getInstance()->Start();
-	TestSingleton::getInstance()->Detach();
 	TestSingleton::getInstance()->Join();
 	return 0;
 }
