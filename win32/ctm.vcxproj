@@ -12,6 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\common\string_tools.cpp" />
+    <ClCompile Include="..\src\common\time_tools.cpp" />
     <ClCompile Include="..\src\ctm.cpp" />
     <ClCompile Include="..\src\thread\Thread.cpp" />
   </ItemGroup>
@@ -21,6 +22,7 @@
     <ClInclude Include="..\src\common\Singleton.h" />
     <ClInclude Include="..\src\common\string_tools.h" />
     <ClInclude Include="..\src\common\templates.h" />
+    <ClInclude Include="..\src\common\time_tools.h" />
     <ClInclude Include="..\src\ctm.h" />
     <ClInclude Include="..\src\thread\Thread.h" />
   </ItemGroup>
@@ -55,8 +57,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(SolutionDir)..\bin\</OutDir>
-    <IntDir>$(SolutionDir)..\obj\</IntDir>
+    <OutDir>$(SolutionDir)bin\</OutDir>
+    <IntDir>$(SolutionDir)obj\</IntDir>
     <TargetName>$(ProjectName)d</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

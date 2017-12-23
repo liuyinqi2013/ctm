@@ -1,8 +1,8 @@
 #include "ctm.h"
-#include "common/Singleton.h"
-#include "thread/Thread.h"
 #include <iostream>
 #include <unistd.h>
+#include "common/singleton.h"
+#include "thread/thread.h"
 
 using namespace ctm;
 using namespace std;
@@ -31,8 +31,8 @@ protected:
 
 int main(int argc, char **argv)
 {
-	TestSingleton::getInstance()->hello();
-	TestSingleton::getInstance()->Start();
-	TestSingleton::getInstance()->Join();
+	TestSingleton::GetInstance()->hello();
+	TestSingleton::GetInstance()->Start();
+	TestSingleton::GetInstance()->Join();
 	return 0;
 }

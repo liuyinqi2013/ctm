@@ -1,4 +1,4 @@
-#ifndef _h_ctm_template_h
-#define _h_ctm_template_h
+#ifndef CTM_TEMPLATE_H__
+#define CTM_TEMPLATE_H__
 
 #endif

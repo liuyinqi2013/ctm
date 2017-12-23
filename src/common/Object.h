@@ -1,5 +1,5 @@
-#ifndef _h_ctm_common_object_h
-#define _h_ctm_common_object_h
+#ifndef CTM_COMMON_OBJECT_H__
+#define CTM_COMMON_OBJECT_H__
 
 
 #endif

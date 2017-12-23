@@ -1,5 +1,5 @@
-#ifndef _h_ctm_common_singleton_h
-#define _h_ctm_common_singleton_h
+#ifndef CTM_COMMON_SINGLETON_H__
+#define CTM_COMMON_SINGLETON_H__
 
 #include "macro.h"
 #include <stdio.h>
@@ -14,7 +14,7 @@ namespace ctm
 		NOCOPY(Singleton)
 	
 	public:  
-	    static T* getInstance()  
+	    static T* GetInstance()  
 	    {  
 	        if (m_pInstance == NULL) {
 	            m_pInstance = new T(); 

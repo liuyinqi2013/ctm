@@ -2,15 +2,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifndef WIN32
 #include <sys/time.h>
+#endif
 
 namespace ctm
 {
 	unsigned long long Usec()
 	{
+#ifndef WIN32
 		struct timeval val = {0};
 		gettimeofday(&val, NULL);
 		return (val.tv_sec * 1000000 + val.tv_usec);
+#endif
+		return 0;
 	}
 
 	std::string DateTime(int fmt)

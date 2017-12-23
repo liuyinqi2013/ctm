@@ -1,5 +1,5 @@
-#ifndef _h_ctm_thread_h
-#define _h_ctm_thread_h
+#ifndef CTM_THREAD_THREAD_H__
+#define CTM_THREAD_THREAD_H__
 
 #include "common/macro.h"
 

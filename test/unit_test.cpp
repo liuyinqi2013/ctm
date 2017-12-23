@@ -1,4 +1,4 @@
-#include "common/Singleton.h"
+#include "common/singleton.h"
 #include "common/string_tools.h"
 #include "common/time_tools.h"
 
@@ -11,7 +11,7 @@ using namespace std;
 class TestSingleton : public Singleton<TestSingleton>
 {
 public:
-	void hello() { cout<<"hello"<<endl; }
+	void Hello() { cout<<"hello"<<endl; }
 };
 
 int main(int argc, char **argv)
@@ -21,6 +21,6 @@ int main(int argc, char **argv)
 	cout<<Sec()<<endl;
 	cout<<Usec()<<endl;
 	cout<<DateTime()<<endl;
-	TestSingleton::getInstance()->hello();
+	TestSingleton::GetInstance()->Hello();
 	return 0;
 }
