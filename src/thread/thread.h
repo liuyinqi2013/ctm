@@ -4,17 +4,34 @@
 #include "common/macro.h"
 
 #include <string>
+#ifdef WIN32
+#include <Windows.h>
+#else
 #include <pthread.h>
+#endif
 
 namespace ctm
 {
 	class Thread
 	{
-		NOCOPY(Thread)
-			
+		NOCOPY(Thread)		
 	public:
-		typedef void* (*ThreadFun)(void*);
+#ifdef WIN32
+typedef DWORD (*ThreadFun)(LPVOID);
+#define HANDLE thread_t
+#define thread_create(tid, func, param) ((tid = CreateThread(NULL, 0, (func), ((LPVOID)param), 0, NULL)) ? true : false)
+#define thread_join(tid)   (WaitForSingleObject((tid), INFINITE) ? true : false)
+#define thread_detach(tid) (true)
+#define thread_stop(tid)   (true)
 		
+#else
+typedef void* (*ThreadFun)(void*);
+#define pthread_t thread_t
+#define thread_create(tid, func, param) ((!pthread_create((&tid), NULL, (func), (param)) ? true : false)
+#define thread_join(tid)   (!(pthread_join((tid), NULL)) ? true : false)
+#define thread_detach(tid) (!(pthread_detach((tid))) ? true : false)
+#define thread_stop(tid)   (!(pthread_cancel((tid))) ? true : false)
+#endif
 		typedef enum
 		{
 			t_stop = 0,
@@ -78,7 +95,7 @@ namespace ctm
 		
 		virtual int Run();
 	private:
-		pthread_t m_thread;
+		thread_t m_thread;
 		
 		int  m_iStatus;
 		bool m_bDetach;

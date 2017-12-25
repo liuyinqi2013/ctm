@@ -1,0 +1,28 @@
+﻿生成启动时间为 2017/12/25 23:04:51。
+     1>项目“D:\GitRoot\ctm\win32\ctm.vcxproj”在节点 2 上(Build 个目标)。
+     1>ClCompile:
+         D:\Program_Develop\Microsoft Visual Studio 11.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D WIN32 /D _CRT_SECURE_NO_WARNINGS /D _DEBUG /D _CONSOLE /D _MBCS /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"D:\GitRoot\ctm\win32\obj\\" /Fd"D:\GitRoot\ctm\win32\obj\vc110.pdb" /Gd /TP /analyze- /errorReport:prompt ..\src\common\string_tools.cpp ..\src\common\time_tools.cpp ..\src\ctm.cpp ..\src\thread\Thread.cpp
+         Thread.cpp
+     1>d:\gitroot\ctm\src\thread\thread.h(4): fatal error C1083: 无法打开包括文件:“common/macro.h”: No such file or directory
+         ctm.cpp
+     1>d:\gitroot\ctm\src\ctm.cpp(3): fatal error C1083: 无法打开包括文件:“unistd.h”: No such file or directory
+         time_tools.cpp
+     1>d:\gitroot\ctm\src\common\time_tools.h(9): warning C4244: “return”: 从“time_t”转换到“unsigned long”，可能丢失数据
+         string_tools.cpp
+     1>d:\gitroot\ctm\src\common\string_tools.cpp(35): warning C4018: “<”: 有符号/无符号不匹配
+     1>d:\gitroot\ctm\src\common\string_tools.cpp(44): warning C4018: “<”: 有符号/无符号不匹配
+     1>d:\gitroot\ctm\src\common\string_tools.cpp(99): warning C4018: “<”: 有符号/无符号不匹配
+     1>d:\gitroot\ctm\src\common\string_tools.cpp(108): warning C4018: “<”: 有符号/无符号不匹配
+     1>d:\gitroot\ctm\src\common\string_tools.cpp(116): warning C4018: “<”: 有符号/无符号不匹配
+     1>d:\gitroot\ctm\src\common\string_tools.cpp(164): warning C4018: “<”: 有符号/无符号不匹配
+     1>d:\gitroot\ctm\src\common\string_tools.cpp(185): warning C4018: “<”: 有符号/无符号不匹配
+     1>d:\gitroot\ctm\src\common\string_tools.cpp(221): warning C4018: “<”: 有符号/无符号不匹配
+     1>d:\gitroot\ctm\src\common\string_tools.cpp(236): warning C4018: “<”: 有符号/无符号不匹配
+     1>d:\gitroot\ctm\src\common\string_tools.cpp(337): warning C4018: “<”: 有符号/无符号不匹配
+     1>d:\gitroot\ctm\src\common\string_tools.cpp(351): warning C4018: “<”: 有符号/无符号不匹配
+         正在生成代码...
+     1>已完成生成项目“D:\GitRoot\ctm\win32\ctm.vcxproj”(Build 个目标)的操作 - 失败。
+
+生成失败。
+
+已用时间 00:00:04.08

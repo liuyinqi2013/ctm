@@ -10,9 +10,9 @@ namespace ctm
 	{
 		if (m_iStatus == t_stop)
 		{
-			int iRet = pthread_create(&m_thread, NULL, Thread::ThreadEnterFun, this);
-			if( iRet != 0) {
-				fprintf(stderr, "errno : %d", iRet);
+			bool bRet = thread_create(m_thread, Thread::ThreadEnterFun, this);
+			if(!bRet) {
+				fprintf(stderr, "errno");
 				return t_error;
 			}
 			m_iStatus = t_run;
@@ -25,9 +25,9 @@ namespace ctm
 	{
 		if(m_iStatus != t_stop)
 		{
-			int iRet = pthread_cancel(m_thread);
-			if(iRet != 0) {
-				fprintf(stderr, "errno : %d", iRet);
+			bool bRet = thread_stop(m_thread);
+			if(!bRet) {
+				fprintf(stderr, "errno");
 				return t_error;
 			}
 			m_iStatus = t_stop;
@@ -39,9 +39,9 @@ namespace ctm
 	{
 		if(!m_bDetach)
 		{
-			int iRet = pthread_join(m_thread, NULL);
-			if(iRet != 0) {
-				fprintf(stderr, "errno : %d", iRet);
+			bool bRet = thread_join(m_thread);
+			if(!bRet) {
+				fprintf(stderr, "errno");
 				return t_error;
 			}
 		}
@@ -57,9 +57,9 @@ namespace ctm
 	{
 		if(!m_bDetach)
 		{
-			int iRet = pthread_detach(m_thread);
-			if(iRet != 0) {
-				fprintf(stderr, "errno : %d", iRet);
+			bool bRet = thread_detach(m_thread);
+			if(!bRet) {
+				fprintf(stderr, "errno");
 				return t_error;
 			}
 
