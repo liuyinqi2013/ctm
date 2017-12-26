@@ -8,7 +8,7 @@
 #include <Windows.h>
 typedef DWORD (*ThreadFun)(LPVOID);
 #define thread_t HANDLE 
-#define thread_create(tid, func, param) ((tid = CreateThread(NULL, 0, func, (LPVOID)param, 0, NULL)) ? true : false)
+#define thread_create(tid, func, param) ((tid = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)func, (LPVOID)param, 0, NULL)) ? true : false)
 #define thread_join(tid)   (WaitForSingleObject(tid, INFINITE) ? true : false)
 #define thread_detach(tid) (true)
 #define thread_stop(tid)   (TerminateThread(tid, 0))
@@ -87,11 +87,6 @@ namespace ctm
 			m_strName = name;
 		}
 
-		unsigned int GetThreadId() const
-		{
-			return m_thread;
-		}
-		
 	protected:
 		
 #ifdef WIN32

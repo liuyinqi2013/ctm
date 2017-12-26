@@ -11,12 +11,16 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\common\com.cpp" />
     <ClCompile Include="..\src\common\string_tools.cpp" />
     <ClCompile Include="..\src\common\time_tools.cpp" />
     <ClCompile Include="..\src\ctm.cpp" />
+    <ClCompile Include="..\src\thread\mutex.cpp" />
     <ClCompile Include="..\src\thread\Thread.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\src\common\com.h" />
+    <ClInclude Include="..\src\common\lock.h" />
     <ClInclude Include="..\src\common\macro.h" />
     <ClInclude Include="..\src\common\Object.h" />
     <ClInclude Include="..\src\common\Singleton.h" />
@@ -24,6 +28,7 @@
     <ClInclude Include="..\src\common\templates.h" />
     <ClInclude Include="..\src\common\time_tools.h" />
     <ClInclude Include="..\src\ctm.h" />
+    <ClInclude Include="..\src\thread\mutex.h" />
     <ClInclude Include="..\src\thread\Thread.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -74,6 +79,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>../src</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

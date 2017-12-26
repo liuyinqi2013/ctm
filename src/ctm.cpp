@@ -1,6 +1,11 @@
 #include "ctm.h"
 #include <iostream>
+#ifndef WIN32
 #include <unistd.h>
+#else
+#include <Windows.h>
+#define sleep(n) Sleep((n) * 1000)
+#endif
 #include "common/singleton.h"
 #include "common/com.h"
 #include "thread/thread.h"
@@ -16,7 +21,6 @@ public:
 protected:
 	int Run()
 	{
-		cout<<"thread id : "<<GetThreadId()<<endl;
 		cout<<"thread name : "<<GetName()<<endl;
 		cout<<"thread status : "<<GetStatus()<<endl;
 		cout<<"thread str2int : "<<S2I("123")<<endl;
@@ -37,6 +41,7 @@ int main(int argc, char **argv)
 {
 	TestSingleton::GetInstance()->hello();
 	TestSingleton::GetInstance()->Start();
-	TestSingleton::GetInstance()->Join();
+	sleep(3);
+	TestSingleton::GetInstance()->Detach();
 	return 0;
 }

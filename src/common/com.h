@@ -4,6 +4,9 @@
 #include <sstream>
 #include <string>
 
+#ifdef WIN32
+#define atoll  atol;
+#endif 
 namespace ctm
 {
 	template <class T>
@@ -26,7 +29,7 @@ namespace ctm
 
 	inline long long Str2Longlong(const std::string& val)
 	{
-		return atoll(val.c_str());
+		return (long long)atoll(val.c_str());
 	}
 	
 	inline double Str2Double(const std::string& val)
