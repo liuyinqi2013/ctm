@@ -12,7 +12,7 @@ namespace ctm
 		{
 			bool bRet = thread_create(m_thread, Thread::ThreadEnterFun, this);
 			if(!bRet) {
-				fprintf(stderr, "errno");
+				fprintf(stderr, "create thread failed");
 				return t_error;
 			}
 			m_iStatus = t_run;
@@ -27,7 +27,7 @@ namespace ctm
 		{
 			bool bRet = thread_stop(m_thread);
 			if(!bRet) {
-				fprintf(stderr, "errno");
+				fprintf(stderr, "stop thread failed");
 				return t_error;
 			}
 			m_iStatus = t_stop;
@@ -41,7 +41,7 @@ namespace ctm
 		{
 			bool bRet = thread_join(m_thread);
 			if(!bRet) {
-				fprintf(stderr, "errno");
+				fprintf(stderr, "join thread failed");
 				return t_error;
 			}
 		}
@@ -59,7 +59,7 @@ namespace ctm
 		{
 			bool bRet = thread_detach(m_thread);
 			if(!bRet) {
-				fprintf(stderr, "errno");
+				fprintf(stderr, "detach thread failed");
 				return t_error;
 			}
 
@@ -69,7 +69,11 @@ namespace ctm
 		return t_succeed;
 	}
 
+#ifdef WIN32
+	DWORD Thread::ThreadEnterFun(LPVOID arg)
+#else
 	void* Thread::ThreadEnterFun(void* arg)
+#endif
 	{
 		Thread *pThread = static_cast<Thread *>(arg);
 		if(pThread)
@@ -81,6 +85,7 @@ namespace ctm
 		
 		return NULL;
 	}
+
 
 	int Thread::Run()
 	{

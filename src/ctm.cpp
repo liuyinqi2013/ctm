@@ -17,7 +17,6 @@ protected:
 	int Run()
 	{
 		cout<<"thread id : "<<GetThreadId()<<endl;
-		cout<<"thread self : "<<pthread_self()<<endl;
 		cout<<"thread name : "<<GetName()<<endl;
 		cout<<"thread status : "<<GetStatus()<<endl;
 		cout<<"thread str2int : "<<S2I("123")<<endl;

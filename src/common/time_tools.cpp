@@ -28,40 +28,16 @@ namespace ctm
 		switch (fmt)
 		{
 		case TFMT_0:
-			sprintf(buf, "%4d-%02d-%02d %02d:%02d:%02d",  
-				st->tm_year + 1900,
-				st->tm_mon + 1,
-				st->tm_mday,
-				st->tm_hour,
-				st->tm_min,
-				st->tm_sec);
+			strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", st);
 			break;
 		case TFMT_1:
-			sprintf(buf, "%4d/%02d/%02d %02d:%02d:%02d",  
-				st->tm_year + 1900,
-				st->tm_mon + 1,
-				st->tm_mday,
-				st->tm_hour,
-				st->tm_min,
-				st->tm_sec);
+			strftime(buf, sizeof(buf), "%Y/%m/%d %H:%M:%S", st);
 			break;
 		case TFMT_2:
-			sprintf(buf, "%4d%02d%02d%02d%02d%02d",  
-				st->tm_year + 1900,
-				st->tm_mon + 1,
-				st->tm_mday,
-				st->tm_hour,
-				st->tm_min,
-				st->tm_sec);
+			strftime(buf, sizeof(buf), "%Y%m%d%H%M%S", st);
 			break;
-		default:			
-			sprintf(buf, "%4d-%02d-%02d %02d:%02d:%02d",  
-				st->tm_year + 1900,
-				st->tm_mon + 1,
-				st->tm_mday,
-				st->tm_hour,
-				st->tm_min,
-				st->tm_sec);			
+		default:
+			strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", st);
 			break;
 		}
 

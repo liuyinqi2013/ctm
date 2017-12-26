@@ -6,8 +6,23 @@
 #include <string>
 #ifdef WIN32
 #include <Windows.h>
+typedef DWORD (*ThreadFun)(LPVOID);
+#define thread_t HANDLE 
+#define thread_create(tid, func, param) ((tid = CreateThread(NULL, 0, func, (LPVOID)param, 0, NULL)) ? true : false)
+#define thread_join(tid)   (WaitForSingleObject(tid, INFINITE) ? true : false)
+#define thread_detach(tid) (true)
+#define thread_stop(tid)   (TerminateThread(tid, 0))
+#define thread_close(tid)  (CloseHandle(tid))
+
 #else
 #include <pthread.h>
+typedef void* (*ThreadFun)(void*);
+#define thread_t pthread_t
+#define thread_create(tid, func, param) (!pthread_create(&tid, NULL, func, param) ? true : false)
+#define thread_join(tid)   (!pthread_join(tid, NULL) ? true : false)
+#define thread_detach(tid) (!pthread_detach(tid) ? true : false)
+#define thread_stop(tid)   (!pthread_cancel(tid) ? true : false)
+#define thread_close(tid)  
 #endif
 
 namespace ctm
@@ -16,22 +31,6 @@ namespace ctm
 	{
 		NOCOPY(Thread)		
 	public:
-#ifdef WIN32
-typedef DWORD (*ThreadFun)(LPVOID);
-#define HANDLE thread_t
-#define thread_create(tid, func, param) ((tid = CreateThread(NULL, 0, (func), ((LPVOID)param), 0, NULL)) ? true : false)
-#define thread_join(tid)   (WaitForSingleObject((tid), INFINITE) ? true : false)
-#define thread_detach(tid) (true)
-#define thread_stop(tid)   (true)
-		
-#else
-typedef void* (*ThreadFun)(void*);
-#define pthread_t thread_t
-#define thread_create(tid, func, param) ((!pthread_create((&tid), NULL, (func), (param)) ? true : false)
-#define thread_join(tid)   (!(pthread_join((tid), NULL)) ? true : false)
-#define thread_detach(tid) (!(pthread_detach((tid))) ? true : false)
-#define thread_stop(tid)   (!(pthread_cancel((tid))) ? true : false)
-#endif
 		typedef enum
 		{
 			t_stop = 0,
@@ -60,7 +59,10 @@ typedef void* (*ThreadFun)(void*);
 		{
 		}
 		
-		virtual ~Thread(){}
+		virtual ~Thread()
+		{
+			thread_close(m_thread);
+		}
 		
 		int Start();
 		
@@ -91,7 +93,12 @@ typedef void* (*ThreadFun)(void*);
 		}
 		
 	protected:
+		
+#ifdef WIN32
+		static DWORD ThreadEnterFun(LPVOID arg);
+#else
 		static void* ThreadEnterFun(void* arg);
+#endif
 		
 		virtual int Run();
 	private:

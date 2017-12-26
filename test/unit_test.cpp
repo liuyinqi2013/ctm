@@ -21,6 +21,8 @@ int main(int argc, char **argv)
 	cout<<Sec()<<endl;
 	cout<<Usec()<<endl;
 	cout<<DateTime()<<endl;
+	cout<<DateTime(TFMT_1)<<endl;
+	cout<<DateTime(TFMT_2)<<endl;
 	TestSingleton::GetInstance()->Hello();
 	return 0;
 }
