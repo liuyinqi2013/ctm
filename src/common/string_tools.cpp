@@ -6,7 +6,7 @@ namespace ctm
 {
 	std::string TrimLeft(std::string& strInOut)
 	{
-		int pos = strInOut.find_first_not_of(BLANK_SET);
+		size_t pos = strInOut.find_first_not_of(BLANK_SET);
 		if(pos != strInOut.npos)
 		{
 			strInOut = strInOut.substr(pos);
@@ -16,7 +16,7 @@ namespace ctm
 
 	std::string TrimRight(std::string& strInOut)
 	{
-		int pos = strInOut.find_last_not_of(BLANK_SET);
+		size_t pos = strInOut.find_last_not_of(BLANK_SET);
 		if(pos != strInOut.npos)
 		{
 			strInOut = strInOut.substr(0, pos + 1);
@@ -32,7 +32,7 @@ namespace ctm
 
 	std::string ToUpper(std::string& strInOut)
 	{
-		for(int i = 0; i < strInOut.size(); ++i)
+		for(size_t i = 0; i < strInOut.size(); ++i)
 		{
 			strInOut[i] = toupper(strInOut[i]);
 		}
@@ -41,7 +41,7 @@ namespace ctm
 
 	std::string ToLower(std::string& strInOut)
 	{
-		for(int i = 0; i < strInOut.size(); ++i)
+		for(size_t i = 0; i < strInOut.size(); ++i)
 		{
 			strInOut[i] = tolower(strInOut[i]);
 		}
@@ -50,7 +50,7 @@ namespace ctm
 
 	std::string RemoveFlag(std::string& strInOut, const std::string& strFlag)
 	{
-		int pos =  strInOut.find(strFlag);
+		size_t pos =  strInOut.find(strFlag);
 		while(pos != strInOut.npos)
 		{
 			strInOut.erase(pos, strFlag.size());
@@ -61,7 +61,7 @@ namespace ctm
 
 	std::string RemoveFlagOnce(std::string& strInOut, const std::string& strFlag)
 	{
-		int pos  = strInOut.find(strFlag);
+		size_t pos  = strInOut.find(strFlag);
 		if(pos != strInOut.npos)
 		{
 			strInOut.erase(pos, strFlag.size());
@@ -71,7 +71,7 @@ namespace ctm
 
 	std::string Replace(std::string& strInOut, const std::string& subSrc, const std::string& subDst)
 	{
-		int pos = strInOut.find(subSrc);
+		size_t pos = strInOut.find(subSrc);
 		while(pos != strInOut.npos)
 		{
 			strInOut.replace(pos, subSrc.size(), subDst);
@@ -82,7 +82,7 @@ namespace ctm
 
 	std::string ReplaceOnce(std::string& strInOut, const std::string& subSrc, const std::string& subDst)
 	{
-		int pos = strInOut.find(subSrc);
+		size_t pos = strInOut.find(subSrc);
 		if(pos != strInOut.npos)
 		{
 			strInOut.replace(pos, subSrc.size(), subDst);
@@ -93,7 +93,7 @@ namespace ctm
 	bool StartsWith(const std::string& strIn, const std::string& substr, bool bCase)
 	{
 		bool bRet = true;
-		int i = 0;
+		size_t i = 0;
 		if(bCase)
 		{
 			for(i = 0; i < strIn.size() && i < substr.size(); i++)
@@ -124,8 +124,8 @@ namespace ctm
 	bool EndsWith(const std::string& strIn, const std::string& substr, bool bCase)
 	{
 		bool bRet = true;
-		int i = strIn.size() - 1;
-		int j = substr.size() - 1;
+		size_t i = strIn.size() - 1;
+		size_t j = substr.size() - 1;
 		if(bCase)
 		{
 			for(; i > 0 && j > 0; i--, j--)
@@ -156,8 +156,8 @@ namespace ctm
 	void CutString(std::string strInput, std::vector<std::string>& vecOutput, const std::string flag, bool bjumpSpace)
 	{
 		vecOutput.clear();
-		int begin = 0;
-		int end = 0;
+		size_t begin = 0;
+		size_t end = 0;
 
 		if(!EndsWith(strInput, flag)) strInput += flag;
 
@@ -177,8 +177,8 @@ namespace ctm
 	void CutStringFirstOf(std::string strInput, std::vector<std::string>& vecOutput, const std::string flagSet, bool bjumpSpace)
 	{
 		vecOutput.clear();
-		int begin = 0;
-		int end = 0;
+		size_t begin = 0;
+		size_t end = 0;
 
 		if(flagSet.find(strInput[strInput.size() -1]) == std::string::npos) strInput += flagSet[0];
 
@@ -218,7 +218,7 @@ namespace ctm
 	std::string EncodeHex(const std::string& strIn,  bool bUp, bool bPrefix)
 	{
 		std::string strHex;
-		for(int i = 0; i < strIn.size(); ++i)
+		for(size_t i = 0; i < strIn.size(); ++i)
 		{
 			strHex += Bin2Hex(strIn[i], bUp, bPrefix);
 		}
@@ -233,7 +233,7 @@ namespace ctm
 		std::string deHex(strTmp.size() / 2, ' ');
 		char t = 0x00;
 		char h = 0x00;
-		for(int i = 0; i < strTmp.size(); i += 2)
+		for(size_t i = 0; i < strTmp.size(); i += 2)
 		{
 			h = Hex2Bin(strTmp[i]);
 			t = Hex2Bin(strTmp[i + 1]);
@@ -334,7 +334,7 @@ namespace ctm
 
 	bool IsNumbers(const std::string& strIn)
 	{
-		for(int i = 0; i < strIn.size(); ++i)
+		for(size_t i = 0; i < strIn.size(); ++i)
 		{
 			if(strIn[i] < '0' && strIn[i] > '9') return false;
 		}
@@ -347,7 +347,7 @@ namespace ctm
 		std::string strOut;
 		if(vecIn.size() > 0)
 		{
-			int i;
+			size_t i;
 			for(i = 0; i < vecIn.size() - 1; ++i) {
 				strOut += vecIn[i] + strFlag;
 			}

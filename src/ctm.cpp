@@ -9,13 +9,21 @@
 #include "common/singleton.h"
 #include "common/com.h"
 #include "thread/thread.h"
+#include "thread/mutex.h"
 
 using namespace ctm;
 using namespace std;
 
+static int num = 0;
+Mutex mutex;
+
 class TestSingleton : public Singleton<TestSingleton>, public Thread
 {
 public:
+	TestSingleton(const std::string& name) : Thread(name)
+	{
+	}
+	
 	void hello() { cout<<"hello"<<endl; }
 
 protected:
@@ -30,18 +38,24 @@ protected:
 		
 		while(1)
 		{
-			cout<<"I am TestSingleton thread"<<endl;
+			{
+				LockOwner owner(mutex);
+				num++;
+				cout<<"thread : "<<GetName()<<" num : "<<num<<endl;
+			}
 			sleep(1);
 		}
 		return 0;
 	}
+	
 };
 
 int main(int argc, char **argv)
 {
-	TestSingleton::GetInstance()->hello();
-	TestSingleton::GetInstance()->Start();
-	sleep(3);
-	TestSingleton::GetInstance()->Detach();
+	TestSingleton t1("t1"), t2("t2");
+	t1.Start();
+	t2.Start();
+	t1.Join();
+	t2.Join();
 	return 0;
 }

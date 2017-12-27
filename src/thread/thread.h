@@ -52,7 +52,7 @@ namespace ctm
 		{
 		}
 
-		Thread(std::string& name) : 
+		Thread(const std::string& name) : 
 			m_iStatus(t_stop),
 			m_bDetach(false), 
 			m_strName(name)

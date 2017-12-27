@@ -17,15 +17,18 @@ namespace ctm
 	class LockOwner
 	{
 	public:
-		LockOwner(const BaseLock& lock)
+		LockOwner(BaseLock& lock) : m_lock(lock)
 		{
-			lock.Lock();
+			m_lock.Lock();
 		}
 		
 		~LockOwner()
 		{
-			lock.UnLock();
+			m_lock.UnLock();
 		}
+		
+	private:
+		BaseLock& m_lock;
 	};
 	
 };
