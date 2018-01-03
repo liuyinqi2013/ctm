@@ -8,31 +8,31 @@ namespace ctm
 
 	int Thread::Start()
 	{
-		if (m_iStatus == t_stop)
+		if (m_iStatus == T_STOP)
 		{
 			bool bRet = thread_create(m_thread, Thread::ThreadEnterFun, this);
 			if(!bRet) {
 				fprintf(stderr, "create thread failed");
-				return t_error;
+				return T_ERR;
 			}
-			m_iStatus = t_run;
+			m_iStatus = T_RUN;
 		}
 		
-		return t_succeed;
+		return T_OK;
 	}
 
 	int Thread::Stop()
 	{
-		if(m_iStatus != t_stop)
+		if(m_iStatus != T_STOP)
 		{
 			bool bRet = thread_stop(m_thread);
 			if(!bRet) {
 				fprintf(stderr, "stop thread failed");
-				return t_error;
+				return T_ERR;
 			}
-			m_iStatus = t_stop;
+			m_iStatus = T_STOP;
 		}
-		return t_succeed;
+		return T_OK;
 	}
 
 	int Thread::Join()
@@ -42,15 +42,15 @@ namespace ctm
 			bool bRet = thread_join(m_thread);
 			if(!bRet) {
 				fprintf(stderr, "join thread failed");
-				return t_error;
+				return T_ERR;
 			}
 		}
 		else
 		{
-			return t_error;
+			return T_ERR;
 		}
 			
-		return t_succeed;
+		return T_OK;
 	}
 
 	int Thread::Detach()
@@ -60,13 +60,13 @@ namespace ctm
 			bool bRet = thread_detach(m_thread);
 			if(!bRet) {
 				fprintf(stderr, "detach thread failed");
-				return t_error;
+				return T_ERR;
 			}
 
 			m_bDetach = true;
 		}
 
-		return t_succeed;
+		return T_OK;
 	}
 
 #ifdef WIN32
@@ -81,7 +81,7 @@ namespace ctm
 			pThread->Run();
 		}
 		
-		pThread->m_iStatus = t_stop;
+		pThread->m_iStatus = T_STOP;
 		
 		return NULL;
 	}
@@ -89,7 +89,7 @@ namespace ctm
 
 	int Thread::Run()
 	{
-		return t_succeed;
+		return T_OK;
 	}
 
 }

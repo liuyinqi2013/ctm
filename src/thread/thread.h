@@ -33,27 +33,27 @@ namespace ctm
 	public:
 		typedef enum
 		{
-			t_stop = 0,
-			t_run  = 1,
-			t_pause = 2,
-			t_suspend = 3,
+			T_STOP = 0,
+			T_RUN  = 1,
+			T_PAUSE = 2,
+			T_SUSPEND = 3
 		} tstatus;
 
 		typedef enum
 		{
-			t_succeed = 0,
-			t_error   = 1,
+			T_OK = 0,
+			T_ERR   = 1
 		} terrno;
 		
 		Thread() : 
-			m_iStatus(t_stop), 
+			m_iStatus(T_STOP), 
 			m_bDetach(false), 
 			m_strName("")
 		{
 		}
 
 		Thread(const std::string& name) : 
-			m_iStatus(t_stop),
+			m_iStatus(T_STOP),
 			m_bDetach(false), 
 			m_strName(name)
 		{
