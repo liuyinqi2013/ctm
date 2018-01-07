@@ -10,6 +10,7 @@
 #include "common/com.h"
 #include "thread/thread.h"
 #include "thread/mutex.h"
+#include "net/socket.h"
 
 using namespace ctm;
 using namespace std;
@@ -52,10 +53,12 @@ protected:
 
 int main(int argc, char **argv)
 {
-	TestSingleton t1("t1"), t2("t2");
-	t1.Start();
-	t2.Start();
-	t1.Join();
-	t2.Join();
+	//TestSingleton t1("t1"), t2("t2");
+	//t1.Start();
+	//t2.Start();
+	//t1.Join();
+	//t2.Join();
+	TcpServer Server("127.0.0.1", 9999);
+	Server.Run();
 	return 0;
 }
