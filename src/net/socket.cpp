@@ -3,13 +3,27 @@
 #include <stdio.h>
 #ifndef WIN32
 #include <fcntl.h>
+#else
+class NetBoot
+{
+public:
+	NetBoot()
+	{
+		WSADATA wsaData;
+		int iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
+	}
+	
+	~NetBoot()
+	{
+		WSACleanup();
+	}	
+};
+static NetBoot netBoot;
 #endif
 
 
 namespace ctm
 {
-
-	static NetBoot netBoot;
 
 	SOCKET_T ListenSocket(const char* ip, const int port, const int num)
 	{
@@ -159,7 +173,7 @@ namespace ctm
 		{
 			len = sizeof(clientAddr);
 			memset(&clientAddr, 0, len);
-			clientSock = Accept(m_tcpSock, (struct sockaddr*)&clientAddr, &len);
+			clientSock = Accept(m_tcpSock, (struct sockaddr*)&clientAddr, (SOCKETLEN_T*)&len);
 			if(clientSock == SOCKET_INVALID)
 			{
 				printf("Accpcet failed!\n");

@@ -22,27 +22,14 @@ inline int CloseSocket(SOCKET_T& sockfd)
 	return closesocket(sockfd);
 }
 
-class NetBoot
-{
-public:
-	NetBoot()
-	{
-		WSADATA wsaData;
-		int iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
-	}
-	
-	~NetBoot()
-	{
-		WSACleanup();
-	}	
-};
-
 #else
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <netdb.h>
+
 
 #define SOCKET_T int
 #define SOCKETLEN_T socklen_t

@@ -2,6 +2,7 @@
 #include "common/string_tools.h"
 #include "common/time_tools.h"
 #include "net/socket.h"
+#include <string.h>
 
 #include <iostream>
 #include <ctype.h>
@@ -28,25 +29,26 @@ int main(int argc, char **argv)
 
 	TcpClient client;
 	
-	//if (!client.Connect("127.0.0.1", 9999))
-	//{
-	//	cout<<"connect server failed!\n"<<endl;
-	//	return -1;
-	//}
-	//char buf[1024] = {0};
-	//int len = client.Recv(buf, 1024);
-	//if (len == -1)
-	//{
-	//	cout<<"recv failed!\n"<<endl;
-	//	return -1;
-	//}
-	//buf[len] = '\0';
-	//printf("Recv : %s\n", buf);
-	//char* s = "hello server";
-	//client.Send(s, strlen(s));
-	//int a;
-	//cin>>a;
+	if (!client.Connect("127.0.0.1", 9999))
+	{
+		cout<<"connect server failed!\n"<<endl;
+		return -1;
+	}
+	char buf[1024] = {0};
+	int len = client.Recv(buf, 1024);
+	if (len == -1)
+	{
+		cout<<"recv failed!\n"<<endl;
+		return -1;
+	}
+	buf[len] = '\0';
+	cout<<"Recv : "<<buf<<endl;
+	char* s = "hello server";
+	client.Send(s, strlen(s));
+	int a;
+	cin>>a;
 
+	/*
 	struct addrinfo addr = {0};
 	addr.ai_family = AF_UNSPEC;
 	addr.ai_socktype = SOCK_STREAM;
@@ -78,6 +80,7 @@ int main(int argc, char **argv)
 		
 	}
 	freeaddrinfo(res);
+	*/
 
 	return 0;
 }

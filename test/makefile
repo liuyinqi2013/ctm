@@ -20,7 +20,7 @@ C_SRC=$(shell find . -type f | grep .c$$ | grep -v grep)
 C_OBJ=$(patsubst %.c, %.o, $(C_SRC))
 CPP_SRC=$(shell find . -type f | grep .cpp$$ | grep -v grep)
 #CPP_SRC=$(notdir $(CPP_SRC_NAME)) 
-CPP_OBJ=$(patsubst %.cpp, %.o, $(CPP_SRC)) ../src/common/string_tools.o ../src/common/time_tools.o
+CPP_OBJ=$(patsubst %.cpp, %.o, $(CPP_SRC)) ../src/common/string_tools.o ../src/common/time_tools.o ../src/net/socket.o
 OBJS=$(C_OBJ) $(CPP_OBJ)
 
 VPATH=$(SUBDIRS) $(SRCDIRS)
