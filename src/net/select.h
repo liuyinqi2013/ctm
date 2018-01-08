@@ -4,13 +4,14 @@
 #include "socket.h"
 
 #ifdef WIN32
+
+#else
 #include <sys/select.h>
 #include <unistd.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#else
 #endif
 
 #include <set>
@@ -32,17 +33,43 @@ namespace ctm
 		void DelWriteFd(const SOCKET_T& fd);
 		void DelExceptFd(const SOCKET_T& fd);
 		
-		int WaitReadFd(struct timeval timeOut);
-		int WaitWriteFd(struct timeval timeOut);
-		int WaitExceptFd(struct timeval timeOut);
+		int WaitReadFd(const struct timeval& timeOut);
+		int WaitWriteFd(const struct timeval& timeOut);
+		int WaitExceptFd(const struct timeval& timeOut);
 		
-		SOCKET_T NextReadFd() const;
-		SOCKET_T NextWriteFd() const;
-		SOCKET_T NextExceptFd() const;
+		SOCKET_T NextReadFd();
+		SOCKET_T NextWriteFd();
+		SOCKET_T NextExceptFd();
 
-		bool IsReadFd(const SOCKET_T& fd);
-		bool IsWriteFd(const SOCKET_T& fd);
-		bool IsExcpetFd(const SOCKET_T& fd);
+		std::set<SOCKET_T> ReadGoodFds()
+		{
+			return GoodFds(m_setReadFd, m_readFdSet);
+		}
+
+		std::set<SOCKET_T> WriteGoodFds()
+		{
+			return GoodFds(m_setWriteFd, m_writeFdSet);
+		}
+		
+		std::set<SOCKET_T> ExcpetGoodFds()
+		{
+			return GoodFds(m_setExceptFd, m_exceptFdSet);
+		}
+
+		bool IsReadFd(const SOCKET_T& fd)
+		{
+			return FD_ISSET(fd, &m_setReadFd);
+		}
+
+		bool IsWriteFd(const SOCKET_T& fd)
+		{
+			return FD_ISSET(fd, &m_setWriteFd);
+		}
+
+		bool IsExcpetFd(const SOCKET_T& fd)
+		{
+			return FD_ISSET(fd, &m_setExceptFd);
+		}
 
 		void ClearReadFdSet();
 		void ClearWriteFdSet();
@@ -50,15 +77,11 @@ namespace ctm
 		void ClearFdSet();
 		
 	private:
-		void AddFd(std::set<SOCKET_T>& setFd, SOCKET_T& maxFd, const SOCKET_T& fd);
+		int WaitFd(const std::set<SOCKET_T>& setFd, fd_set& fdSet, const struct timeval& timeOut, int flag);
 
-		void DelFd(std::set<SOCKET_T>& setFd, SOCKET_T& maxFd, const SOCKET_T& fd);
+		std::set<SOCKET_T> GoodFds(const std::set<SOCKET_T>& setFd, fd_set& fdSet);
 		
 	private:
-		SOCKET_T m_iMaxReadFd;
-		SOCKET_T m_iMaxWriteFd;
-		SOCKET_T m_iMaxExceptFd;
-		
 		fd_set m_readFdSet;
 		fd_set m_writeFdSet;
 		fd_set m_exceptFdSet;
@@ -66,6 +89,10 @@ namespace ctm
 		std::set<SOCKET_T> m_setReadFd;
 		std::set<SOCKET_T> m_setWriteFd;
 		std::set<SOCKET_T> m_setExceptFd;
+
+		std::set<SOCKET_T>::iterator m_readIt;
+		std::set<SOCKET_T>::iterator m_writeIt;
+		std::set<SOCKET_T>::iterator m_exceptIt;
 	};
 
 }
