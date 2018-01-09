@@ -87,6 +87,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\src\common\string_tools.cpp" />
     <ClCompile Include="..\..\src\common\time_tools.cpp" />
+    <ClCompile Include="..\..\src\net\select.cpp" />
     <ClCompile Include="..\..\src\net\socket.cpp" />
     <ClCompile Include="..\..\test\unit_test.cpp" />
   </ItemGroup>
@@ -94,6 +95,7 @@
     <ClInclude Include="..\..\src\common\Singleton.h" />
     <ClInclude Include="..\..\src\common\string_tools.h" />
     <ClInclude Include="..\..\src\common\time_tools.h" />
+    <ClInclude Include="..\..\src\net\select.h" />
     <ClInclude Include="..\..\src\net\socket.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

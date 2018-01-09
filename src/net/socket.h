@@ -107,6 +107,19 @@ namespace ctm
 
 	inline int SetNonBlock(SOCKET_T sockfd) { return SetBlockMode(sockfd, false); }
 
+	class CSocket
+	{
+	public:
+		CSocket();
+		virtual ~CSocket();
+
+	private:
+		SOCKET_T m_sock;
+		int m_sockType;
+		std::string m_bindIp;
+		int m_bindPort;
+	};
+
 	class TcpClient
 	{
 	public:
@@ -131,6 +144,11 @@ namespace ctm
 		bool ShutDown()
 		{
 			return !(ctm::ShutDown(m_tcpSock, 1));
+		}
+
+		SOCKET_T GetSocket() const
+		{
+			return m_tcpSock;
 		}
 
 	private:

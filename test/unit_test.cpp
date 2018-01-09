@@ -89,17 +89,21 @@ void TestGetAddrInfo()
 
 void TestSelect()
 {
-	int fd = open("a.txt", O_RDONLY);
-	
+	TcpClient client;
+	if (!client.Connect("127.0.0.1", 9999))
+	{
+		cout<<"connect server failed!\n"<<endl;
+		return ;
+	}
+
 	CSelect s;
-	s.AddReadFd(0);
-	s.AddReadFd(1);
-	s.AddReadFd(2);
-	s.AddReadFd(fd);
+
+	s.AddReadFd(client.GetSocket());
+
 	while (1)
 	{
 		struct timeval timeOut = { 5, 10 };
-		cout<<"Please enter : "<<endl;
+
 		int iRet = s.WaitReadFd(NULL);
 		if (iRet > 0)
 		{
@@ -107,10 +111,14 @@ void TestSelect()
 			while((fd = s.NextReadFd()) != SOCKET_INVALID)
 			{
 				cout<<"reader fd : "<<fd<<endl;
-				if(fd == 0) {
+				if(fd == client.GetSocket())
+				{
 					char buf[128] = {0};
-					cin>>buf;
+					client.Recv(buf, 128);
 					cout<<"read : "<<buf<<endl;
+
+					char* s = "hello server";
+					client.Send(s, strlen(s));
 				}
 			}
 		}
@@ -123,7 +131,6 @@ void TestSelect()
 			cout<<"WaitReadFd error"<<endl;
 			break;
 		}
-		sleep(1);
 	}
 }
 

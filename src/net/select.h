@@ -71,10 +71,33 @@ namespace ctm
 			return FD_ISSET(fd, &m_exceptFds);
 		}
 
-		void ClearReadFdSet();
-		void ClearWriteFdSet();
-		void ClearExceptFdSet();
-		void ClearFdSet();
+		void ClearReadFdSet()
+		{
+			FD_ZERO(&m_exceptFds);
+			m_setReadFd.clear();
+			m_readIt = m_setReadFd.begin();
+		}
+
+		void ClearWriteFdSet()
+		{
+			FD_ZERO(&m_writeFds);
+			m_setWriteFd.clear();
+			m_writeIt = m_setWriteFd.begin();
+		}
+
+		void ClearExceptFdSet()
+		{
+			FD_ZERO(&m_readFds);
+			m_setExceptFd.clear();
+			m_exceptIt = m_setExceptFd.begin();
+		}
+
+		void ClearFdSet()
+		{
+			ClearReadFdSet();
+			ClearWriteFdSet();
+			ClearExceptFdSet();
+		}
 		
 	private:
 		int WaitFd(const std::set<SOCKET_T>& setFd, fd_set& fdSet, struct timeval* timeOut, int flag);
