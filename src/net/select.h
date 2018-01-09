@@ -33,9 +33,9 @@ namespace ctm
 		void DelWriteFd(const SOCKET_T& fd);
 		void DelExceptFd(const SOCKET_T& fd);
 		
-		int WaitReadFd(const struct timeval& timeOut);
-		int WaitWriteFd(const struct timeval& timeOut);
-		int WaitExceptFd(const struct timeval& timeOut);
+		int WaitReadFd(struct timeval* timeOut);
+		int WaitWriteFd(struct timeval* timeOut);
+		int WaitExceptFd(struct timeval* timeOut);
 		
 		SOCKET_T NextReadFd();
 		SOCKET_T NextWriteFd();
@@ -43,32 +43,32 @@ namespace ctm
 
 		std::set<SOCKET_T> ReadGoodFds()
 		{
-			return GoodFds(m_setReadFd, m_readFdSet);
+			return GoodFds(m_setReadFd, m_readFds);
 		}
 
 		std::set<SOCKET_T> WriteGoodFds()
 		{
-			return GoodFds(m_setWriteFd, m_writeFdSet);
+			return GoodFds(m_setWriteFd, m_writeFds);
 		}
 		
 		std::set<SOCKET_T> ExcpetGoodFds()
 		{
-			return GoodFds(m_setExceptFd, m_exceptFdSet);
+			return GoodFds(m_setExceptFd, m_exceptFds);
 		}
 
 		bool IsReadFd(const SOCKET_T& fd)
 		{
-			return FD_ISSET(fd, &m_setReadFd);
+			return FD_ISSET(fd, &m_readFds);
 		}
 
 		bool IsWriteFd(const SOCKET_T& fd)
 		{
-			return FD_ISSET(fd, &m_setWriteFd);
+			return FD_ISSET(fd, &m_writeFds);
 		}
 
 		bool IsExcpetFd(const SOCKET_T& fd)
 		{
-			return FD_ISSET(fd, &m_setExceptFd);
+			return FD_ISSET(fd, &m_exceptFds);
 		}
 
 		void ClearReadFdSet();
@@ -77,14 +77,14 @@ namespace ctm
 		void ClearFdSet();
 		
 	private:
-		int WaitFd(const std::set<SOCKET_T>& setFd, fd_set& fdSet, const struct timeval& timeOut, int flag);
+		int WaitFd(const std::set<SOCKET_T>& setFd, fd_set& fdSet, struct timeval* timeOut, int flag);
 
 		std::set<SOCKET_T> GoodFds(const std::set<SOCKET_T>& setFd, fd_set& fdSet);
 		
 	private:
-		fd_set m_readFdSet;
-		fd_set m_writeFdSet;
-		fd_set m_exceptFdSet;
+		fd_set m_readFds;
+		fd_set m_writeFds;
+		fd_set m_exceptFds;
 		
 		std::set<SOCKET_T> m_setReadFd;
 		std::set<SOCKET_T> m_setWriteFd;

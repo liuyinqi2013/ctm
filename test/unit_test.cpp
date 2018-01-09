@@ -2,6 +2,8 @@
 #include "common/string_tools.h"
 #include "common/time_tools.h"
 #include "net/socket.h"
+#include "net/select.h"
+
 #include <string.h>
 
 #include <iostream>
@@ -16,39 +18,43 @@ public:
 	void Hello() { cout<<"hello"<<endl; }
 };
 
-int main(int argc, char **argv)
+void TestStringFunc()
 {
-	//string a("\r\n**}&\n");
-	//cout<<Trimmed(a)<<endl;
-	//cout<<Sec()<<endl;
-	//cout<<Usec()<<endl;
-	//cout<<DateTime()<<endl;
-	//cout<<DateTime(TFMT_1)<<endl;
-	//cout<<DateTime(TFMT_2)<<endl;
-	//TestSingleton::GetInstance()->Hello();
+	string a("\r\n**}&\n");
+	cout<<Trimmed(a)<<endl;
+	cout<<Sec()<<endl;
+	cout<<Usec()<<endl;
+	cout<<DateTime()<<endl;
+	cout<<DateTime(TFMT_1)<<endl;
+	cout<<DateTime(TFMT_2)<<endl;
+	TestSingleton::GetInstance()->Hello();
 
+}
+
+void TestTcpClient()
+{
 	TcpClient client;
-	
 	if (!client.Connect("127.0.0.1", 9999))
 	{
 		cout<<"connect server failed!\n"<<endl;
-		return -1;
+		return ;
 	}
 	char buf[1024] = {0};
 	int len = client.Recv(buf, 1024);
 	if (len == -1)
 	{
 		cout<<"recv failed!\n"<<endl;
-		return -1;
+		return ;
 	}
 	buf[len] = '\0';
 	cout<<"Recv : "<<buf<<endl;
 	char* s = "hello server";
 	client.Send(s, strlen(s));
-	int a;
-	cin>>a;
+	
+}
 
-	/*
+void TestGetAddrInfo()
+{
 	struct addrinfo addr = {0};
 	addr.ai_family = AF_UNSPEC;
 	addr.ai_socktype = SOCK_STREAM;
@@ -77,10 +83,54 @@ int main(int argc, char **argv)
 		cout<<"ip : "<<ipbuf<<endl;
 
 		cout<<"canonname : "<<p->ai_canonname<<endl;
-		
 	}
 	freeaddrinfo(res);
-	*/
+}
 
+void TestSelect()
+{
+	int fd = open("a.txt", O_RDONLY);
+	
+	CSelect s;
+	s.AddReadFd(0);
+	s.AddReadFd(1);
+	s.AddReadFd(2);
+	s.AddReadFd(fd);
+	while (1)
+	{
+		struct timeval timeOut = { 5, 10 };
+		cout<<"Please enter : "<<endl;
+		int iRet = s.WaitReadFd(NULL);
+		if (iRet > 0)
+		{
+			SOCKET_T fd;
+			while((fd = s.NextReadFd()) != SOCKET_INVALID)
+			{
+				cout<<"reader fd : "<<fd<<endl;
+				if(fd == 0) {
+					char buf[128] = {0};
+					cin>>buf;
+					cout<<"read : "<<buf<<endl;
+				}
+			}
+		}
+		else if (iRet == 0)
+		{
+			cout<<"time out"<<endl;
+		}
+		else
+		{
+			cout<<"WaitReadFd error"<<endl;
+			break;
+		}
+		sleep(1);
+	}
+}
+
+int main(int argc, char **argv)
+{
+	TestSelect();
+	int a;
+	cin>>a;
 	return 0;
 }

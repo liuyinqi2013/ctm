@@ -4,9 +4,9 @@ namespace ctm
 {
 	CSelect::CSelect()
 	{
-		FD_ZERO(&m_readFdSet);
-		FD_ZERO(&m_writeFdSet);
-		FD_ZERO(&m_exceptFdSet);
+		FD_ZERO(&m_readFds);
+		FD_ZERO(&m_writeFds);
+		FD_ZERO(&m_exceptFds);
 
 		m_readIt   = m_setReadFd.begin();
 		m_writeIt  = m_setWriteFd.begin();
@@ -48,28 +48,28 @@ namespace ctm
 	}
 
 
-	int CSelect::WaitReadFd(const struct timeval& timeOut)
+	int CSelect::WaitReadFd(struct timeval* timeOut)
 	{
 		m_readIt = m_setReadFd.begin();
-		return WaitFd(m_setReadFd, m_readFdSet, timeOut, 0);
+		return WaitFd(m_setReadFd, m_readFds, timeOut, 0);
 	}
 
-	int CSelect::WaitWriteFd(const struct timeval& timeOut)
+	int CSelect::WaitWriteFd(struct timeval* timeOut)
 	{
 		m_writeIt = m_setWriteFd.begin();
-		return WaitFd(m_setWriteFd, m_writeFdSet, timeOut, 1);
+		return WaitFd(m_setWriteFd, m_writeFds, timeOut, 1);
 	}
 
-	int CSelect::WaitExceptFd(const struct timeval& timeOut)
+	int CSelect::WaitExceptFd(struct timeval* timeOut)
 	{
 		m_exceptIt = m_setExceptFd.begin();
-		return WaitFd(m_setExceptFd, m_exceptFdSet, timeOut, 2);
+		return WaitFd(m_setExceptFd, m_exceptFds, timeOut, 2);
 	}
 
-	int CSelect::WaitFd(const std::set<SOCKET_T>& setFd, fd_set& fdSet, const struct timeval& timeOut, int flag)
+	int CSelect::WaitFd(const std::set<SOCKET_T>& setFd, fd_set& fdSet, struct timeval* timeOut, int flag)
 	{
 		SOCKET_T maxFd = 0;
-		FD_ZERO(&setFd);
+		FD_ZERO(&fdSet);
 		std::set<SOCKET_T>::iterator it = setFd.begin();
 		for (; it != setFd.end(); it++)
 		{
@@ -81,52 +81,52 @@ namespace ctm
 		switch(flag)
 		{
 		case 0:
-			return select(maxFd + 1, &fdSet, NULL, NULL, &timeOut);
+			return select(maxFd + 1, &fdSet, NULL, NULL, timeOut);
 		case 1:
-			return select(maxFd + 1, NULL, &fdSet, NULL, &timeOut);
+			return select(maxFd + 1, NULL, &fdSet, NULL, timeOut);
 		case 2:
-			return select(maxFd + 1, NULL, NULL, &fdSet, &timeOut);
+			return select(maxFd + 1, NULL, NULL, &fdSet, timeOut);
 		case 3:
-			return select(maxFd + 1, &fdSet, &fdSet, &fdSet, &timeOut);
+			return select(maxFd + 1, &fdSet, &fdSet, &fdSet, timeOut);
 		}
 
-		return select(maxFd + 1, &fdSet, NULL, NULL, &timeOut);
+		return select(maxFd + 1, &fdSet, NULL, NULL, timeOut);
 	}
 
 	SOCKET_T CSelect::NextReadFd()
 	{
 		for (; m_readIt != m_setReadFd.end(); m_readIt++)
 		{
-			if (FD_ISSET(*m_readIt, &m_setReadFd))
+			if (FD_ISSET(*m_readIt, &m_readFds))
 			{
-				return *m_readIt;
+				return *m_readIt++;
 			}
 		}
-		return INVALID_SOCKET;
+		return SOCKET_INVALID;
 	}
 
 	SOCKET_T CSelect::NextWriteFd()
 	{
 		for (; m_writeIt != m_setWriteFd.end(); m_readIt++)
 		{
-			if (FD_ISSET(*m_writeIt, &m_setWriteFd))
+			if (FD_ISSET(*m_writeIt, &m_writeFds))
 			{
-				return *m_writeIt;
+				return *m_writeIt++;
 			}
 		}
-		return INVALID_SOCKET;
+		return SOCKET_INVALID;
 	}
 
 	SOCKET_T CSelect::NextExceptFd()
 	{
 		for (; m_exceptIt != m_setExceptFd.end(); m_readIt++)
 		{
-			if (FD_ISSET(*m_exceptIt, &m_setExceptFd))
+			if (FD_ISSET(*m_exceptIt, &m_exceptFds))
 			{
-				return *m_exceptIt;
+				return *m_exceptIt++;
 			}
 		}
-		return INVALID_SOCKET;
+		return SOCKET_INVALID;
 	}
 
 	std::set<SOCKET_T> CSelect::GoodFds(const std::set<SOCKET_T>& setFd, fd_set& fdSet)
