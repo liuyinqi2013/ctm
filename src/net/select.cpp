@@ -68,6 +68,9 @@ namespace ctm
 
 	int CSelect::WaitFd(const std::set<SOCKET_T>& setFd, fd_set& fdSet, struct timeval* timeOut, int flag)
 	{
+		if (setFd.size() == 0)
+			return -1;
+		
 		SOCKET_T maxFd = 0;
 		FD_ZERO(&fdSet);
 		std::set<SOCKET_T>::iterator it = setFd.begin();

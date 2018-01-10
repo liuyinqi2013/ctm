@@ -2,6 +2,7 @@
 #define CTM_NET_SOCKET_H__
 #include <string>
 #include <stdio.h>
+#include <errno.h>
 
 #ifdef WIN32
 #include <Winsock2.h>
@@ -22,6 +23,16 @@ inline int CloseSocket(SOCKET_T& sockfd)
 	return closesocket(sockfd);
 }
 
+inline int GetLastSockErrCode()
+{
+	return WSAGetLastError();
+}
+
+inline std::string StrSockErrMsg(int errCode)
+{
+	return std::string("");
+}
+
 #else
 #include <unistd.h>
 #include <sys/types.h>
@@ -29,7 +40,6 @@ inline int CloseSocket(SOCKET_T& sockfd)
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netdb.h>
-
 
 #define SOCKET_T int
 #define SOCKETLEN_T socklen_t
@@ -42,6 +52,17 @@ inline int CloseSocket(SOCKET_T& sockfd)
 {
 	return close(sockfd);
 }
+
+inline int GetLastSockErrCode()
+{
+	return errno;
+}
+
+inline std::string StrSockErrMsg(int errCode)
+{
+	return strerror(errCode);
+}
+
 
 #endif
 
@@ -72,6 +93,21 @@ namespace ctm
 		return listen(sockfd, backlog);
 	}
 
+	inline int SetSockOpt(SOCKET_T sockfd, int level, int optname, const char* optval, int  optlen)
+	{
+		return setsockopt(sockfd, level, optname, optval, optlen);
+	}
+
+	inline int GetPeerName(SOCKET_T sockfd, struct sockaddr* addr, SOCKETLEN_T* len)
+	{
+		return getpeername(sockfd, addr, len);
+	}
+
+	struct hostent* GetHostByName(const char *name)
+	{
+		return gethostbyname(name);
+	}
+	
 	inline int Connect(SOCKET_T sockfd, const struct sockaddr* addr, SOCKETLEN_T len)
 	{
 		return connect(sockfd, addr, len);
@@ -107,17 +143,118 @@ namespace ctm
 
 	inline int SetNonBlock(SOCKET_T sockfd) { return SetBlockMode(sockfd, false); }
 
+	class CSocket;
+	
 	class CSocket
 	{
 	public:
-		CSocket();
-		virtual ~CSocket();
+		typedef enum sock_type
+		{
+			SOCK_TYPE_STREAM = 0, // TCP
+			SOCK_TYPE_DGRAM = 1	  // UDP
+		} SOCK_TYPE;
+		
+		CSocket(int sockType = SOCK_TYPE_STREAM);
+		CSocket(SOCKET_T sockfd);
+		CSocket(const CSocket& other);
+		
+		virtual ~CSocket() 
+		{
+			Close();
+		}
 
+		CSocket& operator=(const CSocket& other);
+
+		bool Bind(const char* ip, const int& port);
+		
+		bool Bind(const std::string& ip, const int& port)
+		{
+			return this->Bind(ip.c_str(), port);
+		}
+
+		bool Listen(int backlog);
+
+		bool GetPeerName(std::string& outIp, int& outPort);
+
+		bool SetSockOpt(int level, int optname, const char* optval, int  optlen);
+
+		CSocket Accept(std::string& outIp, int& outPort);
+		
+		bool Connect(const char* ip, const int& port);
+		bool Connect(const std::string& ip, const int& port)
+		{
+			return this->Connect(ip.c_str(), port);
+		}
+
+		int Send(const char* buf, size_t len, int flags = 0);
+		
+		int Send(const std::string& strBuf, int flags = 0)
+		{
+			return this->Send(strBuf.data(), strBuf.size(), flags);
+		}
+		
+		int SendTo(const char* buf, size_t len, const std::string& dstIp, const int& dstPort, int flags = 0);
+		int SendTo(const std::string& strBuf, const std::string& dstIp, const int& dstPort, int flags = 0)
+		{
+			return this->SendTo(strBuf.data(), strBuf.size(), dstIp, dstPort, flags);
+		}
+
+		int Recv(char* buf, size_t len, int flags = 0);
+		int Recv(std::string& strOut, int flags = 0);
+		int RecvFrom(char* buf, size_t len, int flags = 0);
+		int RecvFrom(std::string& strOut, int flags = 0);
+		int RecvFrom(char* buf, size_t len, std::string& srcIp, int& srcPort, int flags = 0);
+		int RecvFrom(std::string& strOut, std::string& srcIp, int& srcPort, int flags = 0);
+		
+		void Close()
+		{
+			if (IsValid()) CloseSocket(m_sock);
+		}
+
+		bool IsListen() const
+		{
+			return m_isListen;
+		}
+
+		bool IsValid() const
+		{
+			return (m_sock != SOCKET_INVALID);
+		}
+
+		int GetErrCode() const
+		{
+			return m_errno;
+		}
+
+		const std::string& GetErrMsg() const
+		{
+			return m_errmsg;
+		}
+
+		bool Compare(const SOCKET_T sockfd)
+		{
+			return (m_sock == sockfd);
+		}
+		
+		bool Compare(const CSocket& other)
+		{
+			return (m_sock == other.m_sock)
+		}
+
+	protected:
+		void SetAddrZero();
+		{
+			memset(&m_sockAddrIn, 0, sizeof(m_sockAddrIn));
+		}
 	private:
 		SOCKET_T m_sock;
 		int m_sockType;
 		std::string m_bindIp;
 		int m_bindPort;
+		bool m_isListen;
+		int m_errno;
+		std::string m_errmsg;
+		struct sockaddr_in m_sockAddrIn;
 	};
 
 	class TcpClient
@@ -143,7 +280,7 @@ namespace ctm
 
 		bool ShutDown()
 		{
-			return !(ctm::ShutDown(m_tcpSock, 1));
+			return !(ctm::ShutDown(m_tcpSock, 2));
 		}
 
 		SOCKET_T GetSocket() const

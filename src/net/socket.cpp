@@ -74,6 +74,104 @@ namespace ctm
 		return SOCKET_OK;
 	}
 
+
+	CSocket::CSocket(int sockType = SOCK_TYPE_STREAM) :
+		m_sock(SOCKET_INVALID),
+		m_sockType(SOCK_TYPE_STREAM),
+		m_bindIp(""),
+		m_bindPort(0),
+		m_isListen(false),
+		m_errno(0),
+		m_errmsg("")
+	{
+		if (SOCK_TYPE_STREAM == sockType)
+			m_sock = Socket(AF_INET, SOCK_STREAM, 0);
+		else if(SOCK_TYPE_DGRAM == sockType)
+			m_sock = Socket(AF_INET, SOCK_DGRAM, 0);
+		
+		if (!IsValid())
+		{
+			m_errno = GetLastSockErrCode();
+			m_errmsg = StrSockErrMsg(m_errno);
+		}		
+	}
+
+	CSocket::CSocket(SOCKET_T sockfd) :
+		m_sock(sockfd),
+		m_sockType(SOCK_TYPE_STREAM),
+		m_bindIp(""),
+		m_bindPort(0),
+		m_isListen(false),
+		m_errno(0),
+		m_errmsg("")
+	{
+	}
+
+	CSocket::CSocket(const CSocket& other) :
+		m_sock(other.m_sock),
+		m_sockType(other.m_sockType),
+		m_bindIp(other.m_bindIp),
+		m_bindPort(other.m_bindPort),
+		m_isListen(other.m_isListen),
+		m_errno(other.m_errno),
+		m_errmsg(other.m_errmsg)
+	{
+	
+	}
+
+	CSocket& CSocket::operator=(const CSocket& other)
+	{
+		if (m_sock != other.m_sock)
+		{
+			m_sock = other.m_sock;
+			m_sockType = other.m_sockType;
+			m_bindIp = other.m_bindIp;
+			m_bindPort = other.m_bindPort;
+			m_isListen = other.m_isListen;
+			m_errno = other.m_errno;
+			m_errmsg = other.m_errmsg;
+		}
+
+		return *this;
+	}
+
+	bool CSocket::Bind(const char* ip, const int& port)
+	{
+		if (!IsValid() || !ip || port <= 0) 
+			return false;
+		SetAddrZero();
+		m_sockAddrIn.sin_family = AF_INET;
+		m_sockAddrIn.sin_port = htons(port);
+		m_sockAddrIn.sin_addr.s_addr = inet_addr(ip);
+		if(SOCKET_ERR == Bind(m_sock, (struct sockaddr*)&m_sockAddrIn, sizeof(m_sockAddrIn)))
+		{
+			m_errno = GetLastSockErrCode();
+			m_errmsg = StrSockErrMsg(m_errno);
+			return false;
+		}
+		
+		m_bindIp = ip;
+		m_bindPort = port;
+		
+		return true;
+	}
+
+	bool CSocket::Listen(int backlog)
+	{
+		if (!IsValid() || backlog <= 0) 
+			return false;
+		
+		if (SOCKET_ERR == Listen(m_sock, backlog))
+		{
+			m_errno = GetLastSockErrCode();
+			m_errmsg = StrSockErrMsg(m_errno);
+			return false;
+		}
+		m_isListen = true;
+		
+		return true;
+	}
+	
 	TcpClient::TcpClient() :
 		m_tcpSock(SOCKET_INVALID),
 		m_serverIp("127.0.0.1"),

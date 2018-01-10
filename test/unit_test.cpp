@@ -114,9 +114,16 @@ void TestSelect()
 				if(fd == client.GetSocket())
 				{
 					char buf[128] = {0};
-					client.Recv(buf, 128);
-					cout<<"read : "<<buf<<endl;
-
+					int len = client.Recv(buf, 128);
+					if (len > 0) {
+						cout<<"read : "<<buf<<endl;
+					}
+					else {
+						cout<<"read failed"<<buf<<endl;
+						s.DelReadFd(fd);
+						continue;
+					}
+						
 					char* s = "hello server";
 					client.Send(s, strlen(s));
 				}
