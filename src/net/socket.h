@@ -103,7 +103,7 @@ namespace ctm
 		return getpeername(sockfd, addr, len);
 	}
 
-	struct hostent* GetHostByName(const char *name)
+	inline struct hostent* GetHostByName(const char *name)
 	{
 		return gethostbyname(name);
 	}
@@ -179,6 +179,8 @@ namespace ctm
 		bool SetSockOpt(int level, int optname, const char* optval, int  optlen);
 
 		CSocket Accept(std::string& outIp, int& outPort);
+
+		bool SetBlockMode(bool bBlock);
 		
 		bool Connect(const char* ip, const int& port);
 		bool Connect(const std::string& ip, const int& port)
@@ -238,13 +240,20 @@ namespace ctm
 		
 		bool Compare(const CSocket& other)
 		{
-			return (m_sock == other.m_sock)
+			return (m_sock == other.m_sock);
 		}
 
 	protected:
-		void SetAddrZero();
+		void SetAddrZero()
 		{
 			memset(&m_sockAddrIn, 0, sizeof(m_sockAddrIn));
+		}
+
+	private:
+		void GetSystemError()
+		{
+			m_errno = GetLastSockErrCode();
+			m_errmsg = StrSockErrMsg(m_errno);
 		}
 	private:
 		SOCKET_T m_sock;

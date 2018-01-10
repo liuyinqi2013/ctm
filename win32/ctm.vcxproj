@@ -12,6 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\common\com.cpp" />
+    <ClCompile Include="..\src\common\exception.cpp" />
     <ClCompile Include="..\src\common\string_tools.cpp" />
     <ClCompile Include="..\src\common\time_tools.cpp" />
     <ClCompile Include="..\src\ctm.cpp" />
@@ -22,6 +23,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\common\com.h" />
+    <ClInclude Include="..\src\common\exception.h" />
     <ClInclude Include="..\src\common\lock.h" />
     <ClInclude Include="..\src\common\macro.h" />
     <ClInclude Include="..\src\common\Object.h" />
