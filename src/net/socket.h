@@ -3,6 +3,8 @@
 #include <string>
 #include <stdio.h>
 #include <errno.h>
+#include <string.h>
+
 
 #ifdef WIN32
 #include <Winsock2.h>
@@ -148,14 +150,23 @@ namespace ctm
 	class CSocket
 	{
 	public:
+		
 		typedef enum sock_type
 		{
 			SOCK_TYPE_STREAM = 0, // TCP
 			SOCK_TYPE_DGRAM = 1	  // UDP
 		} SOCK_TYPE;
-		
-		CSocket(int sockType = SOCK_TYPE_STREAM);
-		CSocket(SOCKET_T sockfd);
+
+		typedef enum sock_error
+		{
+			NO_ERR = 0, // No error
+			ERR_SOCK_INVALID = 1, //
+			ERR_IP_INVALID = 2, //
+			ERR_PROT_INVALID = 3, //
+			ERR_NO_LISTEN = 4   // No listen
+		} SOCK_ERR_CODE;
+				
+		CSocket(SOCK_TYPE sockType = SOCK_TYPE_STREAM);
 		CSocket(const CSocket& other);
 		
 		virtual ~CSocket() 
@@ -203,14 +214,13 @@ namespace ctm
 
 		int Recv(char* buf, size_t len, int flags = 0);
 		int Recv(std::string& strOut, int flags = 0);
-		int RecvFrom(char* buf, size_t len, int flags = 0);
-		int RecvFrom(std::string& strOut, int flags = 0);
+
 		int RecvFrom(char* buf, size_t len, std::string& srcIp, int& srcPort, int flags = 0);
 		int RecvFrom(std::string& strOut, std::string& srcIp, int& srcPort, int flags = 0);
 		
 		void Close()
 		{
-			if (IsValid()) CloseSocket(m_sock);
+			if (IsValid()) { CloseSocket(m_sock); m_sock = SOCKET_INVALID; }
 		}
 
 		bool IsListen() const
@@ -228,7 +238,7 @@ namespace ctm
 			return m_errno;
 		}
 
-		const std::string& GetErrMsg() const
+		std::string GetErrMsg() const
 		{
 			return m_errmsg;
 		}
@@ -243,18 +253,37 @@ namespace ctm
 			return (m_sock == other.m_sock);
 		}
 
+		SOCKET_T GetSock() const
+		{
+			return m_sock;
+		}
+
+		std::string GetBindIp() const
+		{
+			return m_bindIp;
+		}
+
+		int GetBindPot() const
+		{
+			return m_bindPort;
+		}
 	protected:
+		
 		void SetAddrZero()
 		{
 			memset(&m_sockAddrIn, 0, sizeof(m_sockAddrIn));
 		}
 
 	private:
+		
+		CSocket(SOCKET_T sockfd, SOCK_TYPE sockType);
+		
 		void GetSystemError()
 		{
 			m_errno = GetLastSockErrCode();
 			m_errmsg = StrSockErrMsg(m_errno);
 		}
+		
 	private:
 		SOCKET_T m_sock;
 		int m_sockType;
@@ -277,30 +306,23 @@ namespace ctm
 		int Send(const char* buf, size_t len);
 		int Send(const std::string& strBuf);
 
-		bool ShutDownRecv()
-		{
-			return !(ctm::ShutDown(m_tcpSock, 0));
-		}
-
-		bool ShutDownSend()
-		{
-			return !(ctm::ShutDown(m_tcpSock, 1));
-		}
-
-		bool ShutDown()
-		{
-			return !(ctm::ShutDown(m_tcpSock, 2));
-		}
-
 		SOCKET_T GetSocket() const
 		{
-			return m_tcpSock;
+			return m_tcpSock.GetSock();
 		}
 
+		int GetErrCode() const
+		{
+			return m_tcpSock.GetErrCode();;
+		}
+				
+		std::string GetErrMsg() const
+		{
+			return m_tcpSock.GetErrMsg();
+		}
+		
 	private:
-		void Close();
-	private:
-		SOCKET_T m_tcpSock;
+		CSocket m_tcpSock;
 		std::string m_serverIp;
 		int m_serverPort;
 	};
@@ -312,9 +334,7 @@ namespace ctm
 		virtual ~TcpServer();
 		void Run();
 	private:
-		void Close();
-	private:
-		SOCKET_T m_tcpSock;
+		CSocket m_tcpSock;
 		std::string m_ip;
 		int m_port;
 	};

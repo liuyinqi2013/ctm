@@ -75,14 +75,14 @@ namespace ctm
 	}
 
 
-	CSocket::CSocket(int sockType) :
+	CSocket::CSocket(SOCK_TYPE sockType) :
 		m_sock(SOCKET_INVALID),
 		m_sockType(sockType),
 		m_bindIp(""),
 		m_bindPort(0),
 		m_isListen(false),
 		m_errno(0),
-		m_errmsg("")
+		m_errmsg("Success")
 	{
 		if (SOCK_TYPE_STREAM == sockType)
 			m_sock = Socket(AF_INET, SOCK_STREAM, 0);
@@ -95,14 +95,11 @@ namespace ctm
 		}		
 	}
 
-	CSocket::CSocket(SOCKET_T sockfd) :
+	CSocket::CSocket(SOCKET_T sockfd, SOCK_TYPE sockType) :
 		m_sock(sockfd),
-		m_sockType(SOCK_TYPE_STREAM),
-		m_bindIp(""),
-		m_bindPort(0),
-		m_isListen(false),
+		m_sockType(sockType),
 		m_errno(0),
-		m_errmsg("")
+		m_errmsg("Success")
 	{
 	}
 
@@ -136,7 +133,7 @@ namespace ctm
 
 	bool CSocket::Bind(const char* ip, const int& port)
 	{
-		if (!IsValid() || !ip || port <= 0) 
+		if (!IsValid()) 
 			return false;
 		SetAddrZero();
 		m_sockAddrIn.sin_family = AF_INET;
@@ -173,9 +170,10 @@ namespace ctm
 	{
 		if (!IsValid()) 
 			return false;
+		
 		SetAddrZero();
 		int len = sizeof(m_sockAddrIn);
-		if (SOCKET_ERR == ctm::GetPeerName(m_sock, (struct sockaddr*)&m_sockAddrIn, &len))
+		if (SOCKET_ERR == ctm::GetPeerName(m_sock, (struct sockaddr*)&m_sockAddrIn, (SOCKETLEN_T*)&len))
 		{
 			GetSystemError();
 			return false;
@@ -202,17 +200,26 @@ namespace ctm
 	CSocket CSocket::Accept(std::string& outIp, int& outPort)
 	{
 		if (!IsValid()) 
-			return CSocket(SOCKET_INVALID);
+			return CSocket(SOCKET_INVALID, SOCK_TYPE_STREAM);
+		
+		if (!m_isListen)
+		{
+			m_errno = ERR_NO_LISTEN;
+			m_errmsg = "Socket no listen mode";
+			return CSocket(SOCKET_INVALID, SOCK_TYPE_STREAM);
+		}
 
 		SetAddrZero();
-		int len = sizeof(m_sockAddrIn);
+		SOCKETLEN_T len = sizeof(m_sockAddrIn);
 		SOCKET_T s = ctm::Accept(m_sock, (struct sockaddr*)&m_sockAddrIn, &len);
 		if (SOCKET_INVALID == s)
 		{
 			GetSystemError();
 		}
-
-		return CSocket(s);
+		outPort = ntohs(m_sockAddrIn.sin_port);
+		outIp = inet_ntoa(m_sockAddrIn.sin_addr);
+			
+		return CSocket(s, SOCK_TYPE_STREAM);
 	}
 
 	bool CSocket::SetBlockMode(bool bBlock)
@@ -253,7 +260,7 @@ namespace ctm
 			return SOCKET_ERR;
 		
 		int length = ctm::Send(m_sock, buf, len, flags);
-		if (SOCKET_ERR == length)
+		if (length <= 0)
 		{
 			GetSystemError();
 		}
@@ -261,38 +268,76 @@ namespace ctm
 		return length;
 	}
 
+	int CSocket::SendTo(const char* buf, size_t len, const std::string& dstIp, const int& dstPort, int flags)
+	{
+		if (!IsValid()) 
+			return SOCKET_ERR;
+		
+		SetAddrZero();
+		m_sockAddrIn.sin_family = AF_INET;
+		m_sockAddrIn.sin_port = htons(dstPort);
+		m_sockAddrIn.sin_addr.s_addr = inet_addr(dstIp.c_str());
+		int length = ctm::SendTo(m_sock, buf, len, flags, (struct sockaddr*)&m_sockAddrIn, sizeof(m_sockAddrIn));
+		if (length <= 0)
+		{
+			GetSystemError();
+		}
+
+		return length;
+	}
+
+	int CSocket::Recv(char* buf, size_t len, int flags)
+	{
+		if (!IsValid()) 
+			return SOCKET_ERR;
+		
+		int length = ctm::Recv(m_sock, buf, len, flags);
+		if (length <= 0)
+		{
+			GetSystemError();
+		}
+		else
+		{
+			buf[length] = '\0';
+		}
+		
+		return length;
+	}
+
+	int CSocket::RecvFrom(char* buf, size_t len, std::string& srcIp, int& srcPort, int flags)
+	{
+		if (!IsValid()) 
+			return SOCKET_ERR;
+		
+		SetAddrZero();
+		SOCKETLEN_T addrLen = sizeof(m_sockAddrIn);
+		int length = ctm::RecvFrom(m_sock, buf, len, flags, (struct sockaddr*)&m_sockAddrIn, &addrLen);
+		if (length <= 0)
+		{
+			GetSystemError();
+		}
+		else
+		{
+			buf[length] = '\0';
+		}
+		
+		return length;
+		
+	}
+
 	TcpClient::TcpClient() :
-		m_tcpSock(SOCKET_INVALID),
 		m_serverIp("127.0.0.1"),
 		m_serverPort(0)
 	{
-		m_tcpSock = Socket(AF_INET, SOCK_STREAM, 0);
 	}
 
 	TcpClient::~TcpClient()
 	{
-		Close();
 	}
 
 	bool TcpClient::Connect(const std::string& serverIp, int serverPort)
 	{
-		m_serverIp = serverIp;
-		m_serverPort = serverPort;
-		if (SOCKET_INVALID == m_tcpSock)
-		{
-			return false;
-		}
-
-		struct sockaddr_in serverAddr = {0};
-		serverAddr.sin_family = AF_INET;
-		serverAddr.sin_port = htons(serverPort);
-		serverAddr.sin_addr.s_addr = inet_addr(serverIp.c_str());
-		if (ctm::Connect(m_tcpSock, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) != 0)
-		{
-			return false;
-		}
-
-		return true;
+		return m_tcpSock.Connect(serverIp, serverPort);
 	}
 
 	int TcpClient::Recv(char* buf, size_t len)
@@ -301,7 +346,7 @@ namespace ctm
 		{
 			return -1;
 		}
-		return ctm::Recv(m_tcpSock, buf, len, 0);
+		return m_tcpSock.Recv(buf, len);
 	}
 
 	int TcpClient::Send(const char* buf, size_t len)
@@ -310,72 +355,73 @@ namespace ctm
 		{
 			return -1;
 		}
-		return ctm::Send(m_tcpSock, buf, len, 0);
+		return m_tcpSock.Send(buf, len);
 	}
 
-	void TcpClient::Close()
-	{
-		if (m_tcpSock != SOCKET_INVALID)
-		{
-			CloseSocket(m_tcpSock);
-			m_tcpSock = SOCKET_INVALID;
-		}
-	}
+	
 
 	TcpServer::TcpServer(const std::string& ip, int port) : 
-		m_tcpSock(SOCKET_INVALID),
 		m_ip(ip),
 		m_port(port)
 	{
-		m_tcpSock = ListenSocket(m_ip.c_str(), m_port, SOMAXCONN);
 	}
 
 	TcpServer::~TcpServer()
 	{
-		Close();
+	
 	}
-
-	void TcpServer::Close()
-	{
-		if (m_tcpSock != SOCKET_INVALID)
-		{
-			CloseSocket(m_tcpSock);
-			m_tcpSock = SOCKET_INVALID;
-		}
-	}
-
+	
 	void TcpServer::Run()
 	{
 		printf("Server Start\n");
 
-		if(m_tcpSock == SOCKET_INVALID)
+		if(!m_tcpSock.IsValid())
 		{
-			printf("m_tcpSock is SOCKET_INVALID!\n");
+			printf("m_tcpSock INVALID!\n");
 			return;
 		}
-		struct sockaddr_in clientAddr = {0};
-		int len = sizeof(clientAddr);
-		SOCKET_T clientSock = SOCKET_INVALID;
+
+		if(!m_tcpSock.Bind(m_ip, m_port))
+		{
+			printf("errcode = %d, errmsg = %s!\n", m_tcpSock.GetErrCode(), m_tcpSock.GetErrMsg().c_str());
+			return;
+		}
+
+		if(!m_tcpSock.Listen(SOMAXCONN))
+		{
+			printf("errcode = %d, errmsg = %s!\n", m_tcpSock.GetErrCode(), m_tcpSock.GetErrMsg().c_str());
+			return;
+		}
+
+		int clientPort;
+		std::string clientIp;
+		int len = 0;
 		while(1)
 		{
-			len = sizeof(clientAddr);
-			memset(&clientAddr, 0, len);
-			clientSock = Accept(m_tcpSock, (struct sockaddr*)&clientAddr, (SOCKETLEN_T*)&len);
-			if(clientSock == SOCKET_INVALID)
+			CSocket clientSock = m_tcpSock.Accept(clientIp, clientPort);
+			if(!clientSock.IsValid())
 			{
-				printf("Accpcet failed!\n");
+				printf("errcode = %d, errmsg = %s!\n", m_tcpSock.GetErrCode(), m_tcpSock.GetErrMsg().c_str());
 				continue;
 			}
 
 			printf("has a client connect : \n");
-			printf("port : %d\n", ntohs(clientAddr.sin_port));
-			printf("ip : %s\n", inet_ntoa(clientAddr.sin_addr));
+			printf("port : %d\n", clientPort);
+			printf("ip : %s\n", clientIp.c_str());
 			char *buf = "hello client";
-			len = Send(clientSock, buf, strlen(buf), 0);
+			len = clientSock.Send(buf, strlen(buf));
+			if (len < 0)
+			{
+				printf("errcode = %d, errmsg = %s!\n", m_tcpSock.GetErrCode(), m_tcpSock.GetErrMsg().c_str());
+			}
 			printf("send buf : %s, len : %d\n", buf, len);
 			printf("send len : %d\n", len);
 			char rbuf[128];
-			len =  Recv(clientSock, rbuf, 128, 0);
+			len =  clientSock.Recv(rbuf, 128);
+			if (len < 0)
+			{
+				printf("errcode = %d, errmsg = %s!\n", m_tcpSock.GetErrCode(), m_tcpSock.GetErrMsg().c_str());
+			}
 			rbuf[len] = '\0';
 			printf("recv : %s\n", rbuf);
 		}

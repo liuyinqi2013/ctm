@@ -119,7 +119,8 @@ void TestSelect()
 						cout<<"read : "<<buf<<endl;
 					}
 					else {
-						cout<<"read failed"<<buf<<endl;
+						cout<<"error code : "<<client.GetErrCode()<<endl;
+						cout<<"error msg : "<<client.GetErrMsg()<<endl;
 						s.DelReadFd(fd);
 						continue;
 					}
