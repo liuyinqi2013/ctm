@@ -4,6 +4,9 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
+#include <vector>
+
+#include "common/refcount.h"
 
 
 #ifdef WIN32
@@ -30,9 +33,12 @@ inline int GetLastSockErrCode()
 	return WSAGetLastError();
 }
 
-inline std::string StrSockErrMsg(int errCode)
+inline std::string GetSockErrMsg(int errCode)
 {
-	return std::string("");
+	char buf[128] = {0};
+	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, errCode, 
+		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), buf, sizeof(buf), NULL);
+	return std::string(buf);
 }
 
 #else
@@ -60,7 +66,7 @@ inline int GetLastSockErrCode()
 	return errno;
 }
 
-inline std::string StrSockErrMsg(int errCode)
+inline std::string GetSockErrMsg(int errCode)
 {
 	return strerror(errCode);
 }
@@ -146,6 +152,8 @@ namespace ctm
 	inline int SetNonBlock(SOCKET_T sockfd) { return SetBlockMode(sockfd, false); }
 
 	class CSocket;
+
+	bool operator==(const CSocket& lhs, const CSocket& rhs);
 	
 	class CSocket
 	{
@@ -171,7 +179,11 @@ namespace ctm
 		
 		virtual ~CSocket() 
 		{
-			Close();
+			printf("~CSocket\n");
+			if (m_refCount.Only()) 
+			{
+				Close();
+			}
 		}
 
 		CSocket& operator=(const CSocket& other);
@@ -220,6 +232,7 @@ namespace ctm
 		
 		void Close()
 		{
+			printf("Close\n");
 			if (IsValid()) { CloseSocket(m_sock); m_sock = SOCKET_INVALID; }
 		}
 
@@ -267,6 +280,7 @@ namespace ctm
 		{
 			return m_bindPort;
 		}
+		
 	protected:
 		
 		void SetAddrZero()
@@ -281,8 +295,10 @@ namespace ctm
 		void GetSystemError()
 		{
 			m_errno = GetLastSockErrCode();
-			m_errmsg = StrSockErrMsg(m_errno);
+			m_errmsg = GetSockErrMsg(m_errno);
 		}
+
+		friend bool operator==(const CSocket& lhs, const CSocket& rhs);
 		
 	private:
 		SOCKET_T m_sock;
@@ -293,7 +309,13 @@ namespace ctm
 		int m_errno;
 		std::string m_errmsg;
 		struct sockaddr_in m_sockAddrIn;
+		CRefCount m_refCount;
 	};
+
+	inline bool operator==(const CSocket& lhs, const CSocket& rhs)
+	{
+		return (lhs.m_sock == rhs.m_sock);
+	}
 
 	class TcpClient
 	{
@@ -337,6 +359,7 @@ namespace ctm
 		CSocket m_tcpSock;
 		std::string m_ip;
 		int m_port;
+		std::vector<CSocket> m_sockClients;
 	};
 
 }

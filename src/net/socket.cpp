@@ -92,7 +92,8 @@ namespace ctm
 		if (!IsValid())
 		{
 			GetSystemError();
-		}		
+		}
+		printf("CSocket(SOCK_TYPE sockType)\n");
 	}
 
 	CSocket::CSocket(SOCKET_T sockfd, SOCK_TYPE sockType) :
@@ -101,24 +102,30 @@ namespace ctm
 		m_errno(0),
 		m_errmsg("Success")
 	{
+		printf("CSocket(SOCKET_T sockfd, SOCK_TYPE sockType)\n");
 	}
 
 	CSocket::CSocket(const CSocket& other) :
-		m_sock(other.m_sock),
 		m_sockType(other.m_sockType),
 		m_bindIp(other.m_bindIp),
 		m_bindPort(other.m_bindPort),
 		m_isListen(other.m_isListen),
 		m_errno(other.m_errno),
-		m_errmsg(other.m_errmsg)
+		m_errmsg(other.m_errmsg),
+		m_refCount(other.m_refCount)
 	{
-	
+		printf("CSocket(const CSocket& other)\n");
 	}
 
 	CSocket& CSocket::operator=(const CSocket& other)
 	{
 		if (m_sock != other.m_sock)
 		{
+			if(m_refCount.Only())
+			{
+				Close();
+			}
+			m_refCount = other.m_refCount;
 			m_sock = other.m_sock;
 			m_sockType = other.m_sockType;
 			m_bindIp = other.m_bindIp;
@@ -127,7 +134,7 @@ namespace ctm
 			m_errno = other.m_errno;
 			m_errmsg = other.m_errmsg;
 		}
-
+		printf("CSocket::operator=(const CSocket& other)\n");
 		return *this;
 	}
 
@@ -424,6 +431,7 @@ namespace ctm
 			}
 			rbuf[len] = '\0';
 			printf("recv : %s\n", rbuf);
+			m_sockClients.push_back(clientSock);
 		}
 		printf("Server stop\n");
 	}
