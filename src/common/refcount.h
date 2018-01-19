@@ -1,7 +1,8 @@
 #ifndef CTM_COMMON_REFCOUNT_H__
 #define CTM_COMMON_REFCOUNT_H__
 
-#include <stdio.h>
+#include "macro.h"
+
 namespace ctm
 {
 	class CRefCount
@@ -10,22 +11,24 @@ namespace ctm
 		CRefCount() :
 			m_pCount(new int(1))
 		{
-			printf("CRefCount()\n");
+			DEBUG_LOG();
 		}
 
 		CRefCount(const CRefCount& other) :
 			m_pCount(other.m_pCount)
 		{
 			++(*m_pCount);
-			printf("CRefCount(const CRefCount& other)\n");
+			DEBUG_LOG();
 		}
 
 		virtual ~CRefCount()
 		{
+			DEBUG_LOG();
 			if (--(*m_pCount) == 0) 
 			{
 				delete m_pCount;
 				m_pCount = 0;
+				DEBUG_LOG();
 			}
 		}
 

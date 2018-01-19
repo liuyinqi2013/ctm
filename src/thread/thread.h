@@ -27,9 +27,9 @@ typedef void* (*ThreadFun)(void*);
 
 namespace ctm
 {
-	class Thread
+	class CThread
 	{
-		NOCOPY(Thread)		
+		NOCOPY(CThread)		
 	public:
 		typedef enum
 		{
@@ -45,21 +45,21 @@ namespace ctm
 			T_ERR   = 1
 		} terrno;
 		
-		Thread() : 
+		CThread() : 
 			m_iStatus(T_STOP), 
 			m_bDetach(false), 
 			m_strName("")
 		{
 		}
 
-		Thread(const std::string& name) : 
+		CThread(const std::string& name) : 
 			m_iStatus(T_STOP),
 			m_bDetach(false), 
 			m_strName(name)
 		{
 		}
 		
-		virtual ~Thread()
+		virtual ~CThread()
 		{
 			thread_close(m_thread);
 		}

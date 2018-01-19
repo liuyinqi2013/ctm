@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "common/refcount.h"
-
+#include "common/macro.h"
 
 #ifdef WIN32
 #include <Winsock2.h>
@@ -179,9 +179,10 @@ namespace ctm
 		
 		virtual ~CSocket() 
 		{
-			printf("~CSocket\n");
+			DEBUG_LOG();
 			if (m_refCount.Only()) 
 			{
+				DEBUG_LOG();
 				Close();
 			}
 		}
@@ -204,6 +205,18 @@ namespace ctm
 		CSocket Accept(std::string& outIp, int& outPort);
 
 		bool SetBlockMode(bool bBlock);
+
+		bool SetNonBlock()
+		{
+			return SetBlockMode(false);
+		}
+
+		bool SetBlock()
+		{
+			return SetBlockMode(true);
+		}
+
+		bool ShutDown(int how);
 		
 		bool Connect(const char* ip, const int& port);
 		bool Connect(const std::string& ip, const int& port)
@@ -232,7 +245,7 @@ namespace ctm
 		
 		void Close()
 		{
-			printf("Close\n");
+			DEBUG_LOG();
 			if (IsValid()) { CloseSocket(m_sock); m_sock = SOCKET_INVALID; }
 		}
 

@@ -5,17 +5,17 @@
 
 namespace ctm
 {
-	class CBaseException : public std::exception
+	class CException : public std::exception
 	{
 	public:
-		CBaseException() throw();
-		CBaseException(int errno, const std::string& errmsg) throw();
-		CBaseException(const CBaseException& other) throw();
-		CBaseException& operator= (const CBaseException& rhs) throw();
+		CException() throw();
+		CException(int errno, const std::string& errmsg) throw();
+		CException(const CException& other) throw();
+		CException& operator= (const CException& rhs) throw();
 		
-		virtual ~CBaseException() throw();
-		virtual int Errno() throw();
-		virtual const char* What() const throw();
+		virtual ~CException() throw();
+		virtual int errno() throw();
+		virtual const char* what() const throw();
 	private:
 		int m_errno;
 		std::string	m_errmsg;

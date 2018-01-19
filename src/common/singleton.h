@@ -8,10 +8,10 @@ namespace ctm
 {
 
 	template <class T>  
-	class Singleton  
+	class CSingleton  
 	{
 
-		NOCOPY(Singleton)
+		NOCOPY(CSingleton)
 	
 	public:  
 	    static T* GetInstance()  
@@ -23,8 +23,8 @@ namespace ctm
 	    } 
 		
 	protected:  
-	    Singleton(){}  
-	    ~Singleton(){}  
+	    CSingleton(){}  
+	    ~CSingleton(){}  
 		
 	private:  
 	    static T* m_pInstance;  
@@ -34,10 +34,10 @@ namespace ctm
 	    public:  
 	        ~Garbo()  
 	        {  
-	            if (Singleton::m_pInstance)
+	            if (CSingleton::m_pInstance)
 	            {  
-	                delete Singleton::m_pInstance;  
-	                Singleton::m_pInstance = NULL;  
+	                delete CSingleton::m_pInstance;  
+	                CSingleton::m_pInstance = NULL;  
 	            }  
 	        }  
 	    };
@@ -46,7 +46,7 @@ namespace ctm
 	};  
 	  
 	template <class T>  
-	T* Singleton<T>::m_pInstance = NULL;
+	T* CSingleton<T>::m_pInstance = NULL;
 
 }
 

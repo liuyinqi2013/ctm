@@ -6,11 +6,11 @@
 namespace ctm
 {
 
-	int Thread::Start()
+	int CThread::Start()
 	{
 		if (m_iStatus == T_STOP)
 		{
-			bool bRet = thread_create(m_thread, Thread::ThreadEnterFun, this);
+			bool bRet = thread_create(m_thread, CThread::ThreadEnterFun, this);
 			if(!bRet) {
 				fprintf(stderr, "create thread failed");
 				return T_ERR;
@@ -21,7 +21,7 @@ namespace ctm
 		return T_OK;
 	}
 
-	int Thread::Stop()
+	int CThread::Stop()
 	{
 		if(m_iStatus != T_STOP)
 		{
@@ -35,7 +35,7 @@ namespace ctm
 		return T_OK;
 	}
 
-	int Thread::Join()
+	int CThread::Join()
 	{
 		if(!m_bDetach)
 		{
@@ -53,7 +53,7 @@ namespace ctm
 		return T_OK;
 	}
 
-	int Thread::Detach()
+	int CThread::Detach()
 	{
 		if(!m_bDetach)
 		{
@@ -70,12 +70,12 @@ namespace ctm
 	}
 
 #ifdef WIN32
-	DWORD Thread::ThreadEnterFun(LPVOID arg)
+	DWORD CThread::ThreadEnterFun(LPVOID arg)
 #else
-	void* Thread::ThreadEnterFun(void* arg)
+	void* CThread::ThreadEnterFun(void* arg)
 #endif
 	{
-		Thread *pThread = static_cast<Thread *>(arg);
+		CThread *pThread = static_cast<CThread *>(arg);
 		if(pThread)
 		{
 			pThread->Run();
@@ -87,7 +87,7 @@ namespace ctm
 	}
 
 
-	int Thread::Run()
+	int CThread::Run()
 	{
 		return T_OK;
 	}

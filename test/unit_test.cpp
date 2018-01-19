@@ -1,6 +1,8 @@
 #include "common/singleton.h"
 #include "common/string_tools.h"
 #include "common/time_tools.h"
+#include "common/msg.h"
+
 #include "net/socket.h"
 #include "net/select.h"
 
@@ -12,7 +14,7 @@
 using namespace ctm;
 using namespace std;
 
-class TestSingleton : public Singleton<TestSingleton>
+class TestSingleton : public CSingleton<TestSingleton>
 {
 public:
 	void Hello() { cout<<"hello"<<endl; }
@@ -90,12 +92,16 @@ void TestGetAddrInfo()
 void TestSelect()
 {
 	TcpClient client;
+	
 	if (!client.Connect("127.0.0.1", 9999))
 	{
-		cout<<"connect server failed!\n"<<endl;
+		DEBUG_LOG("connect server failed!");
 		return ;
 	}
 
+	char* send = "hello server";
+	client.Send(send, strlen(send));
+	
 	CSelect s;
 
 	s.AddReadFd(client.GetSocket());
@@ -110,41 +116,58 @@ void TestSelect()
 			SOCKET_T fd;
 			while((fd = s.NextReadFd()) != SOCKET_INVALID)
 			{
-				cout<<"reader fd : "<<fd<<endl;
+				DEBUG_LOG("ready fd : %d", fd);
 				if(fd == client.GetSocket())
 				{
 					char buf[128] = {0};
 					int len = client.Recv(buf, 128);
 					if (len > 0) {
-						cout<<"read : "<<buf<<endl;
+						DEBUG_LOG("read : %s", buf);
 					}
 					else {
-						cout<<"error code : "<<client.GetErrCode()<<endl;
-						cout<<"error msg : "<<client.GetErrMsg()<<endl;
+						ERROR_LOG("error code : %d", client.GetErrCode());
+						ERROR_LOG("error msg : %s", client.GetErrMsg().c_str());
 						s.DelReadFd(fd);
 						continue;
-					}
-						
-					char* s = "hello server";
-					client.Send(s, strlen(s));
+					}	
 				}
 			}
 		}
 		else if (iRet == 0)
 		{
-			cout<<"time out"<<endl;
+			ERROR_LOG("time out");
 		}
 		else
 		{
-			cout<<"WaitReadFd error"<<endl;
+			ERROR_LOG("WaitReadFd error");
 			break;
 		}
 	}
 }
 
+void TestMsg()
+{
+	CMsg msg1(1,"net");
+	CMsg msg2(2,"mod");
+	msg1.TestPrint();
+	msg2.TestPrint();
+	std::string buf;
+	msg1.Serialization(buf);
+	msg2.DeSerialization(buf);
+	CMsg* p = CreateMsg(0);
+	if (p)
+	{
+		p->DeSerialization(buf);
+		p->TestPrint();
+	}
+	msg1.TestPrint();
+	msg2.TestPrint();
+}
+
 int main(int argc, char **argv)
 {
-	TestSelect();
+	//TestSelect();
+	TestMsg();
 	int a;
 	cin>>a;
 	return 0;

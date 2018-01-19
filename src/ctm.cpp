@@ -12,16 +12,18 @@
 #include "thread/mutex.h"
 #include "net/socket.h"
 
+#include "netserver.h"
+
 using namespace ctm;
 using namespace std;
 
 static int num = 0;
-Mutex mutex;
+CMutex mutex;
 
-class TestSingleton : public Singleton<TestSingleton>, public Thread
+class TestSingleton : public CSingleton<TestSingleton>, public CThread
 {
 public:
-	TestSingleton(const std::string& name) : Thread(name)
+	TestSingleton(const std::string& name) : CThread(name)
 	{
 	}
 	
@@ -40,7 +42,7 @@ protected:
 		while(1)
 		{
 			{
-				LockOwner owner(mutex);
+				CLockOwner owner(mutex);
 				num++;
 				cout<<"thread : "<<GetName()<<" num : "<<num<<endl;
 			}
@@ -53,12 +55,13 @@ protected:
 
 int main(int argc, char **argv)
 {
-	//TestSingleton t1("t1"), t2("t2");
-	//t1.Start();
-	//t2.Start();
-	//t1.Join();
-	//t2.Join();
-	TcpServer Server("127.0.0.1", 9999);
-	Server.Run();
+	CTcpNetServer server("127.0.0.1", 9999);
+	if (!server.Init())
+	{
+		ERROR_LOG("Server init failed");
+		return -1;
+	}
+	server.Start();
+	server.Join();
 	return 0;
 }

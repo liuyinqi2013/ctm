@@ -3,32 +3,32 @@
 
 namespace ctm
 {
-	class BaseLock
+	class CLock
 	{
 	public:
-		BaseLock(){}
-		virtual ~BaseLock(){}
+		CLock(){}
+		virtual ~CLock(){}
 		
 		virtual bool Lock() = 0;
 		virtual bool TryLock() = 0;
 		virtual bool UnLock() = 0;
 	};
 	
-	class LockOwner
+	class CLockOwner
 	{
 	public:
-		LockOwner(BaseLock& lock) : m_lock(lock)
+		CLockOwner(CLock& lock) : m_lock(lock)
 		{
 			m_lock.Lock();
 		}
 		
-		~LockOwner()
+		~CLockOwner()
 		{
 			m_lock.UnLock();
 		}
 		
 	private:
-		BaseLock& m_lock;
+		CLock& m_lock;
 	};
 	
 };

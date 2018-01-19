@@ -24,15 +24,15 @@ inline int mutex_unlock(mutex_t& mutex)  { return pthread_mutex_unlock(&mutex); 
 
 namespace ctm
 {
-	class Mutex : public BaseLock
+	class CMutex : public CLock
 	{
 	public:
-			Mutex()
+			CMutex()
 			{
 				mutex_init(m_mutex);
 			}
 			
-			virtual ~Mutex()
+			virtual ~CMutex()
 			{
 				mutex_destroy(m_mutex);
 			}

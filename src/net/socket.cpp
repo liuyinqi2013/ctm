@@ -93,7 +93,7 @@ namespace ctm
 		{
 			GetSystemError();
 		}
-		printf("CSocket(SOCK_TYPE sockType)\n");
+		DEBUG_LOG();
 	}
 
 	CSocket::CSocket(SOCKET_T sockfd, SOCK_TYPE sockType) :
@@ -102,10 +102,11 @@ namespace ctm
 		m_errno(0),
 		m_errmsg("Success")
 	{
-		printf("CSocket(SOCKET_T sockfd, SOCK_TYPE sockType)\n");
+		DEBUG_LOG();
 	}
 
 	CSocket::CSocket(const CSocket& other) :
+		m_sock(other.m_sock),
 		m_sockType(other.m_sockType),
 		m_bindIp(other.m_bindIp),
 		m_bindPort(other.m_bindPort),
@@ -114,17 +115,19 @@ namespace ctm
 		m_errmsg(other.m_errmsg),
 		m_refCount(other.m_refCount)
 	{
-		printf("CSocket(const CSocket& other)\n");
+		DEBUG_LOG();
 	}
 
 	CSocket& CSocket::operator=(const CSocket& other)
 	{
+		DEBUG_LOG();
 		if (m_sock != other.m_sock)
 		{
 			if(m_refCount.Only())
 			{
 				Close();
 			}
+			m_sock = other.m_sock;
 			m_refCount = other.m_refCount;
 			m_sock = other.m_sock;
 			m_sockType = other.m_sockType;
@@ -134,7 +137,6 @@ namespace ctm
 			m_errno = other.m_errno;
 			m_errmsg = other.m_errmsg;
 		}
-		printf("CSocket::operator=(const CSocket& other)\n");
 		return *this;
 	}
 
@@ -235,6 +237,20 @@ namespace ctm
 			return false;
 		
 		if (SOCKET_ERR == ctm::SetBlockMode(m_sock, bBlock))
+		{
+			GetSystemError();
+			return false;
+		}
+
+		return true;
+	}
+
+	bool CSocket::ShutDown(int how)
+	{
+		if (!IsValid()) 
+			return false;
+		
+		if (SOCKET_ERR == ctm::ShutDown(m_sock, how))
 		{
 			GetSystemError();
 			return false;
@@ -380,23 +396,23 @@ namespace ctm
 	
 	void TcpServer::Run()
 	{
-		printf("Server Start\n");
+		DEBUG_LOG("Server Start");
 
 		if(!m_tcpSock.IsValid())
 		{
-			printf("m_tcpSock INVALID!\n");
+			ERROR_LOG("m_tcpSock INVALID!");
 			return;
 		}
 
 		if(!m_tcpSock.Bind(m_ip, m_port))
 		{
-			printf("errcode = %d, errmsg = %s!\n", m_tcpSock.GetErrCode(), m_tcpSock.GetErrMsg().c_str());
+			ERROR_LOG("errcode = %d, errmsg = %s!", m_tcpSock.GetErrCode(), m_tcpSock.GetErrMsg().c_str());
 			return;
 		}
 
 		if(!m_tcpSock.Listen(SOMAXCONN))
 		{
-			printf("errcode = %d, errmsg = %s!\n", m_tcpSock.GetErrCode(), m_tcpSock.GetErrMsg().c_str());
+			ERROR_LOG("errcode = %d, errmsg = %s!", m_tcpSock.GetErrCode(), m_tcpSock.GetErrMsg().c_str());
 			return;
 		}
 
@@ -408,32 +424,33 @@ namespace ctm
 			CSocket clientSock = m_tcpSock.Accept(clientIp, clientPort);
 			if(!clientSock.IsValid())
 			{
-				printf("errcode = %d, errmsg = %s!\n", m_tcpSock.GetErrCode(), m_tcpSock.GetErrMsg().c_str());
+				ERROR_LOG("errcode = %d, errmsg = %s!", m_tcpSock.GetErrCode(), m_tcpSock.GetErrMsg().c_str());
 				continue;
 			}
-
-			printf("has a client connect : \n");
-			printf("port : %d\n", clientPort);
-			printf("ip : %s\n", clientIp.c_str());
+		
+			clientSock.GetPeerName(clientIp, clientPort);
+			DEBUG_LOG("has a client connect : ");
+			DEBUG_LOG("port : %d", clientPort);
+			DEBUG_LOG("ip : %s", clientIp.c_str());
 			char *buf = "hello client";
 			len = clientSock.Send(buf, strlen(buf));
 			if (len < 0)
 			{
-				printf("errcode = %d, errmsg = %s!\n", m_tcpSock.GetErrCode(), m_tcpSock.GetErrMsg().c_str());
+				ERROR_LOG("errcode = %d, errmsg = %s!", m_tcpSock.GetErrCode(), m_tcpSock.GetErrMsg().c_str());
 			}
-			printf("send buf : %s, len : %d\n", buf, len);
-			printf("send len : %d\n", len);
+			DEBUG_LOG("send buf : %s, len : %d", buf, len);
+			DEBUG_LOG("send len : %d", len);
 			char rbuf[128];
 			len =  clientSock.Recv(rbuf, 128);
 			if (len < 0)
 			{
-				printf("errcode = %d, errmsg = %s!\n", m_tcpSock.GetErrCode(), m_tcpSock.GetErrMsg().c_str());
+				ERROR_LOG("errcode = %d, errmsg = %s!", m_tcpSock.GetErrCode(), m_tcpSock.GetErrMsg().c_str());
 			}
 			rbuf[len] = '\0';
-			printf("recv : %s\n", rbuf);
+			DEBUG_LOG("recv : %s", rbuf);
 			m_sockClients.push_back(clientSock);
 		}
-		printf("Server stop\n");
+		DEBUG_LOG("Server stop");
 	}
 }
 

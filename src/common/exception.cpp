@@ -2,25 +2,25 @@
 
 namespace ctm
 {
-	CBaseException::CBaseException() throw() :
+	CException::CException() throw() :
 		m_errno(0),
 		m_errmsg("")	
 	{
 	}
 		
-	CBaseException::CBaseException(int errno, const std::string& errmsg) throw() :
+	CException::CException(int errno, const std::string& errmsg) throw() :
 		m_errno(errno),
 		m_errmsg(errmsg)
 	{
 	}
 		
-	CBaseException::CBaseException(const CBaseException& other) throw() :
+	CException::CException(const CException& other) throw() :
 		m_errno(other.m_errno),
 		m_errmsg(other.m_errmsg)		
 	{
 	}
 		
-	CBaseException& CBaseException::operator= (const CBaseException& rhs) throw()
+	CException& CException::operator= (const CException& rhs) throw()
 	{
 		this->m_errno = rhs.m_errno;
 		this->m_errmsg = rhs.m_errmsg;
@@ -28,16 +28,16 @@ namespace ctm
 		return *this;	
 	}
 		
-	CBaseException::~CBaseException() throw()
+	CException::~CException() throw()
 	{
 	}
 	
-	int CBaseException::Errno() throw()
+	int CException::errno() throw()
 	{
 		return m_errno;
 	}
 	
-	const char* CBaseException::What() const throw()
+	const char* CException::what() const throw()
 	{
 		return m_errmsg.c_str();
 	}

@@ -23,7 +23,8 @@ CPP_SRC=$(shell find . -type f | grep .cpp$$ | grep -v grep)
 CPP_OBJ=$(patsubst %.cpp, %.o, $(CPP_SRC)) ../src/common/string_tools.o ../src/common/time_tools.o \
 	../src/net/socket.o \
 	../src/net/select.o \
-	../src/common/refcount.o
+	../src/common/refcount.o \
+	../src/common/msg.o
 OBJS=$(C_OBJ) $(CPP_OBJ)
 
 VPATH=$(SUBDIRS) $(SRCDIRS)

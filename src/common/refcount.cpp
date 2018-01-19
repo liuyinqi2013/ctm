@@ -4,7 +4,7 @@ namespace ctm
 {
 	CRefCount& CRefCount::operator=(const CRefCount& other) 
 	{
-		printf("CRefCount::operator=(const CRefCount& other) \n");
+		DEBUG_LOG();
 		if(m_pCount != other.m_pCount)
 		{
 			if(--(*m_pCount) == 0)
