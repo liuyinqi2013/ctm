@@ -92,10 +92,10 @@ void TestGetAddrInfo()
 void TestSelect()
 {
 	TcpClient client;
-	
+
 	if (!client.Connect("127.0.0.1", 9999))
 	{
-		DEBUG_LOG("connect server failed!");
+		DEBUG_LOG("connect server failed : %d, %s!", client.GetErrCode(),  client.GetErrMsg().c_str());
 		return ;
 	}
 
@@ -110,7 +110,7 @@ void TestSelect()
 	{
 		struct timeval timeOut = { 5, 10 };
 
-		int iRet = s.WaitReadFd(NULL);
+		int iRet = s.WaitFds(NULL);
 		if (iRet > 0)
 		{
 			SOCKET_T fd;
@@ -166,8 +166,8 @@ void TestMsg()
 
 int main(int argc, char **argv)
 {
-	//TestSelect();
-	TestMsg();
+	TestSelect();
+	//TestMsg();
 	int a;
 	cin>>a;
 	return 0;

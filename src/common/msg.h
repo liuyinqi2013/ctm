@@ -3,6 +3,9 @@
 #include <string>
 #include <time.h>
 #include <map>
+#include <vector>
+#include "thread/mutex.h"
+
 
 
 namespace ctm
@@ -23,17 +26,41 @@ namespace ctm
 			m_unixTime(t)
 		{
 		}
+
+		CMsg(const CMsg& other) :
+			m_iType(other.m_iType), 
+			m_strName(other.m_strName),
+			m_unixTime(other.m_unixTime)
+		{
+		}
 			
 		virtual ~CMsg() 
 		{
 		}
 
+		CMsg& operator= (const CMsg& other)
+		{
+			if (this != &other)
+			{
+				m_iType = other.m_iType; 
+				m_strName = other.m_strName;
+				m_unixTime = other.m_unixTime;
+			}
+
+			return *this;
+		}
+		
 		virtual bool Serialization(std::string& outBuf); 
 
 		virtual bool DeSerialization(const std::string& InBuf); 
 
 		virtual void TestPrint();
-		
+
+		virtual bool IsValid()
+		{
+			return true;
+		}
+
 	public:
 		int m_iType;
 		std::string m_strName;
@@ -45,25 +72,35 @@ namespace ctm
 	
 	
 	#define REG_MSG(type, name) \
-	inline CMsg* CreateMsg_name() { return new name(); } \
-	class CRegMsg_name{ \
+	inline CMsg* CreateMsg##name() { return new name(); } \
+	class CRegMsg##name{ \
 	public:\
-		CRegMsg_name(int iType) { gMapMsg[type] = CreateMsg_name; }\
+		CRegMsg##name(int iType) { gMapMsg[type] = CreateMsg##name; }\
 	};\
-	CRegMsg_name regmsg_name(type)
+	CRegMsg##name regmsg##name(type)
 	
 	CMsg* CreateMsg(int type);
+
+	void  DestroyMsg(CMsg* msg);
 	
 	class CMsgQueue
 	{
+	
 	public:
-		CMsgQueue() {}
-		virtual ~CMsgQueue() {}
+		CMsgQueue();
+		virtual ~CMsgQueue();
 		
-		//virtual void Put(const shared_ptr<CMsg*>& pMsg) = 0;
-		//virtual shared_ptr<CMsg*> Get() = 0;
-		//virtual shared_ptr<CMsg*> Get(int msgTyep) = 0;
-				
+		virtual void Put(CMsg* pMsg);
+		virtual CMsg* Get();
+		virtual CMsg* Get(int msgTyep);
+		virtual CMsg* Get(const std::string& msgName);
+
+		size_t Size();
+	protected:
+		int m_iQueueId;
+		std::string m_strName;
+		CMutex m_mutexLock;
+		std::vector<CMsg*> m_msgVec;
 	};
 }
 

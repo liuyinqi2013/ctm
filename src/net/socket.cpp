@@ -206,6 +206,37 @@ namespace ctm
 		return true;
 	}
 
+	bool CSocket::SetKeepAlive(int interval)
+	{
+		int val = 1;
+		if (!SetSockOpt(SOL_SOCKET, SO_KEEPALIVE, (const char*)&val, sizeof(val)))
+		{
+			return false;
+		}
+
+		val = interval;
+		if (!SetSockOpt(IPPROTO_TCP, TCP_KEEPIDLE, (const char*)&val, sizeof(val)))
+		{
+			return false;
+		}
+
+		val = interval/3;
+		if (val == 0) val = 1;
+		if (!SetSockOpt(IPPROTO_TCP, TCP_KEEPINTVL, (const char*)&val, sizeof(val)))
+		{
+			return false;
+		}
+
+		val = 3;
+		if (!SetSockOpt(IPPROTO_TCP, TCP_KEEPCNT, (const char*)&val, sizeof(val)))
+		{
+			return false;
+		}
+
+		return true;
+		
+	}
+
 	CSocket CSocket::Accept(std::string& outIp, int& outPort)
 	{
 		if (!IsValid()) 
@@ -352,6 +383,7 @@ namespace ctm
 		m_serverIp("127.0.0.1"),
 		m_serverPort(0)
 	{
+		
 	}
 
 	TcpClient::~TcpClient()

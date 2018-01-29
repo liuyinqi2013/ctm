@@ -66,6 +66,44 @@ namespace ctm
 		return WaitFd(m_setExceptFd, m_exceptFds, timeOut, 2);
 	}
 
+	int CSelect::WaitFds(struct timeval* timeOut)
+	{
+		SOCKET_T maxFd = 0;
+
+		m_readIt   = m_setReadFd.begin();
+		m_writeIt  = m_setWriteFd.begin();
+		m_exceptIt = m_setExceptFd.begin();
+		
+		FD_ZERO(&m_readFds);
+		std::set<SOCKET_T>::iterator it = m_setReadFd.begin();
+		for (; it != m_setReadFd.end(); it++)
+		{
+			FD_SET(*it, &m_readFds);
+			if (maxFd < *it) 
+				maxFd = *it;
+		}
+
+		FD_ZERO(&m_writeFds);
+		it = m_setWriteFd.begin();
+		for (; it != m_setWriteFd.end(); it++)
+		{
+			FD_SET(*it, &m_writeFds);
+			if (maxFd < *it) 
+				maxFd = *it;
+		}
+
+		FD_ZERO(&m_exceptFds);
+		it = m_setExceptFd.begin();
+		for (; it != m_setExceptFd.end(); it++)
+		{
+			FD_SET(*it, &m_exceptFds);
+			if (maxFd < *it) 
+				maxFd = *it;
+		}
+
+		return select(maxFd + 1, &m_readFds, &m_writeFds, &m_exceptFds, timeOut);
+	}
+
 	int CSelect::WaitFd(const std::set<SOCKET_T>& setFd, fd_set& fdSet, struct timeval* timeOut, int flag)
 	{
 		if (setFd.size() == 0)

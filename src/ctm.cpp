@@ -55,13 +55,32 @@ protected:
 
 int main(int argc, char **argv)
 {
+	CMsgQueue msgQueue;
 	CTcpNetServer server("127.0.0.1", 9999);
+	server.SetMsgQueue(&msgQueue);
 	if (!server.Init())
 	{
 		ERROR_LOG("Server init failed");
 		return -1;
 	}
 	server.Start();
+	char* send = "ctm:>";
+	while(1)
+	{
+		CNetMsg* p = (CNetMsg*)msgQueue.Get(1);
+		if (p) 
+		{
+			p->TestPrint();
+			int len = p->m_sock.Send(send, strlen(send));
+			if (len == -1) 
+			{
+				DEBUG_LOG("errcode = %d, errmsg = %s!", p->m_sock.GetErrCode(), p->m_sock.GetErrMsg().c_str());
+			}
+			DEBUG_LOG("ip = %s, port = %d, len = %d, send = %s", p->m_strIp.c_str(), p->m_iPort, len, send);
+			delete p;
+		}
+		usleep(5);
+	}
 	server.Join();
 	return 0;
 }

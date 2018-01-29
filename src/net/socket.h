@@ -28,7 +28,7 @@ inline int CloseSocket(SOCKET_T& sockfd)
 	return closesocket(sockfd);
 }
 
-inline int GetLastSockErrCode()
+inline int GetSockErrCode()
 {
 	return WSAGetLastError();
 }
@@ -46,6 +46,7 @@ inline std::string GetSockErrMsg(int errCode)
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <netinet/tcp.h>
 #include <netinet/in.h>
 #include <netdb.h>
 
@@ -61,7 +62,7 @@ inline int CloseSocket(SOCKET_T& sockfd)
 	return close(sockfd);
 }
 
-inline int GetLastSockErrCode()
+inline int GetSockErrCode()
 {
 	return errno;
 }
@@ -202,6 +203,8 @@ namespace ctm
 
 		bool SetSockOpt(int level, int optname, const char* optval, int  optlen);
 
+		bool SetKeepAlive(int interval);
+
 		CSocket Accept(std::string& outIp, int& outPort);
 
 		bool SetBlockMode(bool bBlock);
@@ -307,7 +310,7 @@ namespace ctm
 		
 		void GetSystemError()
 		{
-			m_errno = GetLastSockErrCode();
+			m_errno = GetSockErrCode();
 			m_errmsg = GetSockErrMsg(m_errno);
 		}
 
@@ -354,6 +357,11 @@ namespace ctm
 		std::string GetErrMsg() const
 		{
 			return m_tcpSock.GetErrMsg();
+		}
+
+		bool SetNonBlock()
+		{
+			return m_tcpSock.SetNonBlock();
 		}
 		
 	private:

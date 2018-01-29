@@ -3,6 +3,7 @@
 #include <string>
 #include <map>
 #include "socket.h"
+#include "netmsg.h"
 #include "thread/thread.h"
 #include "thread/mutex.h"
 
@@ -29,6 +30,11 @@ namespace ctm
 		{
 			CLockOwner owner(m_mutexLock);
 			return m_mapConns.size();
+		}
+
+		void  SetMsgQueue(CMsgQueue* msgQueue)
+		{
+			m_msgQueue = msgQueue;
 		}
 		
 	protected:
@@ -71,6 +77,9 @@ namespace ctm
 		CMutex m_mutexLock;
 
 		int m_epollFd;
+
+		CMsgQueue* m_msgQueue;
+		
 	};
 	 
 }

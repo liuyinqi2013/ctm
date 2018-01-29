@@ -36,6 +36,8 @@ namespace ctm
 		int WaitReadFd(struct timeval* timeOut);
 		int WaitWriteFd(struct timeval* timeOut);
 		int WaitExceptFd(struct timeval* timeOut);
+
+		int WaitFds(struct timeval* timeOut);
 		
 		SOCKET_T NextReadFd();
 		SOCKET_T NextWriteFd();

@@ -1,5 +1,6 @@
 #include "msg.h"
 #include "macro.h"
+#include "lock.h"
 
 namespace ctm
 {
@@ -73,6 +74,83 @@ namespace ctm
 	}
 
 	REG_MSG(0, CMsg);
+
+	CMsgQueue::CMsgQueue() :
+		m_iQueueId(0),
+		m_strName("")	
+		
+	{
+	}
+	
+	CMsgQueue::~CMsgQueue()
+	{
+	}
+		
+ 	void CMsgQueue::Put(CMsg* pMsg)
+ 	{
+ 		if (!pMsg) return;
+		
+ 		CLockOwner owner(m_mutexLock);
+		m_msgVec.push_back(pMsg);
+ 	}
+
+	CMsg* CMsgQueue::Get()
+	{	
+		CMsg* pMSG = NULL;
+		
+		CLockOwner owner(m_mutexLock);
+		if (m_msgVec.begin() != m_msgVec.end())
+		{
+			pMSG = *m_msgVec.begin();
+			m_msgVec.erase(m_msgVec.begin());
+		}
+			
+		return pMSG;
+	}
+	
+	CMsg* CMsgQueue::Get(int msgTyep)
+	{
+		CMsg* pMSG = NULL;
+		
+		CLockOwner owner(m_mutexLock);
+		std::vector<CMsg*>::iterator it = m_msgVec.begin();
+		for (; it != m_msgVec.end(); it++)
+		{
+			if (*it && (*it)->m_iType == msgTyep) 
+			{
+				pMSG = *it;
+				m_msgVec.erase(it);
+				break;
+			}
+		}
+			
+		return pMSG;
+	}
+
+	CMsg* CMsgQueue::Get(const std::string& msgName)
+	{
+		CMsg* pMSG = NULL;
+		
+		CLockOwner owner(m_mutexLock);
+		std::vector<CMsg*>::iterator it = m_msgVec.begin();
+		for (; it != m_msgVec.end(); it++)
+		{
+			if (*it && (*it)->m_strName== msgName) 
+			{
+				pMSG = *it;
+				m_msgVec.erase(it);
+				break;
+			}
+		}
+			
+		return pMSG;
+	}
+
+	size_t CMsgQueue::Size()
+	{
+		CLockOwner owner(m_mutexLock);
+		return m_msgVec.size();
+	}
 
 }
 

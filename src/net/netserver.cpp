@@ -1,5 +1,6 @@
 #include "netserver.h"
 #include "common/macro.h"
+#include "netmsg.h"
 
 #include <sys/epoll.h>
 
@@ -11,7 +12,8 @@ namespace ctm
 		CThread("TcpNetServerThread"),
 		m_strIp(ip),
 		m_iPort(port),
-		m_epollFd(-1)
+		m_epollFd(-1),
+		m_msgQueue(NULL)
 		
 	{
 	}
@@ -53,6 +55,13 @@ namespace ctm
 			return false;
 		}
 
+		//设置空闲时间为30分钟
+		if (!m_sockFd.SetKeepAlive(18000))
+		{
+			ERROR_LOG("errcode = %d, errmsg = %s!", m_sockFd.GetErrCode(), m_sockFd.GetErrMsg().c_str());
+			return false;
+		}
+		
 		if(!m_sockFd.Bind(m_strIp, m_iPort))
 		{
 			ERROR_LOG("errcode = %d, errmsg = %s!", m_sockFd.GetErrCode(), m_sockFd.GetErrMsg().c_str());
@@ -86,7 +95,6 @@ namespace ctm
 		struct epoll_event events[MAX_EVENTS];
 		std::string strClientIp;
 		int iClientPort = 0;
-		int len =  0;
 		CSocket clientSock;
 		ConnInfo* conn = NULL;
 		
@@ -184,62 +192,44 @@ namespace ctm
 
 	int CTcpNetServer::HandleReadConn(ConnInfo* conn)
 	{
-		char buf[1024] = {0};
+		std::string strOut;
+		char buf[1025] = {0};
 		int buflen = 1024;
 		int offset = 0;
-		char* send = "hello client";
 		int   len  = 0;
+		int errCode = 0;
+		std::string errMsg;
+		
 		while (1)
 		{
-			len = conn->m_ConnSock.Recv(buf + offset, buflen - offset  - 1);
-			if (len < 0)
+			len = conn->m_ConnSock.Recv(buf, buflen);
+			if (len <= 0)
 			{
-				DEBUG_LOG("errcode = %d, errmsg = %s!", conn->m_ConnSock.GetErrCode(), conn->m_ConnSock.GetErrMsg().c_str());
-				int errCode = conn->m_ConnSock.GetErrCode();
-				if (errCode == EWOULDBLOCK || errCode == EAGAIN) 
+				errCode = GetSockErrCode();
+				errMsg  = GetSockErrMsg(errCode);
+				DEBUG_LOG("errcode = %d, errmsg = %s!", errCode, errMsg.c_str());
+				if ((errCode == EWOULDBLOCK || errCode == EAGAIN) && offset)//需要等待资源 
 				{
-					buf[offset] = '\0';
-					DEBUG_LOG("ip = %s, port = %d, len = %d, recv = %s", conn->m_strConnIp.c_str(), conn->m_iConnPort, offset, buf);
-					len = conn->m_ConnSock.Send(send, strlen(send));
-					if (len == -1) 
-					{
-						ERROR_LOG("errcode = %d, errmsg = %s!", conn->m_ConnSock.GetErrCode(), conn->m_ConnSock.GetErrMsg().c_str());
-					}
-					DEBUG_LOG("ip = %s, port = %d, len = %d, send = %s", conn->m_strConnIp.c_str(), conn->m_iConnPort, offset, send);
-				
-				}
-				else
-				{
-				
-				}
-				
-				return 1;
-			}
-			else if (len == 0)
-			{
-				ERROR_LOG("errcode = %d, errmsg = %s!", conn->m_ConnSock.GetErrCode(), conn->m_ConnSock.GetErrMsg().c_str());
-				int errCode = conn->m_ConnSock.GetErrCode();
-				if ((errCode == EWOULDBLOCK || errCode == EAGAIN) && offset) 
-				{
-					buf[offset] = '\0';
-					DEBUG_LOG("ip = %s, port = %d, len = %d, recv = %s", conn->m_strConnIp.c_str(), conn->m_iConnPort, offset, buf);
-					len = conn->m_ConnSock.Send(send, strlen(send));
-					if (len == -1) 
-					{
-						ERROR_LOG("errcode = %d, errmsg = %s!", conn->m_ConnSock.GetErrCode(), conn->m_ConnSock.GetErrMsg().c_str());
-					}
-					DEBUG_LOG("ip = %s, port = %d, len = %d, send = %s", conn->m_strConnIp.c_str(), conn->m_iConnPort, offset, send);
+					DEBUG_LOG("ip = %s, port = %d, len = %d, recv = %s", conn->m_strConnIp.c_str(), conn->m_iConnPort, strOut.size(), strOut.c_str());
+					CNetMsg* pNetMsg = new CNetMsg;
+					pNetMsg->m_iPort = conn->m_iConnPort;
+					pNetMsg->m_strIp = conn->m_strConnIp;
+					pNetMsg->m_buf   = strOut;
+					pNetMsg->m_sock  = conn->m_ConnSock;
+					if (m_msgQueue) m_msgQueue->Put(pNetMsg);
 				
 				}
 				else
 				{
 					DelClientConn(conn);
 				}
+				return 1;
 				
-				return 2;
 			}
 			else
 			{
+				buf[len] = '\0';
+				strOut.append(buf, len);
 				offset += len;
 			}
 		}
