@@ -3,8 +3,10 @@
 #include <string>
 #include <time.h>
 #include <map>
-#include <vector>
+#include <list>
 #include "thread/mutex.h"
+#include "thread/sem.h"
+#include "macro.h"
 
 
 
@@ -81,11 +83,13 @@ namespace ctm
 	
 	CMsg* CreateMsg(int type);
 
-	void  DestroyMsg(CMsg* msg);
+	void  DestroyMsg(CMsg*& msg);
 	
 	class CMsgQueue
 	{
 	
+	NOCOPY(CMsgQueue)
+		
 	public:
 		CMsgQueue();
 		virtual ~CMsgQueue();
@@ -95,12 +99,50 @@ namespace ctm
 		virtual CMsg* Get(int msgTyep);
 		virtual CMsg* Get(const std::string& msgName);
 
+		int Id() const
+		{
+			return m_iQueueId;
+		}
+
+		void SetId(int id)
+		{
+			m_iQueueId = id;
+		}
+
+		std::string Name() const
+		{
+			return m_strName;
+		}
+
+		void SetName(const std::string& name)
+		{
+			m_strName = name;
+		}
+		
+		size_t MaxSize() const
+		{
+			return m_maxSize;
+		}
+
+		void SetMaxSize(size_t maxSize)
+		{
+			m_maxSize = maxSize;
+		}
+
 		size_t Size();
+
+		bool IsFull()
+		{
+			return (Size() >= m_maxSize);
+		}
+		
 	protected:
 		int m_iQueueId;
 		std::string m_strName;
 		CMutex m_mutexLock;
-		std::vector<CMsg*> m_msgVec;
+		std::list<CMsg*> m_msgVec;
+		size_t m_maxSize;
+		CSem   m_sem;
 	};
 }
 

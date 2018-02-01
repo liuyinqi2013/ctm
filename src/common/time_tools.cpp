@@ -9,7 +9,7 @@
 
 namespace ctm
 {
-	unsigned long long Usec()
+	unsigned long long UTime()
 	{
 #ifndef WIN32
 		struct timeval val = {0};

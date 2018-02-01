@@ -24,7 +24,11 @@ CPP_OBJ=$(patsubst %.cpp, %.o, $(CPP_SRC)) ../src/common/string_tools.o ../src/c
 	../src/net/socket.o \
 	../src/net/select.o \
 	../src/common/refcount.o \
-	../src/common/msg.o
+	../src/common/msg.o \
+	../src/ipc/mmap.o \
+	../src/thread/sem.o \
+	../src/ipc/semaphore.o
+	
 OBJS=$(C_OBJ) $(CPP_OBJ)
 
 VPATH=$(SUBDIRS) $(SRCDIRS)
@@ -38,9 +42,9 @@ $(TARGET):$(OBJS)
 	$(CC) -o $@ $(OBJS) $(LIB_PATH) $(LIB)
 	$(CP) $@ $(BIN_PATH)
 $(CPP_OBJ):%.o:%.cpp
-	$(CC) $(CFLAGS) $(INC_PATH) $< -o $@
+	$(CC) $(CFLAGS) $< -o $@ $(INC_PATH)
 $(C_OBJ):%.o:%.c
-	$(CC) $(CFLAGS) $(INC_PATH) $< -o $@
+	$(CC) $(CFLAGS) $< -o $@ $(INC_PATH)
 
 install:
 	

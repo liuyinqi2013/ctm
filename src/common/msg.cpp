@@ -10,6 +10,15 @@ namespace ctm
 	{
 		return gMapMsg[type]();
 	}
+
+	void  DestroyMsg(CMsg*& msg)
+	{
+		if (msg)
+		{
+			delete msg;
+			msg = NULL;
+		}
+	}
 	
 	bool CMsg::Serialization(std::string& outBuf)
 	{
@@ -77,7 +86,9 @@ namespace ctm
 
 	CMsgQueue::CMsgQueue() :
 		m_iQueueId(0),
-		m_strName("")	
+		m_strName(""),
+		m_maxSize(1024),
+		m_sem(0)
 		
 	{
 	}
@@ -89,14 +100,22 @@ namespace ctm
  	void CMsgQueue::Put(CMsg* pMsg)
  	{
  		if (!pMsg) return;
+
+		m_sem.Post();
 		
  		CLockOwner owner(m_mutexLock);
-		m_msgVec.push_back(pMsg);
+		
+		if (m_msgVec.size() <= m_maxSize)
+		{
+			m_msgVec.push_back(pMsg);
+		}
  	}
 
 	CMsg* CMsgQueue::Get()
 	{	
 		CMsg* pMSG = NULL;
+		
+		m_sem.Wait();
 		
 		CLockOwner owner(m_mutexLock);
 		if (m_msgVec.begin() != m_msgVec.end())
@@ -112,8 +131,10 @@ namespace ctm
 	{
 		CMsg* pMSG = NULL;
 		
+		m_sem.Wait();
+		
 		CLockOwner owner(m_mutexLock);
-		std::vector<CMsg*>::iterator it = m_msgVec.begin();
+		std::list<CMsg*>::iterator it = m_msgVec.begin();
 		for (; it != m_msgVec.end(); it++)
 		{
 			if (*it && (*it)->m_iType == msgTyep) 
@@ -131,8 +152,10 @@ namespace ctm
 	{
 		CMsg* pMSG = NULL;
 		
+		m_sem.Wait();
+		
 		CLockOwner owner(m_mutexLock);
-		std::vector<CMsg*>::iterator it = m_msgVec.begin();
+		std::list<CMsg*>::iterator it = m_msgVec.begin();
 		for (; it != m_msgVec.end(); it++)
 		{
 			if (*it && (*it)->m_strName== msgName) 

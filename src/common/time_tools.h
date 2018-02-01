@@ -6,11 +6,11 @@
 
 namespace ctm
 {
-	inline unsigned long Sec() { return time(NULL); }
+	inline unsigned long Time() { return time(NULL); }
 	
-	unsigned long long Usec();
+	unsigned long long UTime();
 
-	unsigned long Sec2Usec();
+	unsigned long Time2UTime();
 	
 	enum TimeFmt
 	{

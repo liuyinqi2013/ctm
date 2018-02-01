@@ -67,7 +67,9 @@ int main(int argc, char **argv)
 	char* send = "ctm:>";
 	while(1)
 	{
+		DEBUG_LOG("Get a msg");
 		CNetMsg* p = (CNetMsg*)msgQueue.Get(1);
+		DEBUG_LOG("recv a msg");
 		if (p) 
 		{
 			p->TestPrint();

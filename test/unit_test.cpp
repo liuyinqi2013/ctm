@@ -2,10 +2,13 @@
 #include "common/string_tools.h"
 #include "common/time_tools.h"
 #include "common/msg.h"
+#include "common/com.h"
+
 
 #include "net/socket.h"
 #include "net/select.h"
-
+#include "ipc/mmap.h"
+#include "ipc/semaphore.h"
 #include <string.h>
 
 #include <iostream>
@@ -24,8 +27,8 @@ void TestStringFunc()
 {
 	string a("\r\n**}&\n");
 	cout<<Trimmed(a)<<endl;
-	cout<<Sec()<<endl;
-	cout<<Usec()<<endl;
+	cout<<Time()<<endl;
+	cout<<UTime()<<endl;
 	cout<<DateTime()<<endl;
 	cout<<DateTime(TFMT_1)<<endl;
 	cout<<DateTime(TFMT_2)<<endl;
@@ -164,10 +167,64 @@ void TestMsg()
 	msg2.TestPrint();
 }
 
+void TestMmap(int flag = 1)
+{
+	CMmap map("lao.txt", 10);
+	char* p = (char*)map.Open();
+	int size = map.Size();
+	if (p)
+	{
+		if (flag == 1)
+		{
+			p[size] = '\0';
+			DEBUG_LOG("lao.txt : %s", p);
+			char c;
+			cin>>c;
+			memset(p, c, size - 1);
+			DEBUG_LOG("lao.txt : %s", p);
+		}
+		else
+		{
+			while(1)
+			{
+				sleep(1);
+				DEBUG_LOG("lao.txt : %s", p);
+			}
+		}
+	}
+	else
+	{
+		ERROR_LOG("map.Open failed");
+	}
+	
+}
+
+void TestSem(int flag = 1)
+{
+	CSemaphore sem(1024);
+	sem.Open();
+	if (flag == 1)
+	{
+		sem.SetVal(0);
+		while(1)
+		{
+			sem.V();
+			DEBUG_LOG("Recv a signal");
+		}
+	}
+	else
+	{
+		sem.P();
+		DEBUG_LOG("Send a signal");
+	}
+}
+
 int main(int argc, char **argv)
 {
-	TestSelect();
+	//TestSelect();
 	//TestMsg();
+	//TestMmap(S2I(argv[1]));
+	TestSem(S2I(argv[1]));
 	int a;
 	cin>>a;
 	return 0;
