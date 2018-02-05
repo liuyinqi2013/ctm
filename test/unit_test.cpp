@@ -9,6 +9,8 @@
 #include "net/select.h"
 #include "ipc/mmap.h"
 #include "ipc/semaphore.h"
+#include "ipc/sharememory.h"
+
 #include <string.h>
 
 #include <iostream>
@@ -199,6 +201,50 @@ void TestMmap(int flag = 1)
 	
 }
 
+void TestShareMem(int flag = 1)
+{
+	CShareMemory mem("panda.txt");
+	
+		if (flag == 1)
+		{
+			if (!mem.Create(100))
+			{
+				ERROR_LOG("mem.Create failed");
+				return;
+			}
+
+			char* p = mem.Head();
+			int size = mem.Size();
+			DEBUG_LOG("size : %d", size);
+			p[size] = '\0';
+			DEBUG_LOG("mem : %s", p);
+			char c;
+			cin>>c;
+			memset(p, c, size - 1);
+			DEBUG_LOG("mem : %s", p);
+		}
+		else
+		{
+			if (!mem.Open(100))
+			{
+				ERROR_LOG("mem.Create failed");
+				return;
+			}
+			
+			char* p = mem.Head();
+			int size = mem.Size();
+			DEBUG_LOG("size : %d", size);
+						
+			while(1)
+			{
+				sleep(1);
+				DEBUG_LOG("mem : %s", p);
+			}
+		}
+	
+}
+
+
 void TestSem(int flag = 1)
 {
 	CSemaphore sem(1024);
@@ -224,7 +270,8 @@ int main(int argc, char **argv)
 	//TestSelect();
 	//TestMsg();
 	//TestMmap(S2I(argv[1]));
-	TestSem(S2I(argv[1]));
+	//TestSem(S2I(argv[1]));
+	TestShareMem(S2I(argv[1]));
 	int a;
 	cin>>a;
 	return 0;

@@ -46,20 +46,7 @@ namespace ctm
 
 		if (m_iKey == -1 && m_strName.size() > 0)
 		{
-			struct stat buf = {0};
-			std::string filePathName = "/tmp/" + m_strName;
-			if (stat(filePathName.c_str(), &buf) == -1)
-			{
-				FILE* fp = fopen(filePathName.c_str(), "wb");
-				if (!fp)
-				{
-					ERROR_LOG("create file %s failed", filePathName.c_str());
-					return false;
-				}
-				fclose(fp);
-			}
-
-			m_iKey = ftok(filePathName.c_str(), 0x666);
+			m_iKey = KeyId(m_strName);
 		}
 
 		if (m_iKey == -1)
@@ -149,5 +136,23 @@ namespace ctm
     	}
 		
 		return true;	
+	}
+
+	int CSemaphore::KeyId(const std::string& name)
+	{
+		struct stat buf = {0};
+		std::string filePathName = "/tmp/" + name;
+		if (stat(filePathName.c_str(), &buf) == -1)
+		{
+			FILE* fp = fopen(filePathName.c_str(), "wb");
+			if (!fp)
+			{
+				ERROR_LOG("create file %s failed", filePathName.c_str());
+				return -1;
+			}
+			fclose(fp);
+		}
+		
+		return ftok(filePathName.c_str(), 0x666);
 	}
 }

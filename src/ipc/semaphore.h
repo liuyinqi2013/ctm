@@ -24,6 +24,8 @@ namespace ctm
 
 		bool PV(int opt);
 
+		int KeyId(const std::string& name);
+
 	private:
 		int m_iKey;
 		std::string m_strName;

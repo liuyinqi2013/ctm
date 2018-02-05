@@ -27,7 +27,8 @@ CPP_OBJ=$(patsubst %.cpp, %.o, $(CPP_SRC)) ../src/common/string_tools.o ../src/c
 	../src/common/msg.o \
 	../src/ipc/mmap.o \
 	../src/thread/sem.o \
-	../src/ipc/semaphore.o
+	../src/ipc/semaphore.o \
+	../src/ipc/sharememory.o
 	
 OBJS=$(C_OBJ) $(CPP_OBJ)
 
