@@ -1,6 +1,7 @@
 #include "socket.h"
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 #ifndef WIN32
 #include <fcntl.h>
 #else
@@ -322,6 +323,34 @@ namespace ctm
 		return length;
 	}
 
+	int CSocket::SendEx(const char* buf, size_t len, struct timeval* timeOut)
+	{
+		if (!IsValid()) 
+			return SOCKET_ERR;
+		
+		fd_set fds;
+		FD_ZERO(&fds);
+		FD_SET(m_sock, &fds);
+		
+		int iRet = select(m_sock + 1, NULL, &fds, NULL, timeOut);
+		if (iRet == 0)
+		{
+			return 0;
+		}
+		else if (iRet > 0 && FD_ISSET(m_sock, &fds))
+		{
+			int length = ctm::Send(m_sock, buf, len, 0);
+			if (length <= 0)
+			{
+				GetSystemError();
+			}
+
+			return length;
+		}
+		
+		return SOCKET_ERR;
+	}
+
 	int CSocket::SendTo(const char* buf, size_t len, const std::string& dstIp, const int& dstPort, int flags)
 	{
 		if (!IsValid()) 
@@ -350,12 +379,37 @@ namespace ctm
 		{
 			GetSystemError();
 		}
-		else
-		{
-			buf[length] = '\0';
-		}
 		
 		return length;
+	}
+
+	int CSocket::RecvEx(char* buf, size_t len, struct timeval* timeOut)
+	{
+		if (!IsValid()) 
+			return SOCKET_ERR;
+		
+		fd_set fds;
+		FD_ZERO(&fds);
+		FD_SET(m_sock, &fds);
+		
+		int iRet = select(m_sock + 1,  &fds, NULL, NULL, timeOut);
+		if (iRet == 0)
+		{
+			return 0;
+		}
+		else if (iRet > 0 && FD_ISSET(m_sock, &fds))
+		{
+			int length = ctm::Recv(m_sock, buf, len, 0);
+			if (length <= 0)
+			{
+				GetSystemError();
+			}
+
+			return length;
+		}
+		
+		return SOCKET_ERR;
+
 	}
 
 	int CSocket::RecvFrom(char* buf, size_t len, std::string& srcIp, int& srcPort, int flags)
@@ -370,13 +424,44 @@ namespace ctm
 		{
 			GetSystemError();
 		}
-		else
-		{
-			buf[length] = '\0';
-		}
 		
 		return length;
 		
+	}
+
+	bool IsValidIp(const std::string& strIp)
+	{
+		if (strIp.empty()) 
+			return false;
+
+		if (strIp.size() < 7 || strIp.size() > 15) 
+			return false;
+
+		int begin = 0;
+		int end = 0;
+		int cnt = 0;
+		int num = 0;
+		while((end = strIp.find(".", begin)) != strIp.npos)
+		{
+			if (end == begin) 
+				return false;
+			
+			num = atoi(strIp.substr(begin, end - begin).c_str());
+			if (num < 0 || num > 255)
+				return false;
+			
+			++cnt;
+			begin = end + 1;
+		}
+
+		if (cnt != 3)
+			return false;
+		
+		num = atoi(strIp.substr(begin).c_str());
+		if (num < 0 || num > 255)
+			return false;
+
+		return true;
 	}
 
 	TcpClient::TcpClient() :

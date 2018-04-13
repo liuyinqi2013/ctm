@@ -44,6 +44,31 @@ namespace ctm
 		return std::string(buf);
 	}
 
+	std::string Date(int fmt)
+	{
+		time_t t;
+		time(&t);
+		struct tm* st = localtime(&t);
+		char buf[64] = {0};
+		switch (fmt)
+		{
+		case TFMT_0:
+			strftime(buf, sizeof(buf), "%Y-%m-%d", st);
+			break;
+		case TFMT_1:
+			strftime(buf, sizeof(buf), "%Y/%m/%d", st);
+			break;
+		case TFMT_2:
+			strftime(buf, sizeof(buf), "%Y%m%d", st);
+			break;
+		default:
+			strftime(buf, sizeof(buf), "%Y-%m-%d", st);
+			break;
+		}
+
+		return std::string(buf);
+	}
+
 };
 
 

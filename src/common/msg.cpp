@@ -22,17 +22,25 @@ namespace ctm
 	
 	bool CMsg::Serialization(std::string& outBuf)
 	{
+		/*
 		outBuf.clear();
 		outBuf.append((const char*)&m_iType, sizeof(m_iType));
 		int size = m_strName.size();
 		outBuf.append((const char*)&size, sizeof(size));
 		outBuf.append(m_strName);
 		outBuf.append((const char*)&m_unixTime, sizeof(m_unixTime));
+		*/
+
+		Json::Value root;
+		PutToJson(root);
+		outBuf = root.toStyledString();
+		
 		return true;
 	}
 	
 	bool CMsg::DeSerialization(const std::string& InBuf)
 	{
+		/*
 		int pos = 0;
 		int len = InBuf.copy((char*)&m_iType, sizeof(m_iType), pos);
 		if (len != sizeof(m_iType))
@@ -70,13 +78,39 @@ namespace ctm
 		{
 			return false;
 		}
+		*/
+		Json::Value root;
+		Json::Reader reader;
+		if (!reader.parse(InBuf, root))
+		{
+			return false;
+		}
 
+		GetFromJson(root);
+		
 		return true;
 		
 	}
 
+	void CMsg::PutToJson(Json::Value& root)
+	{
+		root["id"] = m_strId;
+		root["type"] = m_iType;
+		root["name"] = m_strName;
+		root["unixTime"] = m_unixTime;
+	}
+
+	void CMsg::GetFromJson(Json::Value& root)
+	{
+		m_strId = root["id"].asString();
+		m_iType = root["type"].asInt();
+		m_strName = root["name"].asString();
+		m_unixTime = root["unixTime"].asUInt();
+	}
+
 	void CMsg::TestPrint()
 	{
+		DEBUG_LOG("MSG id   = %s", m_strId.c_str());
 		DEBUG_LOG("MSG type = %d", m_iType);
 		DEBUG_LOG("MSG name = %s", m_strName.c_str());
 		DEBUG_LOG("MSG time = %d", m_unixTime);
@@ -97,27 +131,33 @@ namespace ctm
 	{
 	}
 		
- 	void CMsgQueue::Put(CMsg* pMsg)
+ 	bool CMsgQueue::Put(CMsg* pMsg)
  	{
- 		if (!pMsg) return;
-
-		m_sem.Post();
+ 		if (!pMsg) false;
 		
  		CLockOwner owner(m_mutexLock);
 		
-		if (m_msgVec.size() <= m_maxSize)
+		if (m_msgVec.size() >= m_maxSize)
 		{
-			m_msgVec.push_back(pMsg);
+			ERROR_LOG("message queue already full max size : %d", m_maxSize);
+			return false;
 		}
+
+		m_msgVec.push_back(pMsg);
+
+		m_sem.Post();
+
+		return true;
  	}
 
 	CMsg* CMsgQueue::Get()
 	{	
 		CMsg* pMSG = NULL;
-		
+
 		m_sem.Wait();
 		
 		CLockOwner owner(m_mutexLock);
+		
 		if (m_msgVec.begin() != m_msgVec.end())
 		{
 			pMSG = *m_msgVec.begin();
@@ -126,14 +166,16 @@ namespace ctm
 			
 		return pMSG;
 	}
-	
+
+	/*
 	CMsg* CMsgQueue::Get(int msgTyep)
 	{
 		CMsg* pMSG = NULL;
-		
+
 		m_sem.Wait();
 		
 		CLockOwner owner(m_mutexLock);
+		
 		std::list<CMsg*>::iterator it = m_msgVec.begin();
 		for (; it != m_msgVec.end(); it++)
 		{
@@ -152,8 +194,6 @@ namespace ctm
 	{
 		CMsg* pMSG = NULL;
 		
-		m_sem.Wait();
-		
 		CLockOwner owner(m_mutexLock);
 		std::list<CMsg*>::iterator it = m_msgVec.begin();
 		for (; it != m_msgVec.end(); it++)
@@ -168,6 +208,8 @@ namespace ctm
 			
 		return pMSG;
 	}
+
+	*/
 
 	size_t CMsgQueue::Size()
 	{

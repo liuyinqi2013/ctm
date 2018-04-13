@@ -50,6 +50,12 @@ inline std::string GetSockErrMsg(int errCode)
 #include <netinet/in.h>
 #include <netdb.h>
 
+#include <sys/select.h>
+#include <sys/time.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
+
 #define SOCKET_T int
 #define SOCKETLEN_T socklen_t
 #define SOCKETBUF_T void
@@ -233,6 +239,13 @@ namespace ctm
 		{
 			return this->Send(strBuf.data(), strBuf.size(), flags);
 		}
+
+		int SendEx(const char* buf, size_t len, struct timeval* timeOut);
+
+		int SendEx(const std::string& strBuf, struct timeval* timeOut)
+		{
+			return this->SendEx(strBuf.data(), strBuf.size(), timeOut);
+		}
 		
 		int SendTo(const char* buf, size_t len, const std::string& dstIp, const int& dstPort, int flags = 0);
 		int SendTo(const std::string& strBuf, const std::string& dstIp, const int& dstPort, int flags = 0)
@@ -243,6 +256,8 @@ namespace ctm
 		int Recv(char* buf, size_t len, int flags = 0);
 		int Recv(std::string& strOut, int flags = 0);
 
+		int RecvEx(char* buf, size_t len, struct timeval* timeOut);
+		
 		int RecvFrom(char* buf, size_t len, std::string& srcIp, int& srcPort, int flags = 0);
 		int RecvFrom(std::string& strOut, std::string& srcIp, int& srcPort, int flags = 0);
 		
@@ -332,6 +347,8 @@ namespace ctm
 	{
 		return (lhs.m_sock == rhs.m_sock);
 	}
+
+	bool IsValidIp(const std::string& strIp);
 
 	class TcpClient
 	{

@@ -3,6 +3,8 @@
 #include "common/time_tools.h"
 #include "common/msg.h"
 #include "common/com.h"
+#include "common/log.h"
+
 
 
 #include "net/socket.h"
@@ -12,13 +14,26 @@
 #include "ipc/sharememory.h"
 
 #include <string.h>
+#include <signal.h>
+
 
 #include <iostream>
 #include <ctype.h>
+#include <iostream>
 
 using namespace ctm;
 using namespace std;
 
+void ShowSign(int sign)
+{
+	DEBUG_LOG("Recv a sign : %d", sign);
+}
+
+void HandleSign()
+{
+	signal(SIGPIPE, ShowSign);
+}
+	
 class TestSingleton : public CSingleton<TestSingleton>
 {
 public:
@@ -59,6 +74,91 @@ void TestTcpClient()
 	client.Send(s, strlen(s));
 	
 }
+
+void PrintHost(struct hostent* hostinfo)
+{	
+	DEBUG_LOG("official name of host : %s", hostinfo->h_name);
+	string hostAliases;
+	char** head = hostinfo->h_aliases;
+	for(;*head ; ++head)
+	{
+		hostAliases += string(" ") + *head;
+	}
+	DEBUG_LOG("alias list : %s", hostAliases.c_str());
+	
+	if (hostinfo->h_addrtype == AF_INET)
+	{
+		DEBUG_LOG("host address type : AF_INET");
+	}
+	else
+	{
+		DEBUG_LOG("host address type : AF_INET6");
+	}
+	
+	DEBUG_LOG("length of address : %d", hostinfo->h_length);
+
+	char buf[128] = {0};
+	string hostAddrs;
+	head = hostinfo->h_addr_list;
+	for(;*head ; ++head)
+	{
+		inet_ntop(hostinfo->h_addrtype,  *head, buf, sizeof(buf));
+		hostAddrs += string(" ") + buf;
+	}
+	
+	DEBUG_LOG("list of addresses  : %s", hostAddrs.c_str());
+
+}
+
+void TestGetHostByAddr()
+{
+	while(1)
+	{
+		DEBUG_LOG("Pealse input host ip:");
+		char buf[128] = {0};
+		cin.getline(buf, sizeof(buf));
+		int size = cin.gcount();
+		struct in_addr inaddr= {0};
+		
+		int ret = inet_pton(AF_INET, buf, &inaddr);
+		if (ret <= 0)
+		{
+			DEBUG_LOG("Not in presentation format : %s", buf);
+			continue;
+		}
+		
+		struct hostent* hostinfo = gethostbyaddr((const char*)&inaddr, sizeof(inaddr), AF_INET);
+		if (!hostinfo)
+		{
+			DEBUG_LOG("Couldn't resolve host ip : %s", buf);
+			continue;
+		}
+		
+		PrintHost(hostinfo);		
+	}
+	
+}
+
+void TestGetHostByName()
+{
+	while(1)
+	{
+		DEBUG_LOG("Pealse input host name:");
+		char buf[128] = {0};
+		cin.getline(buf, sizeof(buf));
+		int size = cin.gcount();
+		struct hostent* hostinfo = gethostbyname(buf);
+		if (!hostinfo)
+		{
+			DEBUG_LOG("Couldn't resolve host name : %s", buf);
+			continue;
+		}
+		
+		PrintHost(hostinfo);		
+	}
+	
+}
+
 
 void TestGetAddrInfo()
 {
@@ -103,14 +203,12 @@ void TestSelect()
 		DEBUG_LOG("connect server failed : %d, %s!", client.GetErrCode(),  client.GetErrMsg().c_str());
 		return ;
 	}
-
-	char* send = "hello server";
-	client.Send(send, strlen(send));
+ 
 	
 	CSelect s;
 
 	s.AddReadFd(client.GetSocket());
-
+	s.AddReadFd(fileno(stdin));
 	while (1)
 	{
 		struct timeval timeOut = { 5, 10 };
@@ -121,20 +219,47 @@ void TestSelect()
 			SOCKET_T fd;
 			while((fd = s.NextReadFd()) != SOCKET_INVALID)
 			{
+				char buf[1024] = {0};
 				DEBUG_LOG("ready fd : %d", fd);
 				if(fd == client.GetSocket())
 				{
-					char buf[128] = {0};
-					int len = client.Recv(buf, 128);
+					int len = client.Recv(buf, 1024);
 					if (len > 0) {
-						DEBUG_LOG("read : %s", buf);
+						DEBUG_LOG("%s", buf);
 					}
-					else {
+					else
+					{
 						ERROR_LOG("error code : %d", client.GetErrCode());
 						ERROR_LOG("error msg : %s", client.GetErrMsg().c_str());
 						s.DelReadFd(fd);
-						continue;
+						return;
 					}	
+				}
+				else if (fd == fileno(stdin))
+				{
+					char buf[1024] = {0};
+					cin.getline(buf, 1024);
+					int size = cin.gcount();
+					
+					if (size == 0)
+					{
+						ERROR_LOG("EOF");
+						s.DelReadFd(fd);
+						return;
+					}
+					
+					int netsize = htonl(size);
+					
+					DEBUG_LOG("len = %d, Content = %s", size, buf);
+					if (client.Send((char*)&netsize, sizeof(netsize)) <= 0)
+					{
+						DEBUG_LOG("errno : %d msg : %s", client.GetErrCode(), client.GetErrMsg().c_str());
+					}
+
+					if (client.Send(buf, size) <= 0)
+					{
+						DEBUG_LOG("errno : %d msg : %s", client.GetErrCode(), client.GetErrMsg().c_str());
+					}
 				}
 			}
 		}
@@ -152,17 +277,20 @@ void TestSelect()
 
 void TestMsg()
 {
-	CMsg msg1(1,"net");
-	CMsg msg2(2,"mod");
+	CMsg msg1("1", 1, "net");
+	CMsg msg2("2", 2, "mod");
 	msg1.TestPrint();
 	msg2.TestPrint();
-	std::string buf;
-	msg1.Serialization(buf);
-	msg2.DeSerialization(buf);
+	std::string buf1;
+	std::string buf2;
+	msg1.Serialization(buf1);
+	DEBUG_LOG("msg1 = %s", buf1.c_str());
+	msg2.Serialization(buf2);
+	DEBUG_LOG("msg2 = %s", buf2.c_str());
 	CMsg* p = CreateMsg(0);
 	if (p)
 	{
-		p->DeSerialization(buf);
+		p->DeSerialization(buf2);
 		p->TestPrint();
 	}
 	msg1.TestPrint();
@@ -267,12 +395,16 @@ void TestSem(int flag = 1)
 
 int main(int argc, char **argv)
 {
-	//TestSelect();
+	CLog::GetInstance()->SetLogName("test");
+	HandleSign();
+	//TestGetHostByAddr();
+	//TestGetHostByName();
+	TestSelect();
 	//TestMsg();
 	//TestMmap(S2I(argv[1]));
 	//TestSem(S2I(argv[1]));
-	TestShareMem(S2I(argv[1]));
-	int a;
-	cin>>a;
+	//TestShareMem(S2I(argv[1]));
+	//int a;
+	//cin>>a;
 	return 0;
 }

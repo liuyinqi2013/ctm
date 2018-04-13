@@ -19,8 +19,10 @@ namespace ctm
 		TFMT_2  //yyyyMMddHHmmss
 	};
 
+
 	std::string DateTime(int fmt = TFMT_0);
 
+	std::string Date(int fmt = TFMT_0);
 };
 
 #endif

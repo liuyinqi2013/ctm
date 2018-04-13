@@ -1,10 +1,11 @@
 #include "netserver.h"
 #include "common/macro.h"
-#include "netmsg.h"
 
 #include <sys/epoll.h>
 
-#define MAX_EVENTS 100
+#define BUF_LEN          1024
+#define MAX_WAIT_EVENTS  100
+#define MAX_EPOLL_FDS    1024
 
 namespace ctm
 {
@@ -12,9 +13,7 @@ namespace ctm
 		CThread("TcpNetServerThread"),
 		m_strIp(ip),
 		m_iPort(port),
-		m_epollFd(-1),
-		m_msgQueue(NULL)
-		
+		m_epollFd(-1)
 	{
 	}
 
@@ -42,7 +41,7 @@ namespace ctm
 
 	bool CTcpNetServer::Init()
 	{
-		m_epollFd = epoll_create(1024);
+		m_epollFd = epoll_create(MAX_EPOLL_FDS);
 		if (-1 == m_epollFd)
 		{
 			ERROR_LOG("epoll_create1 failed");
@@ -87,12 +86,17 @@ namespace ctm
 		
 		return true;
 	}
+
+	void CTcpNetServer::StartUp()
+	{
+		Start();
+	}
 	
 	int CTcpNetServer::Run()
 	{
 		int i = 0;
 		int nfds = 0;
-		struct epoll_event events[MAX_EVENTS];
+		struct epoll_event events[MAX_WAIT_EVENTS];
 		std::string strClientIp;
 		int iClientPort = 0;
 		CSocket clientSock;
@@ -100,7 +104,7 @@ namespace ctm
 		
 		while(1)
 		{
-			nfds = epoll_wait(m_epollFd, events, MAX_EVENTS, -1);
+			nfds = epoll_wait(m_epollFd, events, MAX_WAIT_EVENTS, -1);
 			if (nfds == -1) 
 			{
 				ERROR_LOG("epoll_wait failed");
@@ -117,18 +121,39 @@ namespace ctm
 					if (!clientSock.IsValid())
 					{
 						ERROR_LOG("errcode = %d, errmsg = %s!", m_sockFd.GetErrCode(), m_sockFd.GetErrMsg().c_str());
+						if (m_sockFd.GetErrCode() == EINTR)
+							continue;
+						
 						return -1;
 					}
 
 					DEBUG_LOG("Connect ip = %s, port = %d", strClientIp.c_str(), iClientPort);
 					conn = new ConnInfo(clientSock, strClientIp, iClientPort);
 					AddClientConn(conn);
+					
+					CNetMsg* pNetMsg = new CNetMsg(conn->m_iConnPort, conn->m_strConnIp, conn->m_ConnSock, "Login");
+					if (!m_RecvQueue.Put(pNetMsg))
+					{
+						delete pNetMsg;
+						pNetMsg = NULL;
+					}
 				}
 				else if (events[i].events & EPOLLIN)
 				{
-					DEBUG_LOG("oooo");
-					HandleReadConn(m_mapConns[events[i].data.fd]);
-
+					DEBUG_LOG("Socket %d is Readable", events[i].data.fd);
+					//CReadThread::PutMsg(m_mapConns[events[i].data.fd]);
+					//ReadClientConn(m_mapConns[events[i].data.fd]);
+					ReadOnePacket(m_mapConns[events[i].data.fd]);
+				}
+				else if (events[i].events & EPOLLERR)
+				{
+					DEBUG_LOG("Socket %d is happend error", events[i].data.fd);
+					DelClientConn(events[i].data.fd);
+				}
+				else if (events[i].events & EPOLLRDHUP)
+				{
+					DEBUG_LOG("Socket %d peer shutdown", events[i].data.fd);
+					DelClientConn(events[i].data.fd);
 				}
 			}
 			
@@ -144,10 +169,10 @@ namespace ctm
 			
 		CLockOwner owner(m_mutexLock);
 			
-		conn->m_ConnSock.SetNonBlock();
+		/*conn->m_ConnSock.SetNonBlock();*/
 		m_mapConns[conn->m_ConnSock.GetSock()] = conn;
 		struct epoll_event event = {0};
-		event.events  = EPOLLIN | EPOLLET;
+		event.events  = EPOLLIN | EPOLLERR | EPOLLRDHUP /*| EPOLLET*/;
 		event.data.fd = conn->m_ConnSock.GetSock();
 	
 		int iRet = epoll_ctl(m_epollFd, EPOLL_CTL_ADD, conn->m_ConnSock.GetSock(), &event);
@@ -190,11 +215,11 @@ namespace ctm
 		DelClientConn(conn->m_ConnSock.GetSock());
 	}
 
-	int CTcpNetServer::HandleReadConn(ConnInfo* conn)
+	int CTcpNetServer::ReadClientConn(ConnInfo* conn)
 	{
 		std::string strOut;
-		char buf[1025] = {0};
-		int buflen = 1024;
+		char buf[BUF_LEN] = {0};
+		int buflen = BUF_LEN;
 		int offset = 0;
 		int   len  = 0;
 		int errCode = 0;
@@ -211,12 +236,12 @@ namespace ctm
 				if ((errCode == EWOULDBLOCK || errCode == EAGAIN) && offset)//需要等待资源 
 				{
 					DEBUG_LOG("ip = %s, port = %d, len = %d, recv = %s", conn->m_strConnIp.c_str(), conn->m_iConnPort, strOut.size(), strOut.c_str());
-					CNetMsg* pNetMsg = new CNetMsg;
-					pNetMsg->m_iPort = conn->m_iConnPort;
-					pNetMsg->m_strIp = conn->m_strConnIp;
-					pNetMsg->m_buf   = strOut;
-					pNetMsg->m_sock  = conn->m_ConnSock;
-					if (m_msgQueue) m_msgQueue->Put(pNetMsg);
+					CNetMsg* pNetMsg = new CNetMsg(conn->m_iConnPort, conn->m_strConnIp, conn->m_ConnSock, strOut);
+					if (!m_RecvQueue.Put(pNetMsg))
+					{
+						delete pNetMsg;
+						pNetMsg = NULL;
+					}
 				
 				}
 				else
@@ -236,4 +261,149 @@ namespace ctm
 		
 		return 0;
 	}
+
+	int CTcpNetServer::ReadOnePacket(ConnInfo* conn)
+	{
+		DEBUG_LOG("BEGIN");
+		//先读取一个长度
+		int dataLen = 0;
+
+		
+		if (Readn(conn, (char*)&dataLen, sizeof(dataLen)) < 0)
+		{
+			DEBUG_LOG("ip = %s, port = %d read 4 bit data failed", conn->m_strConnIp.c_str(), conn->m_iConnPort);
+			return -1;
+		}
+		
+		
+		/*
+		int len = conn->m_ConnSock.Recv((char*)&dataLen, sizeof(dataLen));
+		if (len < sizeof(dataLen)) //4个字节都读不了
+		{
+			DEBUG_LOG("ip = %s, port = %d, len = %d read 4 bit data failed", conn->m_strConnIp.c_str(), conn->m_iConnPort, len);
+			DelClientConn(conn);
+			return -1;
+		}
+		*/
+
+		dataLen = ntohl(dataLen);
+		DEBUG_LOG("Content dataLen = %d\n", dataLen);
+
+		//再根据长度读取内容
+		char *buf = new char[dataLen + 1];
+		if (!buf)
+		{
+			DEBUG_LOG("malloc mem failed");
+			return -1;
+		}
+
+		memset(buf, 0, dataLen + 1);
+
+		
+		std::string strContent;
+		int offset  = 0;
+		int errCode = 0;
+		std::string errMsg;
+		
+
+		
+		if (Readn(conn, buf, dataLen) < 0)
+		{
+			DEBUG_LOG("Readn failed");
+			delete[] buf;
+			return -1;
+		}
+		
+		
+		/*
+		while (offset < dataLen)
+		{
+			len = conn->m_ConnSock.Recv(buf + offset, dataLen - offset);
+			if (len <= 0)
+			{
+				errCode = GetSockErrCode();
+				errMsg  = GetSockErrMsg(errCode);
+				//DEBUG_LOG("errcode = %d, errmsg = %s!", errCode, errMsg.c_str());
+				if (errCode == EINTR) //被一个捕获的信号中断
+				{
+					continue;
+				}
+				else if (errCode == EWOULDBLOCK || errCode == EAGAIN)//需要等待资源 
+				{
+					//DEBUG_LOG("ip = %s, port = %d, len = %d need wait data", conn->m_strConnIp.c_str(), conn->m_iConnPort, len);
+					usleep(1000);
+					continue;
+				}
+				else
+				{
+					DelClientConn(conn);
+					delete buf;
+					return -1;
+				}
+			}
+			else
+			{
+				offset += len;
+			}
+		}
+		*/
+		
+
+		//DEBUG_LOG("ip = %s, port = %d, len = %d, recv = %s", conn->m_strConnIp.c_str(), conn->m_iConnPort, dataLen, buf);
+		CNetMsg* pNetMsg = new CNetMsg(conn->m_iConnPort, conn->m_strConnIp, conn->m_ConnSock, buf);
+		if (!m_RecvQueue.Put(pNetMsg))
+		{
+			delete pNetMsg;
+			pNetMsg = NULL;
+		}
+
+		delete[] buf;
+		DEBUG_LOG("END");
+		return 0;
+	}
+
+	int CTcpNetServer::Readn(ConnInfo* conn, char* buf, int len)
+	{
+		DEBUG_LOG("BEGIN");
+		int offset  = 0;
+		int errCode = 0;
+		int length  = 0;
+		std::string errMsg;
+		while (offset < len)
+		{
+			length = conn->m_ConnSock.Recv(buf + offset, len - offset);
+			DEBUG_LOG("************** len = %d, length = %d, offset = %d", len, length, offset);
+			if (length <= 0)
+			{
+				errCode = GetSockErrCode();
+				errMsg  = GetSockErrMsg(errCode);
+				DEBUG_LOG("errcode = %d, errmsg = %s!", errCode, errMsg.c_str());
+				if (errCode == EINTR) //被一个捕获的信号中断
+				{
+					DEBUG_LOG("被一个捕获的信号中断");
+					continue;
+				}
+				else if (errCode == EWOULDBLOCK || errCode == EAGAIN)//需要等待资源 
+				{
+					DEBUG_LOG("ip = %s, port = %d, len = %d need wait data", conn->m_strConnIp.c_str(), conn->m_iConnPort, len);
+					usleep(1000);
+					continue;
+				}
+				else
+				{
+					DelClientConn(conn);
+					return -1;
+				}
+			}
+			else
+			{
+				offset += length;
+			}
+		}
+		
+		DEBUG_LOG("END");
+		
+		return len;
+	}
+
 }

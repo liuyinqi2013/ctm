@@ -10,6 +10,7 @@ namespace ctm
 	{
 	public:
 		CNetMsg();
+		CNetMsg(int port, const std::string& ip, const CSocket& socket, const std::string& buf);
 		virtual ~CNetMsg();
 		
 		void TestPrint();

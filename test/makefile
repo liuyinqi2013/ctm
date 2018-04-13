@@ -15,20 +15,23 @@ INC_PATH=$(INC_SUBDIRS) $(INC_SRCDIS)
 LIB_PATH=/usr/lib64/mysql/libmysqlclient.a
 LIB= -lpthread -ldl -lz
 
-C_SRC=$(shell find . -type f | grep .c$$ | grep -v grep)
+C_SRC=$(shell find . -type f | grep "\.c$$" | grep -v grep)
 #C_SRC=$(notdir $(C_SRC_NAME)) 
 C_OBJ=$(patsubst %.c, %.o, $(C_SRC))
-CPP_SRC=$(shell find . -type f | grep .cpp$$ | grep -v grep)
+CPP_SRC=$(shell find . -type f | grep "\.cpp$$" | grep -v grep)
 #CPP_SRC=$(notdir $(CPP_SRC_NAME)) 
 CPP_OBJ=$(patsubst %.cpp, %.o, $(CPP_SRC)) ../src/common/string_tools.o ../src/common/time_tools.o \
 	../src/net/socket.o \
 	../src/net/select.o \
 	../src/common/refcount.o \
 	../src/common/msg.o \
+	../src/common/log.o \
+	../src/common/platform.o \
 	../src/ipc/mmap.o \
 	../src/thread/sem.o \
 	../src/ipc/semaphore.o \
-	../src/ipc/sharememory.o
+	../src/ipc/sharememory.o \
+	../src/jsoncpp/jsoncpp.o
 	
 OBJS=$(C_OBJ) $(CPP_OBJ)
 

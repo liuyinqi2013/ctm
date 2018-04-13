@@ -9,6 +9,25 @@
 
 namespace ctm
 {
+	class ConnInfo : public CMsg
+	{
+	public:
+		ConnInfo(){}
+		ConnInfo(const CSocket& sock, const std::string& ip, int port) :
+			m_ConnSock(sock),
+			m_strConnIp(ip),
+			m_iConnPort(port)
+		{
+		}
+			
+		~ConnInfo(){}
+		
+	public:
+		CSocket m_ConnSock;
+		std::string m_strConnIp;
+		int m_iConnPort;
+	};
+
 	class CTcpNetServer : public CThread
 	{
 	public:
@@ -32,32 +51,24 @@ namespace ctm
 			return m_mapConns.size();
 		}
 
-		void  SetMsgQueue(CMsgQueue* msgQueue)
+		CNetMsg* GetMsg()
 		{
-			m_msgQueue = msgQueue;
+			return (CNetMsg*)m_RecvQueue.Get();
 		}
 		
-	protected:
-		class ConnInfo
+		void PutMsg(CNetMsg* msg)
 		{
-		public:
-			ConnInfo(){}
-			ConnInfo(const CSocket& sock, const std::string& ip, int port) :
-				m_ConnSock(sock),
-				m_strConnIp(ip),
-				m_iConnPort(port)
-			{
-			}
-			~ConnInfo(){}
-		public:
-			CSocket m_ConnSock;
-	 		std::string m_strConnIp;
-			int m_iConnPort;
-		};
+			m_SendQueue.Put(msg);
+		}
+
+		void StartUp();
+		
+		
+	protected:
 		
 		virtual int Run();
 
-	private:
+	public:
 
 		void AddClientConn(ConnInfo* conn);
 
@@ -65,9 +76,13 @@ namespace ctm
 
 		void DelClientConn(ConnInfo* conn);
 
-		int HandleReadConn(ConnInfo* conn);
+		int ReadClientConn(ConnInfo* conn);
 
-		int HandleWriteConn(ConnInfo* conn);
+		int ReadOnePacket(ConnInfo* conn);
+
+		int WriteClientConn(ConnInfo* conn);
+
+		int Readn(ConnInfo* conn, char* buf, int len);
 		
 	private:
 	 	CSocket m_sockFd;
@@ -78,10 +93,10 @@ namespace ctm
 
 		int m_epollFd;
 
-		CMsgQueue* m_msgQueue;
-		
+		CMsgQueue m_RecvQueue;
+		CMsgQueue m_SendQueue;	
 	};
-	 
+
 }
 
 #endif

@@ -1,18 +1,12 @@
 #ifndef CTM_COMMON_SINGLETON_H__
 #define CTM_COMMON_SINGLETON_H__
-
-#include "macro.h"
-#include <stdio.h>
-
+#include <stdlib.h>
 namespace ctm
 {
 
 	template <class T>  
 	class CSingleton  
 	{
-
-		NOCOPY(CSingleton)
-	
 	public:  
 	    static T* GetInstance()  
 	    {  

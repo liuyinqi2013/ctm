@@ -7,8 +7,8 @@
 #include "thread/mutex.h"
 #include "thread/sem.h"
 #include "macro.h"
-
-
+#include "json/json.h"
+#include "json/json-forwards.h"
 
 namespace ctm
 {
@@ -16,20 +16,23 @@ namespace ctm
 	{
 	public:
 		CMsg() : 
+			m_strId("0"),
 			m_iType(0), 
 			m_strName(""),
 			m_unixTime(time(NULL))
 		{
 		}
 
-		CMsg(int type, const std::string& name, time_t t = time(NULL)) : 
+		CMsg(const std::string& id, int type, const std::string& name, time_t t = time(NULL)) : 
+			m_strId(id),
 			m_iType(type), 
 			m_strName(name),
 			m_unixTime(t)
 		{
 		}
 
-		CMsg(const CMsg& other) :
+		CMsg(const CMsg& other) : 
+			m_strId(other.m_strId),
 			m_iType(other.m_iType), 
 			m_strName(other.m_strName),
 			m_unixTime(other.m_unixTime)
@@ -44,6 +47,7 @@ namespace ctm
 		{
 			if (this != &other)
 			{
+				m_strId = other.m_strId;
 				m_iType = other.m_iType; 
 				m_strName = other.m_strName;
 				m_unixTime = other.m_unixTime;
@@ -56,6 +60,10 @@ namespace ctm
 
 		virtual bool DeSerialization(const std::string& InBuf); 
 
+		virtual void PutToJson(Json::Value& root);
+
+		virtual void GetFromJson(Json::Value& root);
+
 		virtual void TestPrint();
 
 		virtual bool IsValid()
@@ -63,7 +71,38 @@ namespace ctm
 			return true;
 		}
 
+		std::string Id() const
+		{
+			return m_strId;
+		}
+
+		int Type() const
+		{
+			return m_iType;
+		}
+
+		std::string Name() const
+		{
+			return m_strName;
+		}
+
+		void SetId(const std::string& id)
+		{
+			m_strId = id;
+		}
+
+		void SetType(const int type)
+		{
+			m_iType = type;
+		}
+
+		void SetName(const std::string& name)
+		{
+			m_strName = name;
+		}
+		
 	public:
+		std::string m_strId;
 		int m_iType;
 		std::string m_strName;
 		time_t m_unixTime;
@@ -94,11 +133,9 @@ namespace ctm
 		CMsgQueue();
 		virtual ~CMsgQueue();
 		
-		virtual void Put(CMsg* pMsg);
+		virtual bool Put(CMsg* pMsg);
 		virtual CMsg* Get();
-		virtual CMsg* Get(int msgTyep);
-		virtual CMsg* Get(const std::string& msgName);
-
+		
 		int Id() const
 		{
 			return m_iQueueId;
