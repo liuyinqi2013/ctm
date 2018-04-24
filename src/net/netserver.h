@@ -28,8 +28,34 @@ namespace ctm
 		int m_iConnPort;
 	};
 
+	class CTcpNetServer;
+
+	class CSendThread : public CThread
+	{
+	public:
+		CSendThread()
+		{
+		}
+		
+		virtual ~CSendThread()
+		{
+		}
+
+		void SetNetServer(CTcpNetServer* pServer)
+		{
+			m_tcpNetServer = pServer;
+		}
+		
+	protected:
+		virtual int Run();
+	private:
+		CTcpNetServer* m_tcpNetServer;
+	};
+
 	class CTcpNetServer : public CThread
 	{
+		friend class CSendThread;
+		
 	public:
 		CTcpNetServer(const std::string& ip, int port);
 		virtual ~CTcpNetServer();
@@ -61,6 +87,16 @@ namespace ctm
 			m_SendQueue.Put(msg);
 		}
 
+		CNetPack* GetNetPack()
+		{
+			return m_netPackCache.RecvPack();
+		}
+
+		void SendNetPack(CNetPack* pNetPack)
+		{
+			return m_netPackCache.PutSendQueue(pNetPack);
+		}
+
 		void StartUp();
 		
 		
@@ -70,6 +106,8 @@ namespace ctm
 
 	public:
 
+		ConnInfo* GetClientConn(SOCKET_T sock);
+		
 		void AddClientConn(ConnInfo* conn);
 
 		void DelClientConn(SOCKET_T sock);
@@ -94,7 +132,11 @@ namespace ctm
 		int m_epollFd;
 
 		CMsgQueue m_RecvQueue;
-		CMsgQueue m_SendQueue;	
+		CMsgQueue m_SendQueue;
+
+		CNetPackCache m_netPackCache;
+
+		CSendThread m_sendThread;
 	};
 
 }

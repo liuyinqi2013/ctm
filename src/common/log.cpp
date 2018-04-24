@@ -19,7 +19,8 @@ namespace ctm
 		m_stream(NULL),
 		m_Index(0),
 		m_date(Date(TFMT_2)),
-		m_onlyBack(onlyBack)
+		m_onlyBack(onlyBack),
+		m_bFileChange(false)
 	{
 		if (m_logFileMaxSize == 0)
 		{
@@ -31,7 +32,7 @@ namespace ctm
 			m_logPath += "/";
 		}
 
-		m_fileNamePrefix = m_logPath + m_logName + "_" + m_date;
+		//m_fileNamePrefix = m_logPath + m_logName + "_" + m_date;
 		
 		InitFileName();
 	}
@@ -45,7 +46,7 @@ namespace ctm
 		CLockOwner owner(m_mutexLock);
 		m_logName = logName;
 		
-		m_fileNamePrefix = m_logPath + m_logName + "_" + m_date;
+		//m_fileNamePrefix = m_logPath + m_logName + "_" + m_date;
 		InitFileName();
 	}
 	
@@ -59,7 +60,7 @@ namespace ctm
 			m_logPath += "/";
 		}
 
-		m_fileNamePrefix = m_logPath + m_logName + "_" + m_date;
+		//m_fileNamePrefix = m_logPath + m_logName + "_" + m_date;
 		InitFileName();
 		
 	}
@@ -80,10 +81,10 @@ namespace ctm
 	{
 		m_Index = 0;
 		struct stat st;
-		m_fileName = m_fileNamePrefix + ".log";
+		m_fileName = m_logPath + m_logName + "_" + m_date + ".log";
 		while(stat(m_fileName.c_str(), &st) == 0 && st.st_size > 1024 * 1024 * m_logFileMaxSize)
 		{
-			m_fileName = m_fileNamePrefix + "_" + I2S(++m_Index) + ".log";
+			m_fileName = m_logPath + m_logName + "_" + m_date + "_" + I2S(++m_Index) + ".log";
 		}
 	}
 	
@@ -101,21 +102,34 @@ namespace ctm
 		{
 			m_Index = 0;
 			m_date = currDate;
-			m_fileNamePrefix = m_logPath + m_logName + "_" + m_date;
-			m_fileName = m_fileNamePrefix + ".log";
+			m_fileName = m_logPath + m_logName + "_" + m_date + ".log";
+			m_bFileChange = true;
 		}
 
 		struct stat st;
 		if (stat(m_fileName.c_str(), &st) == 0 && st.st_size > 1024 * 1024 * m_logFileMaxSize)
 		{
-			m_fileName = m_fileNamePrefix + "_" + I2S(++m_Index) + ".log";
+			m_fileName = m_logPath + m_logName + "_" + m_date + "_" + I2S(++m_Index) + ".log";
+			m_bFileChange = true;
 		}
 
-		m_stream = fopen(m_fileName.c_str(), "a+");
-		if (NULL == m_stream)
+		if (m_bFileChange || NULL == m_stream)
 		{
-			return false;
+			if (m_stream) 
+			{
+				fclose(m_stream);
+				m_stream = NULL;
+			}
+			
+			m_stream = fopen(m_fileName.c_str(), "a+");
+			if (NULL == m_stream)
+			{
+				return false;
+			}
+			
+			m_bFileChange = false;
 		}
+
 
 		std::string strFmt = "[" + DateTime() + "][" + I2S(GetPid()) + "][";
 		switch(level)
@@ -148,8 +162,8 @@ namespace ctm
 		}
 		
   		vfprintf(m_stream, strFmt.c_str(), args);
-		fclose(m_stream);
-
+		fflush(m_stream);
+		
   		va_end(args);
 		
 		return true;

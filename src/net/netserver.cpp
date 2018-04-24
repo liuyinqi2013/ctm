@@ -9,12 +9,38 @@
 
 namespace ctm
 {
+
+	int CSendThread::Run()
+	{
+		while(1)
+		{
+			DEBUG_LOG("get send net pack");
+			CNetPack* pNetPack = m_tcpNetServer->m_netPackCache.SendPack();
+			ConnInfo* pConn = m_tcpNetServer->GetClientConn(pNetPack->sock);
+			if (pConn)
+			{
+				DEBUG_LOG("Send : %s", pNetPack->obuf);
+				int len = pConn->m_ConnSock.Send(pNetPack->obuf, pNetPack->olen);
+				if (len <= 0)
+				{
+					ERROR_LOG("errcode = %d, errmsg = %s!", pConn->m_ConnSock.GetErrCode(), pConn->m_ConnSock.GetErrMsg().c_str());
+					//m_tcpNetServer->DelClientConn(pConn);
+				}
+			}
+
+			m_tcpNetServer->m_netPackCache.PutFreeQueue(pNetPack);
+		}
+
+		return 0;
+	}
+	
 	CTcpNetServer::CTcpNetServer(const std::string& ip, int port) :
 		CThread("TcpNetServerThread"),
 		m_strIp(ip),
 		m_iPort(port),
 		m_epollFd(-1)
 	{
+		m_sendThread.SetNetServer(this);
 	}
 
 	CTcpNetServer::~CTcpNetServer()
@@ -89,6 +115,7 @@ namespace ctm
 
 	void CTcpNetServer::StartUp()
 	{
+		m_sendThread.Start();
 		Start();
 	}
 	
@@ -130,20 +157,32 @@ namespace ctm
 					DEBUG_LOG("Connect ip = %s, port = %d", strClientIp.c_str(), iClientPort);
 					conn = new ConnInfo(clientSock, strClientIp, iClientPort);
 					AddClientConn(conn);
-					
+
+					/*
 					CNetMsg* pNetMsg = new CNetMsg(conn->m_iConnPort, conn->m_strConnIp, conn->m_ConnSock, "Login");
 					if (!m_RecvQueue.Put(pNetMsg))
 					{
 						delete pNetMsg;
 						pNetMsg = NULL;
 					}
-				}
-				else if (events[i].events & EPOLLIN)
-				{
-					DEBUG_LOG("Socket %d is Readable", events[i].data.fd);
-					//CReadThread::PutMsg(m_mapConns[events[i].data.fd]);
-					//ReadClientConn(m_mapConns[events[i].data.fd]);
-					ReadOnePacket(m_mapConns[events[i].data.fd]);
+					*/
+					
+					
+					CNetPack* pNetPack = m_netPackCache.FreePack();
+					if (pNetPack)
+					{
+						pNetPack->sock = conn->m_ConnSock.GetSock();
+						strcpy(pNetPack->ip, conn->m_strConnIp.c_str());
+						pNetPack->port = conn->m_iConnPort;
+						pNetPack->ilen = strlen("Login");
+						strncpy(pNetPack->ibuf, "Login", BUF_MAX_SIZE);
+						pNetPack->ibuf[pNetPack->ilen] = 0x0;
+						pNetPack->olen = 0;
+						pNetPack->obuf[0] = 0x0;
+						m_netPackCache.PutRecvQueue(pNetPack);
+						DEBUG_LOG("Net Put Login");
+					}
+					
 				}
 				else if (events[i].events & EPOLLERR)
 				{
@@ -155,6 +194,13 @@ namespace ctm
 					DEBUG_LOG("Socket %d peer shutdown", events[i].data.fd);
 					DelClientConn(events[i].data.fd);
 				}
+				else if (events[i].events & EPOLLIN)
+				{
+					DEBUG_LOG("Socket %d is Readable", events[i].data.fd);
+					//CReadThread::PutMsg(m_mapConns[events[i].data.fd]);
+					//ReadClientConn(m_mapConns[events[i].data.fd]);
+					ReadOnePacket(m_mapConns[events[i].data.fd]);
+				}
 			}
 			
 		}
@@ -162,6 +208,19 @@ namespace ctm
 		return 0;
 	}
 
+	ConnInfo* CTcpNetServer::GetClientConn(SOCKET_T sock)
+	{
+		DEBUG_LOG("BEGIN");
+
+		ConnInfo* p = NULL;
+		CLockOwner owner(m_mutexLock);
+		std::map<SOCKET_T, ConnInfo*>::iterator it = m_mapConns.find(sock);
+		if (it != m_mapConns.end())
+			p = it->second;
+		DEBUG_LOG("END");
+		return p;
+	}
+	
 	void CTcpNetServer::AddClientConn(ConnInfo* conn)
 	{
 		DEBUG_LOG("BEGIN");
@@ -350,14 +409,32 @@ namespace ctm
 		
 
 		//DEBUG_LOG("ip = %s, port = %d, len = %d, recv = %s", conn->m_strConnIp.c_str(), conn->m_iConnPort, dataLen, buf);
+		
+		CNetPack* pNetPack = m_netPackCache.FreePack();
+		if (pNetPack)
+		{
+			pNetPack->sock = conn->m_ConnSock.GetSock();
+			strcpy(pNetPack->ip, conn->m_strConnIp.c_str());
+			pNetPack->port = conn->m_iConnPort;
+			pNetPack->ilen = dataLen;
+			strncpy(pNetPack->ibuf, buf, BUF_MAX_SIZE);
+			pNetPack->ibuf[pNetPack->ilen] = 0x0;
+			pNetPack->olen = 0;
+			pNetPack->obuf[0] = 0x0;
+			m_netPackCache.PutRecvQueue(pNetPack);
+		}
+
+		/*
 		CNetMsg* pNetMsg = new CNetMsg(conn->m_iConnPort, conn->m_strConnIp, conn->m_ConnSock, buf);
 		if (!m_RecvQueue.Put(pNetMsg))
 		{
 			delete pNetMsg;
 			pNetMsg = NULL;
 		}
+		*/
 
 		delete[] buf;
+		
 		DEBUG_LOG("END");
 		return 0;
 	}

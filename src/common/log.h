@@ -45,6 +45,7 @@ namespace ctm
 		std::string m_fileNamePrefix;
 		CMutex m_mutexLock;
 		bool m_onlyBack;
+		bool m_bFileChange;
 	};
 		
 };

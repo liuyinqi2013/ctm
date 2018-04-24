@@ -109,7 +109,7 @@ protected:
 int main(int argc, char **argv)
 {
 
-	Daemon();
+	//Daemon();
 
 	CLog::GetInstance()->SetLogName("ctm");
 	CLog::GetInstance()->SetLogPath("/opt/test/ctm/log");
@@ -129,6 +129,20 @@ int main(int argc, char **argv)
 	while(1)
 	{
 		DEBUG_LOG("Get a msg");
+
+		
+		CNetPack* pPackRecv = server.GetNetPack();
+		if (pPackRecv)
+		{
+			DEBUG_LOG("recv a msg");
+			pPackRecv->olen = strlen(send);
+			strncpy(pPackRecv->obuf, send, pPackRecv->olen);
+			pPackRecv->obuf[pPackRecv->olen] = '\0';
+			pPackRecv->TestPrint();
+			server.SendNetPack(pPackRecv);
+		}
+		
+		/*
 		CNetMsg* p = server.GetMsg();
 		DEBUG_LOG("recv a msg");
 		if (p) 
@@ -144,6 +158,8 @@ int main(int argc, char **argv)
 			p = NULL;
 		}
 		usleep(5);
+		*/
+		
 	}
 	server.Join();
 	return 0;

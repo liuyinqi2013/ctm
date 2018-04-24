@@ -431,9 +431,6 @@ namespace ctm
 
 	bool IsValidIp(const std::string& strIp)
 	{
-		if (strIp.empty()) 
-			return false;
-
 		if (strIp.size() < 7 || strIp.size() > 15) 
 			return false;
 

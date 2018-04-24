@@ -4,8 +4,7 @@
 #include "common/msg.h"
 #include "common/com.h"
 #include "common/log.h"
-
-
+#include "common/random.h"
 
 #include "net/socket.h"
 #include "net/select.h"
@@ -393,10 +392,31 @@ void TestSem(int flag = 1)
 	}
 }
 
+void TestRandom()
+{
+	CRandom::SetSeed();
+	for (int i = 0; i < 30; ++i)
+	{
+		DEBUG_LOG("%f", CRandom::Random0());
+	}
+
+	for (int i = 0; i < 30; ++i)
+	{
+		DEBUG_LOG("%d", CRandom::Random(30, 50));
+	}
+
+	for (int i = 0; i < 30; ++i)
+	{
+		DEBUG_LOG("%d", CRandom::Random(0, 1));
+	}
+}
+
 int main(int argc, char **argv)
 {
 	CLog::GetInstance()->SetLogName("test");
-	HandleSign();
+	CLog::GetInstance()->SetLogPath("/opt/test/ctm/log");
+	//TestRandom();
+	//HandleSign();
 	//TestGetHostByAddr();
 	//TestGetHostByName();
 	TestSelect();
