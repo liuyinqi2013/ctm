@@ -30,12 +30,12 @@ namespace ctm
 
 	bool EndsWith(const std::string& strIn, const std::string& substr, bool bCase = true);
 		
-	void CutString(std::string strInput, 
+	void CutString(const std::string& strIn, 
 		std::vector<std::string>& vecOutput, 
 		const std::string flag = " ", 
 		bool bjumpSpace = true);
 
-	void CutStringFirstOf(std::string strInput, 
+	void CutStringFirstOf(const std::string& strIn, 
 		std::vector<std::string>& vecOutput, 
 		const std::string flagSet = BLANK_SET, 
 		bool bjumpSpace = true);

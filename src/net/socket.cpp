@@ -94,7 +94,6 @@ namespace ctm
 		{
 			GetSystemError();
 		}
-		DEBUG_LOG();
 	}
 
 	CSocket::CSocket(SOCKET_T sockfd, SOCK_TYPE sockType) :
@@ -103,7 +102,6 @@ namespace ctm
 		m_errno(0),
 		m_errmsg("Success")
 	{
-		DEBUG_LOG();
 	}
 
 	CSocket::CSocket(const CSocket& other) :
@@ -116,7 +114,6 @@ namespace ctm
 		m_errmsg(other.m_errmsg),
 		m_refCount(other.m_refCount)
 	{
-		DEBUG_LOG();
 	}
 
 	CSocket& CSocket::operator=(const CSocket& other)
@@ -493,78 +490,6 @@ namespace ctm
 			return -1;
 		}
 		return m_tcpSock.Send(buf, len);
-	}
-
-	
-
-	TcpServer::TcpServer(const std::string& ip, int port) : 
-		m_ip(ip),
-		m_port(port)
-	{
-	}
-
-	TcpServer::~TcpServer()
-	{
-	
-	}
-	
-	void TcpServer::Run()
-	{
-		DEBUG_LOG("Server Start");
-
-		if(!m_tcpSock.IsValid())
-		{
-			ERROR_LOG("m_tcpSock INVALID!");
-			return;
-		}
-
-		if(!m_tcpSock.Bind(m_ip, m_port))
-		{
-			ERROR_LOG("errcode = %d, errmsg = %s!", m_tcpSock.GetErrCode(), m_tcpSock.GetErrMsg().c_str());
-			return;
-		}
-
-		if(!m_tcpSock.Listen(SOMAXCONN))
-		{
-			ERROR_LOG("errcode = %d, errmsg = %s!", m_tcpSock.GetErrCode(), m_tcpSock.GetErrMsg().c_str());
-			return;
-		}
-
-		int clientPort;
-		std::string clientIp;
-		int len = 0;
-		while(1)
-		{
-			CSocket clientSock = m_tcpSock.Accept(clientIp, clientPort);
-			if(!clientSock.IsValid())
-			{
-				ERROR_LOG("errcode = %d, errmsg = %s!", m_tcpSock.GetErrCode(), m_tcpSock.GetErrMsg().c_str());
-				continue;
-			}
-		
-			clientSock.GetPeerName(clientIp, clientPort);
-			DEBUG_LOG("has a client connect : ");
-			DEBUG_LOG("port : %d", clientPort);
-			DEBUG_LOG("ip : %s", clientIp.c_str());
-			char *buf = "hello client";
-			len = clientSock.Send(buf, strlen(buf));
-			if (len < 0)
-			{
-				ERROR_LOG("errcode = %d, errmsg = %s!", m_tcpSock.GetErrCode(), m_tcpSock.GetErrMsg().c_str());
-			}
-			DEBUG_LOG("send buf : %s, len : %d", buf, len);
-			DEBUG_LOG("send len : %d", len);
-			char rbuf[128];
-			len =  clientSock.Recv(rbuf, 128);
-			if (len < 0)
-			{
-				ERROR_LOG("errcode = %d, errmsg = %s!", m_tcpSock.GetErrCode(), m_tcpSock.GetErrMsg().c_str());
-			}
-			rbuf[len] = '\0';
-			DEBUG_LOG("recv : %s", rbuf);
-			m_sockClients.push_back(clientSock);
-		}
-		DEBUG_LOG("Server stop");
 	}
 }
 

@@ -2,6 +2,7 @@
 #define CTM_NET_NETSERVER_H__
 #include <string>
 #include <map>
+#include <vector>
 #include "socket.h"
 #include "netmsg.h"
 #include "thread/thread.h"
@@ -9,18 +10,18 @@
 
 namespace ctm
 {
-	class ConnInfo : public CMsg
+	class CliConn : public CMsg
 	{
 	public:
-		ConnInfo(){}
-		ConnInfo(const CSocket& sock, const std::string& ip, int port) :
+		CliConn(){}
+		CliConn(const CSocket& sock, const std::string& ip, int port) :
 			m_ConnSock(sock),
 			m_strConnIp(ip),
 			m_iConnPort(port)
 		{
 		}
 			
-		~ConnInfo(){}
+		~CliConn(){}
 		
 	public:
 		CSocket m_ConnSock;
@@ -61,7 +62,7 @@ namespace ctm
 		virtual ~CTcpNetServer();
 		bool Init();
 
-		std::string GetServerIp() const
+		const std::string& GetServerIp() const
 		{
 			return m_strIp;
 		}
@@ -98,35 +99,44 @@ namespace ctm
 		}
 
 		void StartUp();
-		
+
+		const std::string& GetEndFlag() const
+		{
+			return m_endFlag;
+		}
+
+		void SetEndFlag(const std::string& endflag)
+		{
+			m_endFlag = endflag;
+		}
 		
 	protected:
 		
 		virtual int Run();
 
-	public:
+	private:
 
-		ConnInfo* GetClientConn(SOCKET_T sock);
+		CliConn* GetCliConn(SOCKET_T sock);
 		
-		void AddClientConn(ConnInfo* conn);
+		bool AddCliConn(CliConn* conn);
 
-		void DelClientConn(SOCKET_T sock);
+		bool DelCliConn(SOCKET_T sock);
 
-		void DelClientConn(ConnInfo* conn);
+		bool DelCliConn(CliConn* conn);
 
-		int ReadClientConn(ConnInfo* conn);
+		int ReadCliConn(CliConn* conn);
 
-		int ReadOnePacket(ConnInfo* conn);
+		int ReadOnePacket(CliConn* conn);
 
-		int WriteClientConn(ConnInfo* conn);
+		int WriteCliConn(CliConn* conn);
 
-		int Readn(ConnInfo* conn, char* buf, int len);
+		int Readn(CliConn* conn, char* buf, int len);
 		
 	private:
 	 	CSocket m_sockFd;
 	 	std::string m_strIp;
 		int m_iPort;
-		std::map<SOCKET_T, ConnInfo*> m_mapConns;
+		std::map<SOCKET_T, CliConn*> m_mapConns;
 		CMutex m_mutexLock;
 
 		int m_epollFd;
@@ -137,6 +147,8 @@ namespace ctm
 		CNetPackCache m_netPackCache;
 
 		CSendThread m_sendThread;
+
+		std::string m_endFlag;
 	};
 
 }

@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
-#include <vector>
+#include <map>
 
 #include "common/refcount.h"
 #include "common/macro.h"
@@ -182,16 +182,17 @@ namespace ctm
 		} SOCK_ERR_CODE;
 				
 		CSocket(SOCK_TYPE sockType = SOCK_TYPE_STREAM);
+		CSocket(SOCKET_T sockfd, SOCK_TYPE sockType);
 		CSocket(const CSocket& other);
 		
 		virtual ~CSocket() 
 		{
-			DEBUG_LOG();
+			/*
 			if (m_refCount.Only()) 
 			{
-				DEBUG_LOG();
 				Close();
 			}
+			*/
 		}
 
 		CSocket& operator=(const CSocket& other);
@@ -263,7 +264,6 @@ namespace ctm
 		
 		void Close()
 		{
-			DEBUG_LOG();
 			if (IsValid()) { CloseSocket(m_sock); m_sock = SOCKET_INVALID; }
 		}
 
@@ -320,8 +320,6 @@ namespace ctm
 		}
 
 	private:
-		
-		CSocket(SOCKET_T sockfd, SOCK_TYPE sockType);
 		
 		void GetSystemError()
 		{
@@ -381,25 +379,11 @@ namespace ctm
 			return m_tcpSock.SetNonBlock();
 		}
 		
-	private:
+	public:
 		CSocket m_tcpSock;
 		std::string m_serverIp;
 		int m_serverPort;
 	};
-
-	class TcpServer
-	{
-	public:
-		TcpServer(const std::string& ip, int port);
-		virtual ~TcpServer();
-		void Run();
-	private:
-		CSocket m_tcpSock;
-		std::string m_ip;
-		int m_port;
-		std::vector<CSocket> m_sockClients;
-	};
-
 }
 
 #endif

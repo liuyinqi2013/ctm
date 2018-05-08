@@ -1,33 +1,36 @@
 #include "string_tools.h"
 #include <ctype.h>
 #include <assert.h>
+#include <stdio.h>
 
 namespace ctm
 {
 	std::string TrimLeft(std::string& strInOut)
 	{
-		size_t pos = strInOut.find_first_not_of(BLANK_SET);
-		if(pos != strInOut.npos)
+		size_t pos = 0;
+		for (; pos < strInOut.size() && isspace(strInOut[pos]); ++pos);
+		if (pos < strInOut.size()) 
 		{
-			strInOut = strInOut.substr(pos);
-		}
+			return strInOut.substr(pos);
+		}		
 		return strInOut;
 	}
 
 	std::string TrimRight(std::string& strInOut)
 	{
-		size_t pos = strInOut.find_last_not_of(BLANK_SET);
-		if(pos != strInOut.npos)
+		size_t pos = strInOut.size() - 1;
+		for (; pos >= 0 && isspace(strInOut[pos]); --pos);
+		if (pos >= 0) 
 		{
-			strInOut = strInOut.substr(0, pos + 1);
-		}
+			return strInOut.substr(0, pos + 1);
+		}		
 		return strInOut;
 	}
 
 	std::string Trimmed(std::string& strInOut)
 	{
-		TrimLeft(strInOut);
-		return TrimRight(strInOut);
+		std::string tmp = TrimLeft(strInOut);
+		return TrimRight(tmp);
 	}
 
 	std::string ToUpper(std::string& strInOut)
@@ -93,24 +96,14 @@ namespace ctm
 	bool StartsWith(const std::string& strIn, const std::string& substr, bool bCase)
 	{
 		bool bRet = true;
-		size_t i = 0;
+		int i = 0;
 		if(bCase)
 		{
-			for(i = 0; i < strIn.size() && i < substr.size(); i++)
-			{
-				if(toupper(strIn[i]) != toupper(substr[i])){
-					break;
-				}
-			}
+			for(;i < strIn.size() && i < substr.size() && toupper(strIn[i]) == toupper(substr[i]); i++);
 		}
 		else
 		{
-			for(i = 0; i < strIn.size() && i < substr.size(); i++)
-			{
-				if(strIn[i] != substr[i]){
-					break;
-				}
-			}
+			for(;i < strIn.size() && i < substr.size() && strIn[i] == substr[i]; i++);
 		}
 
 		if(i < substr.size())
@@ -124,28 +117,19 @@ namespace ctm
 	bool EndsWith(const std::string& strIn, const std::string& substr, bool bCase)
 	{
 		bool bRet = true;
-		size_t i = strIn.size() - 1;
-		size_t j = substr.size() - 1;
+		int i = strIn.size() - 1;
+		int j = substr.size() - 1;
+		
 		if(bCase)
 		{
-			for(; i > 0 && j > 0; i--, j--)
-			{
-				if(toupper(strIn[i]) != toupper(substr[j])){
-					break;
-				}
-			}
+			for(;i >= 0 && j >= 0 && toupper(strIn[i]) == toupper(substr[j]); --i, --j);
 		}
 		else
 		{
-			for(; i > 0 && j > 0; i--, j--)
-			{
-				if(strIn[i] != substr[j]){
-					break;
-				}
-			}
+			for(;i >= 0 && j >= 0 && strIn[i] == substr[j]; --i, --j);
 		}
-
-		if(j > 0)
+		
+		if(j >= 0)
 		{
 			bRet = false;
 		}
@@ -153,29 +137,34 @@ namespace ctm
 		return bRet;
 	}
 
-	void CutString(std::string strInput, std::vector<std::string>& vecOutput, const std::string flag, bool bjumpSpace)
+	void CutString(const std::string& strIn, std::vector<std::string>& vecOutput, const std::string flag, bool bjumpSpace)
 	{
 		vecOutput.clear();
 		size_t begin = 0;
-		size_t end = 0;
-
-		if(!EndsWith(strInput, flag)) strInput += flag;
-
-		while(begin < strInput.size() && (end = strInput.find(flag, begin)) != std::string::npos)
+		size_t end   = strIn.find(flag, begin);
+		std::string strItem;
+		while(end != std::string::npos)
 		{
-			if(bjumpSpace && end <= begin)
+			strItem = strIn.substr(begin, end - begin);
+			if (bjumpSpace && strItem.size() > 0)
 			{
-				begin = end + flag.size();
-				continue;
+				vecOutput.push_back(strItem);
 			}
-
-			vecOutput.push_back(strInput.substr(begin, end - begin));
+			else
+			{
+				vecOutput.push_back(strItem);
+			}
 			begin = end + flag.size();
+			end   = strIn.find(flag, begin);
 		}
+
+		if (begin < strIn.size())
+			vecOutput.push_back(strIn.substr(begin));
 	}
 
-	void CutStringFirstOf(std::string strInput, std::vector<std::string>& vecOutput, const std::string flagSet, bool bjumpSpace)
+	void CutStringFirstOf(const std::string& strIn, std::vector<std::string>& vecOutput, const std::string flagSet, bool bjumpSpace)
 	{
+		std::string strInput = strIn;
 		vecOutput.clear();
 		size_t begin = 0;
 		size_t end = 0;

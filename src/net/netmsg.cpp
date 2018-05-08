@@ -40,6 +40,7 @@ namespace ctm
 		memset(ip, 0, sizeof(ip));
 		memset(ibuf, 0, sizeof(ibuf));
 		memset(obuf, 0, sizeof(obuf));
+		memset(temp, 0, sizeof(temp));
 	}
 	
 	CNetPack::CNetPack(const CNetPack& other)
@@ -120,7 +121,7 @@ namespace ctm
 	void CNetPackCache::PutRecvQueue(CNetPack* pNetPack)
 	{
 		CLockOwner owner(m_mutexRecv);
-		if (m_array <= pNetPack && pNetPack <=  m_array + m_size - 1)
+		if (m_array <= pNetPack && pNetPack <= m_array + m_size - 1)
 		{
 			m_vecRecv.push_back(pNetPack);
 			m_semRecv.Post();
@@ -157,6 +158,32 @@ namespace ctm
 		m_vecSend.clear();
 		for (int i = 0; i < m_size; ++i)
 			m_vecFree.push_back(m_array + i);
+	}
+
+
+	void CNetPackCache::AddContext(int sock, CNetPack* pNetPack)
+	{
+		m_mapContext[sock] = pNetPack;
+	}
+
+	void CNetPackCache::DelContext(int sock)
+	{
+		std::map<int, CNetPack*>::iterator it = m_mapContext.find(sock);
+		if (it != m_mapContext.end())
+		{
+			m_mapContext.erase(it);
+		}
+	}
+
+	CNetPack* CNetPackCache::GetContext(int sock)
+	{
+		std::map<int, CNetPack*>::iterator it = m_mapContext.find(sock);
+		if (it != m_mapContext.end())
+		{
+			return it->second;
+		}
+		
+		return NULL;
 	}
 	
 

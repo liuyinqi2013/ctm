@@ -41,15 +41,23 @@ public:
 
 void TestStringFunc()
 {
-	string a("\r\n**}&\n");
+	string a("@@\r\n**}&\n@[@end@]");
+	cout<<a<<endl;
+	cout<<EndsWith(a, "@@")<<endl;
+	cout<<StartsWith(a, "@@")<<endl;
 	cout<<Trimmed(a)<<endl;
 	cout<<Time()<<endl;
 	cout<<UTime()<<endl;
 	cout<<DateTime()<<endl;
 	cout<<DateTime(TFMT_1)<<endl;
 	cout<<DateTime(TFMT_2)<<endl;
-	TestSingleton::GetInstance()->Hello();
-
+	std::vector<std::string> vecOutput;
+	CutString(a, vecOutput, "[@end@]", false);
+	cout<<"item size = "<<vecOutput.size()<<endl;
+	for (int i = 0; i < vecOutput.size(); ++i)
+	{
+		cout<<"item = "<<vecOutput[i]<<endl;
+	}
 }
 
 void TestTcpClient()
@@ -415,11 +423,12 @@ int main(int argc, char **argv)
 {
 	CLog::GetInstance()->SetLogName("test");
 	CLog::GetInstance()->SetLogPath("/opt/test/ctm/log");
+	TestStringFunc();
 	//TestRandom();
 	//HandleSign();
 	//TestGetHostByAddr();
 	//TestGetHostByName();
-	TestSelect();
+	//TestSelect();
 	//TestMsg();
 	//TestMmap(S2I(argv[1]));
 	//TestSem(S2I(argv[1]));

@@ -106,16 +106,37 @@ protected:
 	
 };
 
+void Handle_PIPE(int sign)
+{
+	DEBUG_LOG("--- Recv sign SIGPIPE ---");
+}
+
+void Handle_INT(int sign)
+{
+	DEBUG_LOG("--- Recv sign SIGINT ---");
+	exit(1);
+}
+
+void RegSignFunc()
+{
+	signal(SIGPIPE, Handle_PIPE);
+	signal(SIGINT, Handle_INT);
+}
+
+
 int main(int argc, char **argv)
 {
 
 	//Daemon();
+
+	RegSignFunc();
 
 	CLog::GetInstance()->SetLogName("ctm");
 	CLog::GetInstance()->SetLogPath("/opt/test/ctm/log");
 	//CLog::GetInstance()->SetOnlyBack(true);
 	
 	CTcpNetServer server("0.0.0.0", 9999);
+	server.SetEndFlag("[@end@]");
 	if (!server.Init())
 	{
 		ERROR_LOG("Server init failed");
@@ -125,20 +146,49 @@ int main(int argc, char **argv)
 	server.StartUp();
 	
 	char* send = "ctm:>";
-	
+
+	FILE* fp = NULL;
+	unsigned long total_size = 0;
 	while(1)
 	{
-		DEBUG_LOG("Get a msg");
+		//DEBUG_LOG("Get a msg");
 
 		
 		CNetPack* pPackRecv = server.GetNetPack();
 		if (pPackRecv)
 		{
-			DEBUG_LOG("recv a msg");
+			//DEBUG_LOG("recv a msg");
+			if (strncmp(pPackRecv->ibuf, "[--filename--]:", strlen("[--filename--]:"))== 0)
+			{
+				int len = strlen("[--filename--]:");
+				DEBUG_LOG("filename = %s", string(pPackRecv->ibuf + len).c_str());
+				fp = fopen(pPackRecv->ibuf + len, "wb+");
+				total_size = 0;
+			}
+			else
+			{
+				if (fp)
+				{
+					if (strncmp(pPackRecv->ibuf, "[--end--]",  strlen("[--end--]")) == 0)
+					{
+						DEBUG_LOG("[file end]");
+						fclose(fp);
+						fp = NULL;
+						DEBUG_LOG("file total size =%ul", total_size);
+						
+					}
+					else
+					{
+						fwrite(pPackRecv->ibuf, 1, pPackRecv->ilen, fp);
+						total_size += pPackRecv->ilen;
+					}
+				}
+			}
+			
 			pPackRecv->olen = strlen(send);
 			strncpy(pPackRecv->obuf, send, pPackRecv->olen);
 			pPackRecv->obuf[pPackRecv->olen] = '\0';
-			pPackRecv->TestPrint();
+			//pPackRecv->TestPrint();
 			server.SendNetPack(pPackRecv);
 		}
 		

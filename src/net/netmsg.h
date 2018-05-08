@@ -7,8 +7,9 @@
 #include "thread/sem.h"
 
 #include <vector>
+#include <map>
 
-#define BUF_MAX_SIZE 64 * 1024
+#define BUF_MAX_SIZE 16 * 1024
 namespace ctm
 {
 	class CNetMsg : public CMsg
@@ -41,6 +42,7 @@ namespace ctm
 		char ibuf[BUF_MAX_SIZE];
 		int  olen;
 		char obuf[BUF_MAX_SIZE];
+		char temp[1024];
 	} CNetPack;
 
 	class CNetPackCache
@@ -59,7 +61,13 @@ namespace ctm
 		void PutSendQueue(CNetPack* pNetPack);
 		
 		void Clear();
-		
+
+		void AddContext(int sock, CNetPack* pNetPack); //增加上下文
+
+		void DelContext(int sock);  //删除上下文
+
+		CNetPack* GetContext(int sock); //获取上下文
+
 	private:
 		int m_size;
 		CNetPack* m_array;
@@ -72,6 +80,7 @@ namespace ctm
 		std::vector<CNetPack*> m_vecFree;
 		std::vector<CNetPack*> m_vecRecv;
 		std::vector<CNetPack*> m_vecSend;
+		std::map<int, CNetPack*> m_mapContext; //上下文
 	};
 
 	class CNetPackQueue

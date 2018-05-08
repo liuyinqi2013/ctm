@@ -31,9 +31,7 @@ namespace ctm
 		{
 			m_logPath += "/";
 		}
-
-		//m_fileNamePrefix = m_logPath + m_logName + "_" + m_date;
-		
+	
 		InitFileName();
 	}
 	
@@ -46,7 +44,6 @@ namespace ctm
 		CLockOwner owner(m_mutexLock);
 		m_logName = logName;
 		
-		//m_fileNamePrefix = m_logPath + m_logName + "_" + m_date;
 		InitFileName();
 	}
 	
@@ -59,8 +56,7 @@ namespace ctm
 		{
 			m_logPath += "/";
 		}
-
-		//m_fileNamePrefix = m_logPath + m_logName + "_" + m_date;
+		
 		InitFileName();
 		
 	}

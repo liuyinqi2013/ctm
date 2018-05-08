@@ -13,7 +13,7 @@ namespace ctm
 			return srand(seed);
 		}
 
-		static int Random0()
+		static int Random()
 		{
 			return rand();
 		}
