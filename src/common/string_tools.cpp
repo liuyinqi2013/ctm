@@ -331,6 +331,26 @@ namespace ctm
 		return true;
 	}
 
+	bool IsSpace(const std::string& strIn)
+	{
+		for(size_t i = 0; i < strIn.size(); ++i)
+		{
+			if(!isspace(strIn[i])) return false;
+		}
+		
+		return true;
+	}
+
+	bool IsAlnum(const std::string& strIn)
+	{
+		for(size_t i = 0; i < strIn.size(); ++i)
+		{
+			if(!isalnum(strIn[i])) return false;
+		}
+		
+		return true;
+	}
+	
 	std::string Join(std::vector<std::string>& vecIn, const std::string& strFlag)
 	{
 		std::string strOut;
@@ -346,4 +366,23 @@ namespace ctm
 		return strOut;
 	}
 
+	std::vector<std::string> Split(std::string& strIn, const std::string sep)
+	{
+		std::vector<std::string> vecOutput;
+		size_t begin = 0;
+		size_t end   = strIn.find(sep, begin);
+		std::string strItem;
+		while(end != std::string::npos)
+		{
+			strItem = strIn.substr(begin, end - begin);
+			vecOutput.push_back(strItem);
+			begin = end + sep.size();
+			end   = strIn.find(sep, begin);
+		}
+
+		if (begin < strIn.size())
+			vecOutput.push_back(strIn.substr(begin));
+		
+		return vecOutput;
+	}
 }

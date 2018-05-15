@@ -21,17 +21,14 @@ namespace ctm
 		signal(SIGPIPE, Thread_PIPE);
 		while(1)
 		{
-			//DEBUG_LOG("get send net pack");
 			CNetPack* pNetPack = m_tcpNetServer->m_netPackCache.SendPack();
 			CliConn* pConn = m_tcpNetServer->GetCliConn(pNetPack->sock);
 			if (pConn)
 			{
-				//DEBUG_LOG("Send : %s", pNetPack->obuf);
 				int len = pConn->m_ConnSock.Send(pNetPack->obuf, pNetPack->olen);
 				if (len <= 0)
 				{
 					ERROR_LOG("errcode = %d, errmsg = %s!", pConn->m_ConnSock.GetErrCode(), pConn->m_ConnSock.GetErrMsg().c_str());
-					//m_tcpNetServer->DelCliConn(pConn);
 				}
 			}
 
@@ -53,24 +50,7 @@ namespace ctm
 
 	CTcpNetServer::~CTcpNetServer()
 	{
-		CLockOwner owner(m_mutexLock);
-		if (GetStatus() == T_RUN) Stop();
-
-		std::map<SOCKET_T, CliConn*>::iterator it = m_mapConns.begin();
-		for (; it != m_mapConns.end(); it++)
-		{
-			if (!it->second)
-			{
-				delete it->second;
-				it->second = NULL;
-			}
-		}
-
-		if (-1 == m_epollFd)
-		{
-			close(m_epollFd);
-		}
-		
+		ShutDown();
 	}
 
 	bool CTcpNetServer::Init()
@@ -121,6 +101,31 @@ namespace ctm
 		return true;
 	}
 
+	void CTcpNetServer::ShutDown()
+	{
+		DEBUG_LOG("Tcp net server shutdown");
+		
+		CLockOwner owner(m_mutexLock);
+		if (GetStatus() == T_RUN) Stop();
+
+		std::map<SOCKET_T, CliConn*>::iterator it = m_mapConns.begin();
+		for (; it != m_mapConns.end(); it++)
+		{
+			if (!it->second)
+			{
+				delete it->second;
+				it->second = NULL;
+			}
+		}
+
+		if (-1 == m_epollFd)
+		{
+			close(m_epollFd);
+		}
+
+		m_sockFd.Close();
+	}
+
 	void CTcpNetServer::StartUp()
 	{
 		m_sendThread.Start();
@@ -145,8 +150,7 @@ namespace ctm
 				ERROR_LOG("epoll_wait failed");
 				return -1;
 			}
-
-			//DEBUG_LOG("reader nfds = %d", nfds);
+			
 			for ( i = 0; i < nfds; ++i)
 			{
 				if (events[i].data.fd == m_sockFd.GetSock())
@@ -162,7 +166,7 @@ namespace ctm
 						return -1;
 					}
 
-					DEBUG_LOG("Connect ip = %s, port = %d", strClientIp.c_str(), iClientPort);
+					DEBUG_LOG("New Connect ip = %s, port = %d", strClientIp.c_str(), iClientPort);
 					conn = new CliConn(clientSock, strClientIp, iClientPort);
 					
 					if (!AddCliConn(conn))
@@ -184,7 +188,7 @@ namespace ctm
 						strcpy(pNetPack->ip, conn->m_strConnIp.c_str());
 						pNetPack->port = conn->m_iConnPort;
 						pNetPack->ilen = strlen("Login");
-						strncpy(pNetPack->ibuf, "Login", BUF_MAX_SIZE);
+						memcpy(pNetPack->ibuf, "Login", BUF_MAX_SIZE);
 						pNetPack->ibuf[pNetPack->ilen] = 0x0;
 						pNetPack->olen = 0;
 						pNetPack->obuf[0] = 0x0;
@@ -193,23 +197,26 @@ namespace ctm
 					}
 					
 				}
+				else if (events[i].events & EPOLLRDHUP)
+				{
+					DEBUG_LOG("Socket %d peer shutdown", events[i].data.fd);
+					if (ReadCliConn(m_mapConns[events[i].data.fd]) != 0)
+						DelCliConn(events[i].data.fd);
+				}
 				else if (events[i].events & EPOLLERR)
 				{
 					DEBUG_LOG("Socket %d is happend error", events[i].data.fd);
 					DelCliConn(events[i].data.fd);
-				}
-				else if (events[i].events & EPOLLRDHUP)
-				{
-					DEBUG_LOG("Socket %d peer shutdown", events[i].data.fd);
-					DelCliConn(events[i].data.fd);
-				}
+				}	
 				else if (events[i].events & EPOLLIN)
 				{
 					//DEBUG_LOG("Socket %d is Readable", events[i].data.fd);
 					//CReadThread::PutMsg(m_mapConns[events[i].data.fd]);
-					ReadCliConn(m_mapConns[events[i].data.fd]);
 					//ReadOnePacket(m_mapConns[events[i].data.fd]);
+					if (ReadCliConn(m_mapConns[events[i].data.fd]) == -1)
+						DelCliConn(events[i].data.fd);		
 				}
+
 			}
 			
 		}
@@ -316,6 +323,8 @@ namespace ctm
 		int errCode = 0;
 		std::string errMsg;
 		std::vector<std::string> vecOutput;
+
+		int ret = 0;
 		
 		while (1)
 		{
@@ -324,7 +333,6 @@ namespace ctm
 			{
 				errCode = GetSockErrCode();
 				errMsg  = GetSockErrMsg(errCode);
-				
 				if (errCode == EINTR) //被一个捕获的信号中断
 				{
 					continue;
@@ -332,12 +340,13 @@ namespace ctm
 				
 				if ((errCode == EWOULDBLOCK || errCode == EAGAIN)) //需要等待资源 
 				{
-					//DEBUG_LOG("need wait data");
+					ret = 1;
 				}
 				else
 				{
 					DEBUG_LOG("errcode = %d, errmsg = %s!", errCode, errMsg.c_str());	
-					DelCliConn(conn);
+					//DelCliConn(conn);
+					ret = -1;
 				}
 				
 				break;
@@ -345,23 +354,20 @@ namespace ctm
 			else
 			{
 				buf[len] = '\0';
-				//DEBUG_LOG("ip = %s, port = %d, len = %d, recv = %s", conn->m_strConnIp.c_str(), conn->m_iConnPort, len, buf);
 				CNetPack* pNetPack = m_netPackCache.GetContext(conn->m_ConnSock.GetSock()); 
 				if (!pNetPack) //不存在上下文
 				{
-					//DEBUG_LOG("-------------------------------------------");
 					CutString(std::string(buf, len), vecOutput, m_endFlag, false);
 					int i = 0;
 					for (i = 0; i < vecOutput.size() - 1; ++i)
 					{
-						//DEBUG_LOG("vecOutput[%d]  len = %d, content = %s", i, vecOutput[i].size(), vecOutput[i].c_str());
 						pNetPack = m_netPackCache.FreePack();
 						
 						pNetPack->sock = conn->m_ConnSock.GetSock();
 						strcpy(pNetPack->ip, conn->m_strConnIp.c_str());
 						pNetPack->port = conn->m_iConnPort;
 						pNetPack->ilen = vecOutput[i].size();
-						strncpy(pNetPack->ibuf, vecOutput[i].data(), pNetPack->ilen);
+						memcpy(pNetPack->ibuf, vecOutput[i].data(), pNetPack->ilen);
 						pNetPack->ibuf[pNetPack->ilen] = 0x0;
 						pNetPack->olen = 0;
 						pNetPack->obuf[0] = 0x0;
@@ -373,35 +379,31 @@ namespace ctm
 					strcpy(pNetPack->ip, conn->m_strConnIp.c_str());
 					pNetPack->port = conn->m_iConnPort;
 					pNetPack->ilen = vecOutput[i].size();
-					strncpy(pNetPack->ibuf, vecOutput[i].data(),  pNetPack->ilen);
+					memcpy(pNetPack->ibuf, vecOutput[i].data(),  pNetPack->ilen);
 					pNetPack->ibuf[pNetPack->ilen] = 0x0;
 					pNetPack->olen = 0;
 					pNetPack->obuf[0] = 0x0;
 					
 					if (EndsWith(buf, m_endFlag))
 					{
-						//DEBUG_LOG("11111111111111111111111111111111111111111");
 						m_netPackCache.PutRecvQueue(pNetPack); //一个完整的包
 					}
 					else
 					{
-						//DEBUG_LOG("22222222222222222222222222222222222222222222");
 						m_netPackCache.AddContext(pNetPack->sock, pNetPack); //不完整的包，放入上下文
 					}
 					
 				}
 				else // 存在上下文
 				{
-					//DEBUG_LOG("*************************************************************");
 					std::string temp =  std::string(pNetPack->ibuf, pNetPack->ilen) + std::string(buf, len);
-					//DEBUG_LOG("temp = %s", temp.c_str());
 					CutString(temp, vecOutput, m_endFlag, false);
 					
 					pNetPack->sock = conn->m_ConnSock.GetSock();
 					strcpy(pNetPack->ip, conn->m_strConnIp.c_str());
 					pNetPack->port = conn->m_iConnPort;
 					pNetPack->ilen = vecOutput[0].size();
-					strncpy(pNetPack->ibuf, vecOutput[0].data(), pNetPack->ilen);
+					memcpy(pNetPack->ibuf, vecOutput[0].data(), pNetPack->ilen);
 					pNetPack->ibuf[pNetPack->ilen] = 0x0;
 					pNetPack->olen = 0;
 					pNetPack->obuf[0] = 0x0;
@@ -420,7 +422,7 @@ namespace ctm
 							strcpy(pNetPack->ip, conn->m_strConnIp.c_str());
 							pNetPack->port = conn->m_iConnPort;
 							pNetPack->ilen = vecOutput[i].size();
-							strncpy(pNetPack->ibuf, vecOutput[i].data(), pNetPack->ilen);
+							memcpy(pNetPack->ibuf, vecOutput[i].data(), pNetPack->ilen);
 							pNetPack->ibuf[pNetPack->ilen] = 0x0;
 							pNetPack->olen = 0;
 							pNetPack->obuf[0] = 0x0;
@@ -432,19 +434,17 @@ namespace ctm
 						strcpy(pNetPack->ip, conn->m_strConnIp.c_str());
 						pNetPack->port = conn->m_iConnPort;
 						pNetPack->ilen = vecOutput[i].size();
-						strncpy(pNetPack->ibuf, vecOutput[i].data(), pNetPack->ilen);
+						memcpy(pNetPack->ibuf, vecOutput[i].data(), pNetPack->ilen);
 						pNetPack->ibuf[pNetPack->ilen] = 0x0;
 						pNetPack->olen = 0;
 						pNetPack->obuf[0] = 0x0;
 						
 						if (EndsWith(temp, m_endFlag))
 						{
-							//DEBUG_LOG("33333333333333333333333333333333333333333333");
 							m_netPackCache.PutRecvQueue(pNetPack); //一个完整的包
 						}
 						else
 						{
-							//DEBUG_LOG("4444444444444444444444444444444444444444444444");
 							m_netPackCache.AddContext(pNetPack->sock, pNetPack); //不完整的包，放入上下文
 						}
 					}
@@ -452,7 +452,6 @@ namespace ctm
 					{
 						if (EndsWith(temp, m_endFlag))
 						{
-							//DEBUG_LOG("55555555555555555555555555555555555555555555555");
 							m_netPackCache.DelContext(pNetPack->sock);
 							m_netPackCache.PutRecvQueue(pNetPack); //一个完整的包
 						}
@@ -461,7 +460,7 @@ namespace ctm
 			}
 		}
 		
-		return 0;
+		return ret;
 	}
 
 	int CTcpNetServer::ReadOnePacket(CliConn* conn)
@@ -560,7 +559,7 @@ namespace ctm
 			strcpy(pNetPack->ip, conn->m_strConnIp.c_str());
 			pNetPack->port = conn->m_iConnPort;
 			pNetPack->ilen = dataLen;
-			strncpy(pNetPack->ibuf, buf, BUF_MAX_SIZE);
+			memcpy(pNetPack->ibuf, buf, BUF_MAX_SIZE);
 			pNetPack->ibuf[pNetPack->ilen] = 0x0;
 			pNetPack->olen = 0;
 			pNetPack->obuf[0] = 0x0;

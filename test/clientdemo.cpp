@@ -49,7 +49,7 @@ int main(int argc, char **argv)
 		{
 			fileName = filePathName.substr(pos + 1);
 		}
-		string strHead = string("[--filename--]:") + fileName + "[@end@]";
+		string strHead = string("[--filename--]:") + fileName + "[---@end@---]";
 		DEBUG_LOG("strHead:%s", strHead.c_str());
 		client.Send(strHead.data(), strHead.size());
 	}
@@ -92,10 +92,10 @@ int main(int argc, char **argv)
 				else if (fd == fileno(fin))
 				{
 					char buf[4096 + 32] = {0};
-					int len = fread(buf, 1, 4096, fin);
+					int len = fread(buf, sizeof(char), 4096, fin);
 					total_size += len;
-					strncpy(buf + len, "[@end@]", strlen("[@end@]"));
-					int size = len + strlen("[@end@]");
+					strncpy(buf + len, "[---@end@---]", strlen("[---@end@---]"));
+					int size = len + strlen("[---@end@---]");
 					//DEBUG_LOG("send buf = %s, len = %d", buf, size);
 					if (client.Send(buf, size) <= 0)
 					{
@@ -106,7 +106,7 @@ int main(int argc, char **argv)
 					{
 						fclose(fin);
 						DEBUG_LOG("[Send End]");
-						string strEnd = string("[--end--]") + "[@end@]";
+						string strEnd = string("[--end--]") + "[---@end@---]";
 						client.Send(strEnd.data(), strEnd.size());
 						client.m_tcpSock.ShutDown(SHUT_WR);
 						s.DelReadFd(fd);

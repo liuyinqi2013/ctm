@@ -43,6 +43,7 @@ namespace ctm
 	{
 		CLockOwner owner(m_mutexLock);
 		m_logName = logName;
+		m_bFileChange = true;
 		
 		InitFileName();
 	}
@@ -56,7 +57,9 @@ namespace ctm
 		{
 			m_logPath += "/";
 		}
-		
+
+		m_bFileChange = true;
+	
 		InitFileName();
 		
 	}

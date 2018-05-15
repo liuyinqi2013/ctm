@@ -29,6 +29,8 @@ CMutex mutex;
 
 #define MAXFD 64
 
+CTcpNetServer server("0.0.0.0", 9999);
+
 void Daemon()
 {
 	pid_t pid = fork();
@@ -73,39 +75,6 @@ void Daemon()
 	dup2(fd, 2);
 }
 
-class TestSingleton : public CSingleton<TestSingleton>, public CThread
-{
-public:
-	TestSingleton(const std::string& name) : CThread(name)
-	{
-	}
-	
-	void hello() { cout<<"hello"<<endl; }
-
-protected:
-	int Run()
-	{
-		cout<<"thread name : "<<GetName()<<endl;
-		cout<<"thread status : "<<GetStatus()<<endl;
-		cout<<"thread str2int : "<<S2I("123")<<endl;
-		cout<<"thread int2str : "<<I2S(10)<<endl;
-		cout<<"thread str2double : "<<S2D("123.23")<<endl;
-		cout<<"thread double2str : "<<D2S(1.004)<<endl;
-		
-		while(1)
-		{
-			{
-				CLockOwner owner(mutex);
-				num++;
-				cout<<"thread : "<<GetName()<<" num : "<<num<<endl;
-			}
-			sleep(1);
-		}
-		return 0;
-	}
-	
-};
-
 void Handle_PIPE(int sign)
 {
 	DEBUG_LOG("--- Recv sign SIGPIPE ---");
@@ -117,7 +86,7 @@ void Handle_INT(int sign)
 	exit(1);
 }
 
-void RegSignFunc()
+void RegSignHandleFunc()
 {
 	signal(SIGPIPE, Handle_PIPE);
 	signal(SIGINT, Handle_INT);
@@ -129,14 +98,13 @@ int main(int argc, char **argv)
 
 	//Daemon();
 
-	RegSignFunc();
+	RegSignHandleFunc();
 
 	CLog::GetInstance()->SetLogName("ctm");
 	CLog::GetInstance()->SetLogPath("/opt/test/ctm/log");
 	//CLog::GetInstance()->SetOnlyBack(true);
 	
-	CTcpNetServer server("0.0.0.0", 9999);
-	server.SetEndFlag("[@end@]");
+	server.SetEndFlag("[---@end@---]");
 	if (!server.Init())
 	{
 		ERROR_LOG("Server init failed");
@@ -162,7 +130,7 @@ int main(int argc, char **argv)
 			{
 				int len = strlen("[--filename--]:");
 				DEBUG_LOG("filename = %s", string(pPackRecv->ibuf + len).c_str());
-				fp = fopen(pPackRecv->ibuf + len, "wb+");
+				fp = fopen(pPackRecv->ibuf + len, "w+b");
 				total_size = 0;
 			}
 			else

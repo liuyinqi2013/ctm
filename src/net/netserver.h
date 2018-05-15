@@ -62,6 +62,8 @@ namespace ctm
 		virtual ~CTcpNetServer();
 		bool Init();
 
+		void ShutDown();
+
 		const std::string& GetServerIp() const
 		{
 			return m_strIp;

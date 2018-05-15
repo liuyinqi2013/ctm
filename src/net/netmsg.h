@@ -7,6 +7,7 @@
 #include "thread/sem.h"
 
 #include <vector>
+#include <list>
 #include <map>
 
 #define BUF_MAX_SIZE 16 * 1024
@@ -77,9 +78,9 @@ namespace ctm
 		CMutex    m_mutexFree;
 		CMutex    m_mutexRecv;
 		CMutex    m_mutexSend;
-		std::vector<CNetPack*> m_vecFree;
-		std::vector<CNetPack*> m_vecRecv;
-		std::vector<CNetPack*> m_vecSend;
+		std::list<CNetPack*> m_vecFree;
+		std::list<CNetPack*> m_vecRecv;
+		std::list<CNetPack*> m_vecSend;
 		std::map<int, CNetPack*> m_mapContext; //иообнд
 	};
 

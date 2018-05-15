@@ -11,24 +11,20 @@ namespace ctm
 		CRefCount() :
 			m_pCount(new int(1))
 		{
-			DEBUG_LOG();
 		}
 
 		CRefCount(const CRefCount& other) :
 			m_pCount(other.m_pCount)
 		{
 			++(*m_pCount);
-			DEBUG_LOG();
 		}
 
 		virtual ~CRefCount()
 		{
-			DEBUG_LOG();
 			if (--(*m_pCount) == 0) 
 			{
 				delete m_pCount;
 				m_pCount = 0;
-				DEBUG_LOG();
 			}
 		}
 

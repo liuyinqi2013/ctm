@@ -52,7 +52,13 @@ namespace ctm
 
 	inline bool IsDigits(const std::string& strIn) { return IsNumbers(strIn);}
 
+	bool IsSpace(const std::string& strIn);
+
+	bool IsAlnum(const std::string& strIn);
+
 	std::string Join(std::vector<std::string>& vecIn, const std::string& strFlag = " ");
+
+	std::vector<std::string> Split(std::string& strIn, const std::string sep = " ");
 }
 
 #endif

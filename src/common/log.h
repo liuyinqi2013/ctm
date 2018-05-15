@@ -42,7 +42,6 @@ namespace ctm
 		int m_Index;
 		std::string m_date;
 		std::string m_fileName;
-		std::string m_fileNamePrefix;
 		CMutex m_mutexLock;
 		bool m_onlyBack;
 		bool m_bFileChange;

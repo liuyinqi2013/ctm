@@ -91,8 +91,8 @@ namespace ctm
 	{
 		m_semFree.Wait();
 		CLockOwner owner(m_mutexFree);
-		CNetPack* pNetPack = *m_vecFree.begin();
-		m_vecFree.erase(m_vecFree.begin());
+		CNetPack* pNetPack = m_vecFree.front();
+		m_vecFree.pop_front();
 
 		return pNetPack;
 		
@@ -112,8 +112,8 @@ namespace ctm
 	{
 		m_semRecv.Wait();
 		CLockOwner owner(m_mutexRecv);
-		CNetPack* pNetPack = *m_vecRecv.begin();
-		m_vecRecv.erase(m_vecRecv.begin());
+		CNetPack* pNetPack = m_vecRecv.front();
+		m_vecRecv.pop_front();
 
 		return pNetPack;
 	}
@@ -132,8 +132,8 @@ namespace ctm
 	{
 		m_semSend.Wait();
 		CLockOwner owner(m_mutexSend);
-		CNetPack* pNetPack = *m_vecSend.begin();
-		m_vecSend.erase(m_vecSend.begin());
+		CNetPack* pNetPack = m_vecSend.front();
+		m_vecSend.pop_front();
 
 		return pNetPack;
 	}
