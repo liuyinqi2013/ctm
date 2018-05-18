@@ -310,12 +310,12 @@ namespace ctm
 		
 		if(tmp[2] == 64)
 		{
-			strDst.erase(strDst.size() - 1, 1);
+			strDst.pop_back();
 		}
 		
 		if(tmp[3] == 64)
 		{
-			strDst.erase(strDst.size() - 1, 1);
+			strDst.pop_back();
 		}
 
 		return strDst;

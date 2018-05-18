@@ -101,7 +101,7 @@ namespace ctm
 			return false;
 		}
 
-		m_semHandle == -1;
+		m_semHandle = -1;
 
 		return true;
 	}

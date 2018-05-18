@@ -32,7 +32,10 @@ namespace ctm
 		*/
 
 		Json::Value root;
-		PutToJson(root);
+		root["id"] = m_strId;
+		root["type"] = m_iType;
+		root["name"] = m_strName;
+		root["unixTime"] = m_unixTime;
 		outBuf = root.toStyledString();
 		
 		return true;
@@ -86,26 +89,13 @@ namespace ctm
 			return false;
 		}
 
-		GetFromJson(root);
-		
-		return true;
-		
-	}
-
-	void CMsg::PutToJson(Json::Value& root)
-	{
-		root["id"] = m_strId;
-		root["type"] = m_iType;
-		root["name"] = m_strName;
-		root["unixTime"] = m_unixTime;
-	}
-
-	void CMsg::GetFromJson(Json::Value& root)
-	{
 		m_strId = root["id"].asString();
 		m_iType = root["type"].asInt();
 		m_strName = root["name"].asString();
 		m_unixTime = root["unixTime"].asUInt();
+		
+		return true;
+		
 	}
 
 	void CMsg::TestPrint()

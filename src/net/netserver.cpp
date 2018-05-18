@@ -21,7 +21,7 @@ namespace ctm
 		signal(SIGPIPE, Thread_PIPE);
 		while(1)
 		{
-			CNetPack* pNetPack = m_tcpNetServer->m_netPackCache.SendPack();
+			CNetPack* pNetPack = m_tcpNetServer->m_sendQueue.GetAndPop();
 			CliConn* pConn = m_tcpNetServer->GetCliConn(pNetPack->sock);
 			if (pConn)
 			{
@@ -32,7 +32,7 @@ namespace ctm
 				}
 			}
 
-			m_tcpNetServer->m_netPackCache.PutFreeQueue(pNetPack);
+			m_tcpNetServer->m_netPackPool.Recycle(pNetPack);
 		}
 
 		return 0;
@@ -43,7 +43,8 @@ namespace ctm
 		m_strIp(ip),
 		m_iPort(port),
 		m_epollFd(-1),
-		m_endFlag("\r\n")
+		m_endFlag("\r\n"),
+		m_netPackPool(128)
 	{
 		m_sendThread.SetNetServer(this);
 	}
@@ -171,28 +172,19 @@ namespace ctm
 					
 					if (!AddCliConn(conn))
 						continue;
-
-					/*
-					CNetMsg* pNetMsg = new CNetMsg(conn->m_iConnPort, conn->m_strConnIp, conn->m_ConnSock, "Login");
-					if (!m_RecvQueue.Put(pNetMsg))
-					{
-						delete pNetMsg;
-						pNetMsg = NULL;
-					}
-					*/
 					
-					CNetPack* pNetPack = m_netPackCache.FreePack();
+					CNetPack* pNetPack = m_netPackPool.Get();
 					if (pNetPack)
 					{
 						pNetPack->sock = conn->m_ConnSock.GetSock();
 						strcpy(pNetPack->ip, conn->m_strConnIp.c_str());
 						pNetPack->port = conn->m_iConnPort;
 						pNetPack->ilen = strlen("Login");
-						memcpy(pNetPack->ibuf, "Login", BUF_MAX_SIZE);
+						strncpy(pNetPack->ibuf, "Login", BUF_MAX_SIZE);
 						pNetPack->ibuf[pNetPack->ilen] = 0x0;
 						pNetPack->olen = 0;
 						pNetPack->obuf[0] = 0x0;
-						m_netPackCache.PutRecvQueue(pNetPack);
+						m_recvQueue.Push(pNetPack);
 						DEBUG_LOG("Net Put Login");
 					}
 					
@@ -274,12 +266,16 @@ namespace ctm
 		CLockOwner owner(m_mutexLock);
 
 		//删除上下文
-		CNetPack* pNetPack = m_netPackCache.GetContext(sock); 
+		/*
+		CNetPack* pNetPack = GetContext(sock); 
 		if (pNetPack)
 		{
-			m_netPackCache.DelContext(pNetPack->sock);
-			m_netPackCache.PutFreeQueue(pNetPack);
+			DelContext(pNetPack->sock);
+			m_netPackPool.Recycle(pNetPack);
 		}
+		*/
+
+		m_Context.Remove(sock);
 					
 		std::map<SOCKET_T, CliConn*>::iterator it = m_mapConns.find(sock);
 		if (it != m_mapConns.end())
@@ -344,8 +340,7 @@ namespace ctm
 				}
 				else
 				{
-					DEBUG_LOG("errcode = %d, errmsg = %s!", errCode, errMsg.c_str());	
-					//DelCliConn(conn);
+					DEBUG_LOG("errcode = %d, errmsg = %s!", errCode, errMsg.c_str());
 					ret = -1;
 				}
 				
@@ -354,14 +349,33 @@ namespace ctm
 			else
 			{
 				buf[len] = '\0';
-				CNetPack* pNetPack = m_netPackCache.GetContext(conn->m_ConnSock.GetSock()); 
+
+				m_Context.GetCompletePack(conn->m_ConnSock.GetSock(), std::string(buf, len), vecOutput);
+				
+				for (int i = 0; i < vecOutput.size(); ++i)
+				{
+					CNetPack* pNetPack = m_netPackPool.Get();
+						
+					pNetPack->sock = conn->m_ConnSock.GetSock();
+					strcpy(pNetPack->ip, conn->m_strConnIp.c_str());
+					pNetPack->port = conn->m_iConnPort;
+					pNetPack->ilen = vecOutput[i].size();
+					memcpy(pNetPack->ibuf, vecOutput[i].data(), pNetPack->ilen);
+					pNetPack->ibuf[pNetPack->ilen] = 0x0;
+					pNetPack->olen = 0;
+					pNetPack->obuf[0] = 0x0;
+					m_recvQueue.Push(pNetPack);
+				}
+
+				/*
+				CNetPack* pNetPack = GetContext(conn->m_ConnSock.GetSock()); 
 				if (!pNetPack) //不存在上下文
 				{
 					CutString(std::string(buf, len), vecOutput, m_endFlag, false);
 					int i = 0;
 					for (i = 0; i < vecOutput.size() - 1; ++i)
 					{
-						pNetPack = m_netPackCache.FreePack();
+						pNetPack = m_netPackPool.Get();
 						
 						pNetPack->sock = conn->m_ConnSock.GetSock();
 						strcpy(pNetPack->ip, conn->m_strConnIp.c_str());
@@ -371,10 +385,10 @@ namespace ctm
 						pNetPack->ibuf[pNetPack->ilen] = 0x0;
 						pNetPack->olen = 0;
 						pNetPack->obuf[0] = 0x0;
-						m_netPackCache.PutRecvQueue(pNetPack);
+						m_recvQueue.Push(pNetPack);
 					}
 					
-					pNetPack = m_netPackCache.FreePack();
+					pNetPack = m_netPackPool.Get();
 					pNetPack->sock = conn->m_ConnSock.GetSock();
 					strcpy(pNetPack->ip, conn->m_strConnIp.c_str());
 					pNetPack->port = conn->m_iConnPort;
@@ -386,11 +400,11 @@ namespace ctm
 					
 					if (EndsWith(buf, m_endFlag))
 					{
-						m_netPackCache.PutRecvQueue(pNetPack); //一个完整的包
+						m_recvQueue.Push(pNetPack); //一个完整的包
 					}
 					else
 					{
-						m_netPackCache.AddContext(pNetPack->sock, pNetPack); //不完整的包，放入上下文
+						AddContext(pNetPack->sock, pNetPack); //不完整的包，放入上下文
 					}
 					
 				}
@@ -410,13 +424,13 @@ namespace ctm
 					
 					if (vecOutput.size() > 1)
 					{
-						m_netPackCache.DelContext(pNetPack->sock);
-						m_netPackCache.PutRecvQueue(pNetPack);		
+						DelContext(pNetPack->sock);
+						m_recvQueue.Push(pNetPack);		
 						
 						int i = 1;
 						for (i = 1; i < vecOutput.size() - 1; ++i)
 						{
-							pNetPack = m_netPackCache.FreePack();
+							pNetPack = m_netPackPool.Get();
 							
 							pNetPack->sock = conn->m_ConnSock.GetSock();
 							strcpy(pNetPack->ip, conn->m_strConnIp.c_str());
@@ -426,10 +440,10 @@ namespace ctm
 							pNetPack->ibuf[pNetPack->ilen] = 0x0;
 							pNetPack->olen = 0;
 							pNetPack->obuf[0] = 0x0;
-							m_netPackCache.PutRecvQueue(pNetPack);
+							m_recvQueue.Push(pNetPack);
 						}
 						
-						pNetPack = m_netPackCache.FreePack();
+						pNetPack = m_netPackPool.Get();
 						pNetPack->sock = conn->m_ConnSock.GetSock();
 						strcpy(pNetPack->ip, conn->m_strConnIp.c_str());
 						pNetPack->port = conn->m_iConnPort;
@@ -441,22 +455,23 @@ namespace ctm
 						
 						if (EndsWith(temp, m_endFlag))
 						{
-							m_netPackCache.PutRecvQueue(pNetPack); //一个完整的包
+							m_recvQueue.Push(pNetPack); //一个完整的包
 						}
 						else
 						{
-							m_netPackCache.AddContext(pNetPack->sock, pNetPack); //不完整的包，放入上下文
+							AddContext(pNetPack->sock, pNetPack); //不完整的包，放入上下文
 						}
 					}
 					else
 					{
 						if (EndsWith(temp, m_endFlag))
 						{
-							m_netPackCache.DelContext(pNetPack->sock);
-							m_netPackCache.PutRecvQueue(pNetPack); //一个完整的包
+							DelContext(pNetPack->sock);
+							m_recvQueue.Push(pNetPack); //一个完整的包
 						}
 					}
 				}
+				*/
 			}
 		}
 		
@@ -552,7 +567,7 @@ namespace ctm
 
 		//DEBUG_LOG("ip = %s, port = %d, len = %d, recv = %s", conn->m_strConnIp.c_str(), conn->m_iConnPort, dataLen, buf);
 		
-		CNetPack* pNetPack = m_netPackCache.FreePack();
+		CNetPack* pNetPack = m_netPackPool.Get();
 		if (pNetPack)
 		{
 			pNetPack->sock = conn->m_ConnSock.GetSock();
@@ -563,7 +578,7 @@ namespace ctm
 			pNetPack->ibuf[pNetPack->ilen] = 0x0;
 			pNetPack->olen = 0;
 			pNetPack->obuf[0] = 0x0;
-			m_netPackCache.PutRecvQueue(pNetPack);
+			m_recvQueue.Push(pNetPack);
 		}
 
 		/*
@@ -623,6 +638,30 @@ namespace ctm
 		DEBUG_LOG("END");
 		
 		return len;
+	}
+
+	void CTcpNetServer::AddContext(int sock, CNetPack* pNetPack)
+	{
+		m_mapContext[sock] = pNetPack;
+	}
+
+	void CTcpNetServer::DelContext(int sock)
+	{
+		std::map<int, CNetPack*>::iterator it = m_mapContext.find(sock);
+		if (it != m_mapContext.end())
+		{
+			m_mapContext.erase(it);
+		}
+	}
+
+	CNetPack* CTcpNetServer::GetContext(int sock)
+	{
+		std::map<int, CNetPack*>::iterator it = m_mapContext.find(sock);
+		if (it != m_mapContext.end())
+		{
+			return it->second;
+		}
+		return NULL;
 	}
 
 }

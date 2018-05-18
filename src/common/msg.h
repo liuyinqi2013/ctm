@@ -60,10 +60,6 @@ namespace ctm
 
 		virtual bool DeSerialization(const std::string& InBuf); 
 
-		virtual void PutToJson(Json::Value& root);
-
-		virtual void GetFromJson(Json::Value& root);
-
 		virtual void TestPrint();
 
 		virtual bool IsValid()

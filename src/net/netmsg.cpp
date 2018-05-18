@@ -1,4 +1,6 @@
 #include "netmsg.h"
+#include "ipc/semaphore.h"
+#include "common/string_tools.h"
 
 namespace ctm
 {
@@ -66,202 +68,38 @@ namespace ctm
 		ilen = other.ilen;
 		olen = other.olen;
 		
-		strncpy(ip,   other.ip, sizeof(ip));
-		strncpy(ibuf, other.ibuf, sizeof(ibuf));
-		strncpy(obuf, other.obuf, sizeof(obuf));
+		memcpy(ip,   other.ip, sizeof(ip));
+		memcpy(ibuf, other.ibuf, sizeof(ibuf));
+		memcpy(obuf, other.obuf, sizeof(obuf));
 	}
 
-	CNetPackCache::CNetPackCache(int size) :
-		m_size(size),
-		m_array(new CNetPack[size + 1]),
-		m_semFree(size),
-		m_semRecv(0),
-		m_semSend(0)	
+	void CNetContext::GetCompletePack(SOCKET_T sock, const std::string& buf, std::vector<std::string>& vecOut)
 	{
-		for (int i = 0; i < m_size; ++i)
-			m_vecFree.push_back(m_array + i);
-	}
-	
-	CNetPackCache::~CNetPackCache()
-	{
-		delete[] m_array;
-	}
-	
-	CNetPack* CNetPackCache::FreePack()
-	{
-		m_semFree.Wait();
-		CLockOwner owner(m_mutexFree);
-		CNetPack* pNetPack = m_vecFree.front();
-		m_vecFree.pop_front();
-
-		return pNetPack;
-		
-	}
-	
-	void CNetPackCache::PutFreeQueue(CNetPack* pNetPack)
-	{
-		CLockOwner owner(m_mutexFree);
-		if (m_array <= pNetPack && pNetPack <=  m_array + m_size - 1)
+		CLockOwner owner(m_mutex);
+		std::string tmp = buf;
+		std::map<int, std::string>::iterator it = m_mapContext.find(sock);
+		if (it != m_mapContext.end())
 		{
-			m_vecFree.push_back(pNetPack);
-			m_semFree.Post();
+			tmp = it->second + buf;
+			m_mapContext.erase(it);
+		}
+
+		CutString(tmp, vecOut, m_sep, false);
+		if (!EndsWith(tmp, m_sep) && vecOut.size() > 0)
+		{
+			m_mapContext[sock] = vecOut.back();
+			vecOut.pop_back();
 		}
 	}
 	
-	CNetPack* CNetPackCache::RecvPack()
+	void CNetContext::Remove(SOCKET_T sock)
 	{
-		m_semRecv.Wait();
-		CLockOwner owner(m_mutexRecv);
-		CNetPack* pNetPack = m_vecRecv.front();
-		m_vecRecv.pop_front();
-
-		return pNetPack;
-	}
-	
-	void CNetPackCache::PutRecvQueue(CNetPack* pNetPack)
-	{
-		CLockOwner owner(m_mutexRecv);
-		if (m_array <= pNetPack && pNetPack <= m_array + m_size - 1)
-		{
-			m_vecRecv.push_back(pNetPack);
-			m_semRecv.Post();
-		}
-	}
-	
-	CNetPack* CNetPackCache::SendPack()
-	{
-		m_semSend.Wait();
-		CLockOwner owner(m_mutexSend);
-		CNetPack* pNetPack = m_vecSend.front();
-		m_vecSend.pop_front();
-
-		return pNetPack;
-	}
-	
-	void CNetPackCache::PutSendQueue(CNetPack* pNetPack)
-	{
-		CLockOwner owner(m_mutexSend);
-		if (m_array <= pNetPack && pNetPack <=  m_array + m_size - 1)
-		{
-			m_vecSend.push_back(pNetPack);
-			m_semSend.Post();
-		}
-	}
-	
-	void CNetPackCache::Clear()
-	{
-		CLockOwner owner0(m_mutexFree);
-		CLockOwner owner1(m_mutexRecv);
-		CLockOwner owner2(m_mutexSend);
-		m_vecFree.clear();
-		m_vecRecv.clear();
-		m_vecSend.clear();
-		for (int i = 0; i < m_size; ++i)
-			m_vecFree.push_back(m_array + i);
-	}
-
-
-	void CNetPackCache::AddContext(int sock, CNetPack* pNetPack)
-	{
-		m_mapContext[sock] = pNetPack;
-	}
-
-	void CNetPackCache::DelContext(int sock)
-	{
-		std::map<int, CNetPack*>::iterator it = m_mapContext.find(sock);
+		CLockOwner owner(m_mutex);
+		std::map<int, std::string>::iterator it = m_mapContext.find(sock);
 		if (it != m_mapContext.end())
 		{
 			m_mapContext.erase(it);
 		}
 	}
-
-	CNetPack* CNetPackCache::GetContext(int sock)
-	{
-		std::map<int, CNetPack*>::iterator it = m_mapContext.find(sock);
-		if (it != m_mapContext.end())
-		{
-			return it->second;
-		}
-		
-		return NULL;
-	}
-	
-
-	CNetPackQueue CNetPackQueue::RecvQueue;
-	CNetPackQueue CNetPackQueue::SendQueue;
-
-	CNetPackQueue::CNetPackQueue(int size) :
-		m_size(size),
-		m_semFree(size),
-		m_semUsed(0)
-	{
-		m_array = new CNetPack[m_size + 1];
-		for (int i = 0; i < m_size; ++i)
-			m_freePack.push_back(m_array + i);
-	}
-	
-	CNetPackQueue::~CNetPackQueue()
-	{
-		delete[] m_array;
-	}
-
-	CNetPack* CNetPackQueue::GetFreePack()
-	{
-		m_semFree.Wait();
-		CLockOwner owner(m_mutex);
-
-		if (m_freePack.size() == 0)
-			return NULL;
-
-		CNetPack* pNetPack = *m_freePack.begin();
-		m_freePack.erase(m_freePack.begin());
-		
-		return pNetPack;
-	}
-	
-	CNetPack* CNetPackQueue::GetUsedPack()
-	{
-		m_semUsed.Wait();
-		CLockOwner owner(m_mutex);
-		if (m_usedPack.size() == 0)
-			return NULL;
-		
-		CNetPack* pNetPack = *m_usedPack.begin();
-		m_usedPack.erase(m_usedPack.begin());
-
-		return pNetPack;
-	}
-
-	void CNetPackQueue::SaveFreePack(CNetPack* pNetPack)
-	{
-		CLockOwner owner(m_mutex);
-		if (m_array <= pNetPack && pNetPack <=  m_array + m_size - 1)
-		{
-			m_freePack.push_back(pNetPack);
-			m_semFree.Post();
-		}
-		
-	}
-	
-	void CNetPackQueue::SaveUsedPack(CNetPack* pNetPack)
-	{
-		CLockOwner owner(m_mutex);
-		if (m_array <= pNetPack && pNetPack <=  m_array + m_size - 1)
-		{
-			m_usedPack.push_back(pNetPack);
-			m_semFree.Post();
-		}
-	}
-
-	void CNetPackQueue::Clear()
-	{
-		CLockOwner owner(m_mutex);
-		
-		m_freePack.clear();
-		m_usedPack.clear();
-		for (int i = 0; i < m_size; ++i)
-			m_freePack.push_back(m_array + i);
-	}
-
 }
 

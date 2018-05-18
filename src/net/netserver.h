@@ -80,24 +80,14 @@ namespace ctm
 			return m_mapConns.size();
 		}
 
-		CNetMsg* GetMsg()
-		{
-			return (CNetMsg*)m_RecvQueue.Get();
-		}
-		
-		void PutMsg(CNetMsg* msg)
-		{
-			m_SendQueue.Put(msg);
-		}
-
 		CNetPack* GetNetPack()
 		{
-			return m_netPackCache.RecvPack();
+			return m_recvQueue.GetAndPop();
 		}
 
 		void SendNetPack(CNetPack* pNetPack)
 		{
-			return m_netPackCache.PutSendQueue(pNetPack);
+			return m_sendQueue.Push(pNetPack);
 		}
 
 		void StartUp();
@@ -110,6 +100,7 @@ namespace ctm
 		void SetEndFlag(const std::string& endflag)
 		{
 			m_endFlag = endflag;
+			m_Context.SetSep(endflag);
 		}
 		
 	protected:
@@ -133,6 +124,12 @@ namespace ctm
 		int WriteCliConn(CliConn* conn);
 
 		int Readn(CliConn* conn, char* buf, int len);
+
+		void AddContext(SOCKET_T sock, CNetPack* pNetPack); //增加上下文
+
+		void DelContext(SOCKET_T sock);  //删除上下文
+
+		CNetPack* GetContext(SOCKET_T sock); //获取上下文
 		
 	private:
 	 	CSocket m_sockFd;
@@ -143,14 +140,15 @@ namespace ctm
 
 		int m_epollFd;
 
-		CMsgQueue m_RecvQueue;
-		CMsgQueue m_SendQueue;
-
-		CNetPackCache m_netPackCache;
-
 		CSendThread m_sendThread;
-
 		std::string m_endFlag;
+
+		CTinyMemPool<CNetPack> m_netPackPool;
+		CTinyQueue<CNetPack> m_recvQueue;
+		CTinyQueue<CNetPack> m_sendQueue;
+		std::map<SOCKET_T, CNetPack*> m_mapContext; //上下文
+
+		CNetContext m_Context;
 	};
 
 }
