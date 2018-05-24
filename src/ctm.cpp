@@ -19,6 +19,9 @@
 #include "thread/mutex.h"
 #include "net/socket.h"
 
+#include "game/card.h"
+
+
 #include "netserver.h"
 
 using namespace ctm;
@@ -98,13 +101,27 @@ int main(int argc, char **argv)
 
 	//Daemon();
 
+
 	RegSignHandleFunc();
 
 	CLog::GetInstance()->SetLogName("ctm");
 	CLog::GetInstance()->SetLogPath("/opt/test/ctm/log");
 	//CLog::GetInstance()->SetOnlyBack(true);
+
+	CPokerCards poker;
+
+	DEBUG_LOG("%s", poker.ToString().c_str());
+
+	poker.Shuffle();
+
+	DEBUG_LOG("%s", poker.ToString().c_str());
+
+	poker.Sort();
+	
+	DEBUG_LOG("%s", poker.ToString().c_str());
 	
 	server.SetEndFlag("[---@end@---]");
+	
 	if (!server.Init())
 	{
 		ERROR_LOG("Server init failed");

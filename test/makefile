@@ -35,7 +35,10 @@ COM_OBJ=../src/common/string_tools.o ../src/common/time_tools.o \
 	../src/thread/sem.o \
 	../src/ipc/semaphore.o \
 	../src/ipc/sharememory.o \
-	../src/jsoncpp/jsoncpp.o
+	../src/jsoncpp/jsoncpp.o \
+	../src/net/netclient.o \
+	../src/thread/thread.o \
+	../src/net/netmsg.o
 	
 CPP_OBJ=$(patsubst %.cpp, %.o, $(CPP_SRC)) ../src/common/string_tools.o ../src/common/time_tools.o \
 	../src/net/socket.o \
@@ -48,7 +51,11 @@ CPP_OBJ=$(patsubst %.cpp, %.o, $(CPP_SRC)) ../src/common/string_tools.o ../src/c
 	../src/thread/sem.o \
 	../src/ipc/semaphore.o \
 	../src/ipc/sharememory.o \
-	../src/jsoncpp/jsoncpp.o
+	../src/jsoncpp/jsoncpp.o \
+	../src/net/netclient.o \
+	../src/thread/thread.o \
+	../src/net/netmsg.o
+	
 	
 OBJS0=$(COM_OBJ) testdemo.o
 OBJS1=$(COM_OBJ) serverdemo.o tcpserver.o

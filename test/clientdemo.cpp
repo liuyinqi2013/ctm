@@ -8,6 +8,8 @@
 
 #include "net/socket.h"
 #include "net/select.h"
+#include "net/netclient.h"
+
 #include "ipc/mmap.h"
 #include "ipc/semaphore.h"
 #include "ipc/sharememory.h"
@@ -27,6 +29,49 @@ int main(int argc, char **argv)
 {
 	CLog::GetInstance()->SetLogName("test");
 	CLog::GetInstance()->SetLogPath("/opt/test/ctm/log");
+
+	CNetTcpClient client("127.0.0.1", 9999);
+
+	client.SetEndFlag("[---@end@---]");
+	if (!client.Init())
+		return -1;
+
+	client.Start();
+	FILE* fin = NULL;
+	if (argc > 1)
+	{
+		fin = fopen(argv[1], "rb+");
+		string filePathName(argv[1]);
+		string fileName = filePathName;
+		int pos = filePathName.rfind("/");
+		if (pos != string::npos)
+		{
+			fileName = filePathName.substr(pos + 1);
+		}
+		string strHead = string("[--filename--]:") + fileName;
+		DEBUG_LOG("strHead:%s", strHead.c_str());
+		client.SendNetPack(strHead);
+	}
+	else
+	{
+		fin = stdin;
+		ERROR_LOG("stdin fileno : %d", fileno(fin));
+	}
+
+	while (1)
+	{
+		DEBUG_LOG("%s", client.GetNetPack().c_str());
+		char buf[1024] = {0};
+		fgets(buf, 1024, fin);
+
+		DEBUG_LOG("send buf = %s, size = %d", buf, strlen(buf));
+		if (client.SendNetPack(string(buf, strlen(buf))) <= 0)
+		{
+			DEBUG_LOG("SendNetPack errno");
+		}
+	}
+	
+	/*
 	TcpClient client;
 
 	if (!client.Connect("127.0.0.1", 9999))
@@ -56,6 +101,7 @@ int main(int argc, char **argv)
 	else
 	{
 		fin = stdin;
+		ERROR_LOG("stdin fileno : %d", fileno(fin));
 	}
 
 	unsigned long total_size = 0;
@@ -78,7 +124,10 @@ int main(int argc, char **argv)
 				{
 					int len = client.Recv(buf, 1024);
 					if (len > 0) {
-						//DEBUG_LOG("%s", buf);
+						if (fin == stdin)
+						{
+							DEBUG_LOG("%s", buf);
+						}
 					}
 					else
 					{
@@ -89,7 +138,7 @@ int main(int argc, char **argv)
 						goto quit;
 					}	
 				}
-				else if (fd == fileno(fin))
+				else if (fd == fileno(fin) && fd != 0)
 				{
 					char buf[4096 + 32] = {0};
 					int len = fread(buf, sizeof(char), 4096, fin);
@@ -113,6 +162,19 @@ int main(int argc, char **argv)
 						DEBUG_LOG("file total size =%ul", total_size);
 					}
 				}
+				else if (fd == 0)
+				{
+					char buf[4096 + 32] = {0};
+					fgets(buf, 4096, fin);
+					int len = strlen(buf);
+					strncpy(buf + len, "[---@end@---]", strlen("[---@end@---]"));
+					int size = len + strlen("[---@end@---]");
+					DEBUG_LOG("send buf = %s, size = %d", buf, size);
+					if (client.Send(buf, size) <= 0)
+					{
+						DEBUG_LOG("errno : %d msg : %s", client.GetErrCode(), client.GetErrMsg().c_str());
+					}
+				}
 			}
 		}
 		else if (iRet == 0)
@@ -126,11 +188,13 @@ int main(int argc, char **argv)
 		}
 	}
 
+
 quit:
 	unsigned long long endTime = UTime();
 	DEBUG_LOG("begin time = %ull us", beginTime);
 	DEBUG_LOG("end time = %ull us", endTime);
 	DEBUG_LOG("used time = %ull us", endTime - beginTime);
+	*/
 	
 	return 0;
 }

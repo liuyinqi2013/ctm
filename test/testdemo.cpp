@@ -288,16 +288,12 @@ void TestMsg()
 	CMsg msg2("2", 2, "mod");
 	msg1.TestPrint();
 	msg2.TestPrint();
-	std::string buf1;
-	std::string buf2;
-	msg1.Serialization(buf1);
-	DEBUG_LOG("msg1 = %s", buf1.c_str());
-	msg2.Serialization(buf2);
-	DEBUG_LOG("msg2 = %s", buf2.c_str());
+	DEBUG_LOG("msg1 = %s", msg1.ToString().c_str());
+	DEBUG_LOG("msg2 = %s", msg2.ToString().c_str());
 	CMsg* p = CreateMsg(0);
 	if (p)
 	{
-		p->DeSerialization(buf2);
+		p->FromString(msg2.ToString());
 		p->TestPrint();
 	}
 	msg1.TestPrint();
@@ -423,13 +419,13 @@ int main(int argc, char **argv)
 {
 	CLog::GetInstance()->SetLogName("test");
 	CLog::GetInstance()->SetLogPath("/opt/test/ctm/log");
-	TestStringFunc();
+	//TestStringFunc();
 	//TestRandom();
 	//HandleSign();
 	//TestGetHostByAddr();
 	//TestGetHostByName();
 	//TestSelect();
-	//TestMsg();
+	TestMsg();
 	//TestMmap(S2I(argv[1]));
 	//TestSem(S2I(argv[1]));
 	//TestShareMem(S2I(argv[1]));

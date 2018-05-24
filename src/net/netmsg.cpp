@@ -31,7 +31,7 @@ namespace ctm
 		DEBUG_LOG("buf  = %s", m_buf.c_str());
 	}
 
-	REG_MSG(0, CNetMsg);
+	REG_MSG(1, CNetMsg);
 
 	CNetPack::CNetPack() :
 		sock(-1),

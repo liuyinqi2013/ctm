@@ -426,6 +426,47 @@ namespace ctm
 		
 	}
 
+	bool CSocket::Renew()
+	{
+
+		SOCKET_T sock;
+		
+		if (SOCK_TYPE_STREAM == m_sockType)
+			sock = Socket(AF_INET, SOCK_STREAM, 0);
+		else if(SOCK_TYPE_DGRAM == m_sockType)
+			sock = Socket(AF_INET, SOCK_DGRAM, 0);
+		if (sock == SOCKET_INVALID)
+		{
+			GetSystemError();
+			return false;
+		}
+
+		dup2(sock, m_sock);
+		CloseSocket(sock);
+		
+		return true;
+	}
+
+	bool CSocket::ReConnect()
+	{
+		if (!Renew()) return false;
+		
+		if (SOCKET_ERR == ctm::Connect(m_sock, (struct sockaddr*)&m_sockAddrIn, sizeof(m_sockAddrIn)))
+		{
+			GetSystemError();
+			return false;
+		}
+		
+		return true;
+	}
+		
+	bool CSocket::ReConnect(const char* ip, const int& port)
+	{
+		if (!Renew()) return false;
+
+		return Connect(ip, port);
+	}
+
 	bool IsValidIp(const std::string& strIp)
 	{
 		if (strIp.size() < 7 || strIp.size() > 15) 

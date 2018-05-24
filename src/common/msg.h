@@ -12,6 +12,13 @@
 
 namespace ctm
 {
+	typedef enum msg_type
+	{
+	MSG_BASE = 0,
+	MSG_GAME_LOGIN  = 1,
+	MSG_GAME_LOGOUT = 2,
+	} MSG_TYPE;
+	
 	class CMsg
 	{
 	public:
@@ -58,7 +65,15 @@ namespace ctm
 		
 		virtual bool Serialization(std::string& outBuf); 
 
-		virtual bool DeSerialization(const std::string& InBuf); 
+		virtual bool DeSerialization(const std::string& InBuf);
+
+		virtual std::string ToString() const;
+
+		virtual void FromString(const std::string& InBuf);
+
+		virtual Json::Value ToJson() const;
+
+		virtual void FromJson(const Json::Value& json);
 
 		virtual void TestPrint();
 
@@ -176,6 +191,113 @@ namespace ctm
 		std::list<CMsg*> m_msgVec;
 		size_t m_maxSize;
 		CSem   m_sem;
+	};
+
+	template < class T >
+	class CTinyMemPool
+	{
+	public:
+		CTinyMemPool(size_t size) : m_size(size), m_sem(size)
+		{
+			m_array = new T[m_size];
+			m_vecMem.push_back(m_array);
+			for (int i = 0; i < m_size; ++i) m_listFree.push_back(m_array + i);
+		}
+		
+		~CTinyMemPool()
+		{
+			for (int i = 0; i < m_vecMem.size(); ++i) delete [] m_vecMem[i];
+		}
+		
+		T* Get()
+		{
+			m_sem.Wait();
+			CLockOwner owner(m_mutex);
+			T* pNetPack = m_listFree.front();
+			m_listFree.pop_front();
+
+			return pNetPack;
+		}
+		
+		bool Recycle(T* pNetPack)
+		{
+			CLockOwner owner(m_mutex);
+			if (m_array <= pNetPack && pNetPack <=  m_array + m_size - 1)
+			{
+				m_listFree.push_back(pNetPack);
+				m_sem.Post();
+				return true;
+			}
+			
+			return false;
+		}
+
+		size_t Size() const
+		{
+			CLockOwner owner(m_mutex);
+			return m_size;
+		}
+		
+	private:
+		size_t m_size;
+		T*     m_array;
+		CMutex m_mutex;
+		CSem   m_sem;
+		std::list<T*> m_listFree;
+		std::vector<T*> m_vecMem;
+	};
+
+	template < class T >
+	class CTinyQueue
+	{
+	public:
+		CTinyQueue() : m_sem(0)
+		{
+		}
+		
+		~CTinyQueue()
+		{
+		}
+		
+		void Push(const T& t)
+		{
+			CLockOwner owner(m_mutex);
+			m_listT.push_back(t);
+			m_sem.Post();
+		}
+		
+		void Pop()
+		{
+			m_sem.Wait();
+			CLockOwner owner(m_mutex);
+			m_listT.pop_front();
+		}
+		
+		T& Get()
+		{
+			CLockOwner owner(m_mutex);
+			return m_listT.front();
+		}
+		
+		T GetAndPop()
+		{
+			m_sem.Wait();
+			CLockOwner owner(m_mutex);
+			T t = m_listT.front();
+			m_listT.pop_front();
+			return t;
+		}
+
+		size_t Size() const
+		{
+			CLockOwner owner(m_mutex);
+			return m_listT.size();
+		}
+		
+	private:
+		CMutex m_mutex;
+		CSem   m_sem;
+		std::list<T> m_listT;
 	};
 }
 

@@ -233,7 +233,7 @@ namespace ctm
 		{
 			return this->Connect(ip.c_str(), port);
 		}
-
+		
 		int Send(const char* buf, size_t len, int flags = 0);
 		
 		int Send(const std::string& strBuf, int flags = 0)
@@ -311,6 +311,12 @@ namespace ctm
 		{
 			return m_bindPort;
 		}
+
+		bool Renew();
+
+		bool ReConnect();
+		
+		bool ReConnect(const char* ip, const int& port);
 		
 	protected:
 		

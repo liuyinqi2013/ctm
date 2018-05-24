@@ -7,55 +7,73 @@
 #include "netmsg.h"
 #include "thread/thread.h"
 #include "thread/mutex.h"
+#include "common/com.h"
 
 namespace ctm
 {
-	class CliConn : public CMsg
+	class ClientConnect
 	{
 	public:
-		CliConn(){}
-		CliConn(const CSocket& sock, const std::string& ip, int port) :
+		ClientConnect(){}
+		ClientConnect(const CSocket& sock, const std::string& ip, int port) :
 			m_ConnSock(sock),
 			m_strConnIp(ip),
-			m_iConnPort(port)
+			m_iConnPort(port),
+			m_iStatus(0)
 		{
 		}
 			
-		~CliConn(){}
+		~ClientConnect(){}
+
+		std::string ToString() const
+		{
+			return I2S(m_ConnSock.GetSock()) + " " + m_strConnIp + ":" + I2S(m_iConnPort);
+		}
 		
 	public:
 		CSocket m_ConnSock;
 		std::string m_strConnIp;
 		int m_iConnPort;
-	};
-
-	class CTcpNetServer;
-
-	class CSendThread : public CThread
-	{
-	public:
-		CSendThread()
-		{
-		}
-		
-		virtual ~CSendThread()
-		{
-		}
-
-		void SetNetServer(CTcpNetServer* pServer)
-		{
-			m_tcpNetServer = pServer;
-		}
-		
-	protected:
-		virtual int Run();
-	private:
-		CTcpNetServer* m_tcpNetServer;
+		int m_iStatus;
 	};
 
 	class CTcpNetServer : public CThread
 	{
-		friend class CSendThread;
+		
+	protected:
+		class CNetSendThread : public CThread
+		{
+		public:
+			CNetSendThread(){}
+			virtual ~CNetSendThread(){}
+			void SetNetServer(CTcpNetServer* pServer)
+			{
+				m_tcpNetServer = pServer;
+			}
+			
+		protected:
+			virtual int Run();
+			
+		private:
+			CTcpNetServer* m_tcpNetServer;
+		};
+
+		class CNetRecvThread : public CThread
+		{
+		public:
+			CNetRecvThread(){}
+			virtual ~CNetRecvThread(){}
+			void SetNetServer(CTcpNetServer* pServer)
+			{
+				m_tcpNetServer = pServer;
+			}
+			
+		protected:
+			virtual int Run();
+			
+		private:
+			CTcpNetServer* m_tcpNetServer;
+		};
 		
 	public:
 		CTcpNetServer(const std::string& ip, int port);
@@ -64,17 +82,17 @@ namespace ctm
 
 		void ShutDown();
 
-		const std::string& GetServerIp() const
+		const std::string& ServerIp() const
 		{
 			return m_strIp;
 		}
 
-		int GetServerPort() const
+		int ServerPort() const
 		{
 			return m_iPort;
 		}
 
-		size_t GetConnCount() 
+		size_t ClientCount() 
 		{
 			CLockOwner owner(m_mutexLock);
 			return m_mapConns.size();
@@ -102,53 +120,74 @@ namespace ctm
 			m_endFlag = endflag;
 			m_Context.SetSep(endflag);
 		}
-		
+
+		int SendThreadNum() const
+		{
+			return m_sendThreadNum;
+		}
+
+		void SetSendThreadNum(int n)
+		{
+			m_sendThreadNum = n;
+		}
+
+		int RecvThreadNum() const
+		{
+			return m_recvThreadNum;
+		}
+
+		void SetRecvThreadNum(int n)
+		{
+			m_recvThreadNum = n;
+		}
+			
 	protected:
 		
 		virtual int Run();
 
 	private:
 
-		CliConn* GetCliConn(SOCKET_T sock);
+		ClientConnect* GetClientConnect(SOCKET_T sock);
 		
-		bool AddCliConn(CliConn* conn);
+		bool AddClientConnect(ClientConnect* conn);
 
-		bool DelCliConn(SOCKET_T sock);
+		bool DelClientConnect(SOCKET_T sock);
 
-		bool DelCliConn(CliConn* conn);
+		bool DelClientConnect(ClientConnect* conn);
 
-		int ReadCliConn(CliConn* conn);
+		int ReadClientConnect(ClientConnect* conn);
 
-		int ReadOnePacket(CliConn* conn);
+		int ReadOnePacket(ClientConnect* conn);
 
-		int WriteCliConn(CliConn* conn);
+		int Readn(ClientConnect* conn, char* buf, int len);
 
-		int Readn(CliConn* conn, char* buf, int len);
-
-		void AddContext(SOCKET_T sock, CNetPack* pNetPack); //增加上下文
-
-		void DelContext(SOCKET_T sock);  //删除上下文
-
-		CNetPack* GetContext(SOCKET_T sock); //获取上下文
+		void ClientRecv();
 		
+		void ClientSend();
+	
 	private:
 	 	CSocket m_sockFd;
 	 	std::string m_strIp;
 		int m_iPort;
-		std::map<SOCKET_T, CliConn*> m_mapConns;
+		std::map<SOCKET_T, ClientConnect*> m_mapConns;
 		CMutex m_mutexLock;
 
 		int m_epollFd;
 
-		CSendThread m_sendThread;
+		int m_sendThreadNum;
+		int m_recvThreadNum;
+		CNetSendThread* m_pSendThread;
+		CNetRecvThread* m_pRecvThread;
 		std::string m_endFlag;
 
 		CTinyMemPool<CNetPack> m_netPackPool;
-		CTinyQueue<CNetPack> m_recvQueue;
-		CTinyQueue<CNetPack> m_sendQueue;
-		std::map<SOCKET_T, CNetPack*> m_mapContext; //上下文
-
+		CTinyQueue<CNetPack*>  m_recvQueue;
+		CTinyQueue<CNetPack*>  m_sendQueue;
+		CTinyQueue<ClientConnect*> m_readableConnQueue;
 		CNetContext m_Context;
+
+		friend class CNetSendThread;
+		friend class CNetRecvThread;
 	};
 
 }

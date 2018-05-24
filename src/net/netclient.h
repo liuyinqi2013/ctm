@@ -2,41 +2,64 @@
 #define CTM_NET_NETCLIENT_H__
 #include "socket.h"
 #include "netmsg.h"
+#include "thread/thread.h"
+
+#include <sys/select.h>
+#include <unistd.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
+
 #include <string>
 namespace ctm
 {
-	class CNetTcpClient
+	class CNetTcpClient : public CThread
 	{
 	public:
 		CNetTcpClient() 
 		{
 		}
 		
-		CNetTcpClient(std::string& ip, int port) : m_strServerIp(ip), m_iPort(port)
+		CNetTcpClient(const std::string& ip, int port) : m_strServerIp(ip), m_iPort(port)
 		{
 		}
 		
-		~CNetTcpClient()
+		virtual ~CNetTcpClient()
 		{
-		}
-		
-		bool Connect();
-		
-		bool Connect(std::string& ip, int port)
-		{
-			m_strServerIp = ip;
-			m_iPort = port;
-			return Connect();
 		}
 
-		int Send(const char* buf, size_t len);
+		bool Init();
 
-		int Recv(char* buf, size_t len);
+		std::string GetNetPack()
+		{
+			return m_recvQueue.GetAndPop();
+		}
+
+		int SendNetPack(const std::string& buf)
+		{
+			return m_Socket.Send(m_Context.Pack(buf));
+		}
+
+		void SetEndFlag(const std::string& endflag)
+		{
+			m_Context.SetSep(endflag);
+		}
+
+	protected:
+		
+		virtual int Run();
 		
 	private:
 		int m_iPort;
 		std::string m_strServerIp;
 		CSocket m_Socket;
+		
+		CTinyQueue<std::string>  m_recvQueue;
+		CNetContext m_Context;
+
+		fd_set m_readFds;
 	};
 }
 

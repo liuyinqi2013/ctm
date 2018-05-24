@@ -15,7 +15,7 @@ inline int mutex_unlock(mutex_t& mutex)  { return ReleaseMutex(mutex) ? 0 : -1; 
 #include <pthread.h>
 #define mutex_t pthread_mutex_t
 inline int mutex_init(mutex_t& mutex)    { return pthread_mutex_init(&mutex, NULL); }
-inline int mutex_destroy(mutex_t& mutex) { return pthread_mutex_init(&mutex, NULL); }
+inline int mutex_destroy(mutex_t& mutex) { return pthread_mutex_destroy(&mutex, NULL); }
 inline int mutex_lock(mutex_t& mutex)    { return pthread_mutex_lock(&mutex); }
 inline int mutex_trylock(mutex_t& mutex) { return pthread_mutex_trylock(&mutex); }
 inline int mutex_unlock(mutex_t& mutex)  { return pthread_mutex_unlock(&mutex); }
