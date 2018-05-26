@@ -71,7 +71,7 @@ namespace ctm
 
 		virtual void FromString(const std::string& InBuf);
 
-		virtual Json::Value ToJson() const;
+		virtual const Json::Value& ToJson() const;
 
 		virtual void FromJson(const Json::Value& json);
 
@@ -117,6 +117,7 @@ namespace ctm
 		int m_iType;
 		std::string m_strName;
 		time_t m_unixTime;
+		Json::Value m_root;
 	};
 
 	typedef CMsg* (*CreateMsgFunc)();

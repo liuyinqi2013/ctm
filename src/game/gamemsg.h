@@ -13,11 +13,15 @@ namespace ctm
 		CLoginMsg();
 		virtual ~CLoginMsg();
 
-		virtual Json::Value ToJson() const;
+		virtual const Json::Value& ToJson() const;
 
 		virtual void FromJson(const Json::Value& json);
 		
 	public:
+		int m_sock;
+		std::string m_openId;
+		std::string m_userName;
+		std::string m_headerImageUrl;
 	};
 
 	class CLogOutMsg : public CMsg
@@ -26,7 +30,7 @@ namespace ctm
 		CLogOutMsg();
 		virtual ~CLogOutMsg();
 
-		virtual Json::Value ToJson() const;
+		virtual const Json::Value& ToJson() const;
 
 		virtual void FromJson(const Json::Value& json);
 	public:

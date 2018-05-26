@@ -82,6 +82,11 @@ namespace ctm
 		CMutex m_mutex;
 		std::map<SOCKET_T, std::string> m_mapContext; //иообнд
 	};
+
+	inline std::string Pack(const std::string& buf)
+	{
+		return buf + "[---@end@---]";
+	}
 }
 
 #endif

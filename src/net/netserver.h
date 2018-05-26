@@ -140,7 +140,12 @@ namespace ctm
 		{
 			m_recvThreadNum = n;
 		}
-			
+
+		void Recycle(CNetPack* p)
+		{
+			m_netPackPool.Recycle(p);
+		}
+		
 	protected:
 		
 		virtual int Run();

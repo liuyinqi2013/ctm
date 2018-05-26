@@ -67,15 +67,14 @@ namespace ctm
 		FromJson(root);
 	}
 
-	Json::Value CMsg::ToJson() const
+	const Json::Value& CMsg::ToJson() const
 	{
-		Json::Value root;
-		root["id"] = m_strId;
-		root["type"] = m_iType;
-		root["name"] = m_strName;
-		root["unixTime"] = m_unixTime;
+		m_root["id"] = m_strId;
+		m_root["type"] = m_iType;
+		m_root["name"] = m_strName;
+		m_root["unixTime"] = m_unixTime;
 
-		return root;
+		return m_root;
 	}
 
 	void CMsg::FromJson(const Json::Value& json) 

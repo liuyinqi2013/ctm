@@ -8,12 +8,15 @@ namespace ctm
 {
 
 	class CDask;
+	class CGameMsg;
 	
 	class CPlayer
 	{
 	public:
 		CPlayer();
 		virtual ~CPlayer();
+
+		void HandleGameMsg(CGameMsg* pGameMsg);
 		
 	public:
 		std::string m_openId;
