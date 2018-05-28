@@ -90,6 +90,8 @@ namespace ctm
 		~CPokerCards() {}
 		
 		void Sort();
+
+		void Sort1();
 		
 		void Shuffle();
 
@@ -114,12 +116,29 @@ namespace ctm
 		return (lhs.Compare(rhs) == 0);
 	}
 
-	inline int Compare(const CCard * lhs, const CCard * rhs)
+	inline bool CompareLt(const CCard & lhs, const CCard & rhs)
 	{
-		return lhs->Compare(*rhs);
+		return (lhs.Compare(rhs) < 0);
+	}
+		
+	inline bool CompareLt1(const CCard & lhs, const CCard & rhs)
+	{
+		return (lhs.Compare1(rhs) < 0);
+	}
+
+	inline bool ComparePtrLt(const CCard * lhs, const CCard * rhs)
+	{
+		return (lhs->Compare(*rhs) < 0);
+	}
+
+	inline bool ComparePtrLt1(const CCard * lhs, const CCard * rhs)
+	{
+		return (lhs->Compare1(*rhs) < 0);
 	}
 
 	void Sort(std::vector<CCard *> & vecCards);
+
+	void Sort1(std::vector<CCard *> & vecCards);
 	
 	void Shuffle(std::vector<CCard *> & vecCards);
 

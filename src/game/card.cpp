@@ -26,7 +26,12 @@ namespace ctm
 
 	void CPokerCards::Sort()
 	{
-		std::sort(m_cards, m_cards + 54);
+		std::sort(m_cards, m_cards + 54, CompareLt);
+	}
+
+	void CPokerCards::Sort1()
+	{
+		std::sort(m_cards, m_cards + 54, CompareLt1);
 	}
 
 	void CPokerCards::Shuffle()
@@ -56,7 +61,12 @@ namespace ctm
 	
 	void Sort(std::vector<CCard *> & vecCards)
 	{
-		std::sort(vecCards.begin(), vecCards.end(), Compare);
+		std::sort(vecCards.begin(), vecCards.end(), ComparePtrLt);
+	}
+
+	void Sort1(std::vector<CCard *> & vecCards)
+	{
+		std::sort(vecCards.begin(), vecCards.end(), ComparePtrLt1);
 	}
 	
 	void Shuffle(std::vector<CCard *> & vecCards)

@@ -119,6 +119,10 @@ int main(int argc, char **argv)
 	poker.Sort();
 	
 	DEBUG_LOG("%s", poker.ToString().c_str());
+
+	poker.Sort1();
+	
+	DEBUG_LOG("%s", poker.ToString().c_str());
 	
 	server.SetEndFlag("[---@end@---]");
 	

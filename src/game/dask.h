@@ -2,6 +2,8 @@
 #define CTM_GAME_PLAYER_H__
 
 #include <vector>
+#include "Card.h"
+
 #define  DASK_MAX_PLAYERS 4
 
 namespace ctm
