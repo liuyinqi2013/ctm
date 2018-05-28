@@ -31,6 +31,8 @@ namespace ctm
 		void Login(CLoginMsg * pMsg);
 
 		void Logout(CLogOutMsg * pMsg);
+
+		void HandleMsg(CMsg * pMsg);
 		
 	private:
 		CTcpNetServer* m_tcpNetServer;
