@@ -4,6 +4,8 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <list>
+
 
 #include "gamemsg.h"
 
@@ -26,22 +28,30 @@ namespace ctm
 
 		void Run();
 
+		void RecycleDask(CDask * dask);
+
 	private:
 		
-		void Login(CLoginMsg * pMsg);
+		void Login(CLoginMsgC2S * pMsg);
 
-		void Logout(CLogOutMsg * pMsg);
+		void Logout(CLogOutMsgC2S * pMsg);
 
-		void HandleMsg(CMsg * pMsg);
+		void JoinGame(CJoinGameC2S * pMsg);
+
+		void HandleMsg(CGameMsg * pMsg);
+
+		void HandlePlayerMsg(CGameMsg * pMsg);
 		
 	private:
 		CTcpNetServer* m_tcpNetServer;
 		int m_totalDaskNum;
 		CDask*  m_daskArray;
-		std::map<std::string, CPlayer*> m_mapPlayers;
-		std::vector<CDask*> m_vecFreeDask;
+		std::map<std::string, CPlayer*> m_mapOpenidPlayers;
+		std::map<int, CPlayer*> m_mapSockPlayers;
+		std::list<CDask*> m_vecFreeDask;
 		std::string m_ip;
 		int m_port;
+		CDask* m_waitDask;
 	};
 }
 

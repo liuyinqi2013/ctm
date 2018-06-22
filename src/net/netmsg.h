@@ -83,9 +83,9 @@ namespace ctm
 		std::map<SOCKET_T, std::string> m_mapContext; //иообнд
 	};
 
-	inline std::string Pack(const std::string& buf)
+	inline std::string PackNetData(const std::string& buf, const std::string& sep = "[---@end@---]")
 	{
-		return buf + "[---@end@---]";
+		return buf + sep;
 	}
 }
 

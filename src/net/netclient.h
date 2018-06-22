@@ -47,6 +47,23 @@ namespace ctm
 			m_Context.SetSep(endflag);
 		}
 
+		void SetServerIp(const std::string& ip)
+		{
+			m_strServerIp = ip;
+		}
+
+		void SetServerPort(int port)
+		{
+			m_iPort = port;
+		}
+
+		void SetConnSendMsg(const std::string& msg)
+		{
+			m_connSendMsg = msg;
+		}
+
+		void ShutDown();
+
 	protected:
 		
 		virtual int Run();
@@ -60,6 +77,8 @@ namespace ctm
 		CNetContext m_Context;
 
 		fd_set m_readFds;
+
+		std::string m_connSendMsg;
 	};
 }
 

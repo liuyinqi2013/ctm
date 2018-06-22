@@ -5,6 +5,10 @@
 #include <vector>
 #include <algorithm>
 
+#include "json/json.h"
+#include "json/json-forwards.h"
+
+
 namespace ctm
 {
 	class CCard
@@ -75,6 +79,21 @@ namespace ctm
 		std::string ToString() const
 		{
 			return I2S(m_type) + "-" + I2S(m_number); 
+		}
+
+		Json::Value ToJson()
+		{
+			Json::Value value;
+			value["type"]   = m_type;
+			value["number"] = m_number;
+
+			return value;
+		}
+
+		void FromJson(const Json::Value& json)
+		{
+			m_type   = json["type"].asInt();
+			m_number = json["number"].asInt();
 		}
 		
 	public:

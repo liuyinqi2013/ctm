@@ -36,7 +36,7 @@ namespace ctm
 	{
 		int iRet = 0;
 		int len  = 0;
-		char buf[1024] = {0};
+		char buf[4096 + 1] = {0};
 		std::vector<std::string> vecOutput;
 		while(1)
 		{
@@ -44,7 +44,7 @@ namespace ctm
 			iRet = select(m_Socket.GetSock() + 1, &fds, NULL, NULL, NULL);
 			if (iRet > 0)
 			{
-				len = m_Socket.Recv(buf, sizeof(buf));
+				len = m_Socket.Recv(buf, sizeof(buf) - 1);
 				if (len > 0)
 				{
 					buf[len] = '\0';
@@ -59,11 +59,12 @@ namespace ctm
 					while(!m_Socket.ReConnect())
 					{
 						ERROR_LOG("ReConnect %s:%d failed!", m_strServerIp.c_str(), m_iPort);
-						sleep(1);
+						sleep(2);
 					}
 					
 					FD_ZERO(&m_readFds);
-					FD_SET(m_Socket.GetSock(), &m_readFds);	
+					FD_SET(m_Socket.GetSock(), &m_readFds);
+					SendNetPack(m_connSendMsg);
 				}
 			}
 			else if (iRet == 0)
@@ -75,5 +76,13 @@ namespace ctm
 		}
 		
 		return 0;
+	}
+
+	void CNetTcpClient::ShutDown()
+	{
+		//¹Ø±Õ¼à¿ØÏß³Ì
+		Stop();
+
+		m_Socket.Close();
 	}
 }

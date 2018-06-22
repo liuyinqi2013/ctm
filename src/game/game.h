@@ -3,7 +3,7 @@
 
 #include <string>
 #include <vector>
-#include "Card.h"
+#include "card.h"
 
 
 namespace ctm
@@ -17,20 +17,12 @@ namespace ctm
 		CGame();
 		virtual ~CGame();
 
-		void Start();
-
-		void Over();
-
-		bool Join(CPlayer* player);
-
-		bool Quit(CPlayer* player);
+		virtual void ToDeal(std::vector<CCard*> handCardsArray[], std::vector<CCard*> & daskCard);
 		
-	protected:
+	public:
 		std::string m_gameName;
-		int m_status;
 		int m_playerNum;
 		CPokerCards m_pokerCards;
-		CDask* m_dask;
 	};
 }
 

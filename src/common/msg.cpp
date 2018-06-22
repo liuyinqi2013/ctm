@@ -50,7 +50,7 @@ namespace ctm
 		
 	}
 
-	std::string CMsg::ToString() const
+	std::string CMsg::ToString()
 	{
 		return ToJson().toStyledString();
 	}
@@ -67,7 +67,7 @@ namespace ctm
 		FromJson(root);
 	}
 
-	const Json::Value& CMsg::ToJson() const
+	const Json::Value& CMsg::ToJson()
 	{
 		m_root["id"] = m_strId;
 		m_root["type"] = m_iType;
@@ -110,7 +110,7 @@ namespace ctm
 		
  	bool CMsgQueue::Put(CMsg* pMsg)
  	{
- 		if (!pMsg) false;
+ 		if (!pMsg) return false;
 		
  		CLockOwner owner(m_mutexLock);
 		

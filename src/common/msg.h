@@ -15,8 +15,19 @@ namespace ctm
 	typedef enum msg_type
 	{
 	MSG_BASE = 0,
-	MSG_GAME_LOGIN  = 1,
-	MSG_GAME_LOGOUT = 2,
+	MSG_GAME = 1,
+	MSG_GAME_LOGIN_C2S = 2,
+	MSG_GAME_LOGIN_S2C = 3,
+	MSG_GAME_LOGOUT_C2S = 4,
+	MSG_GAME_LOGOUT_S2C = 5,
+	MSG_GAME_JOIN_GAME_C2S = 6,
+	MSG_GAME_JOIN_GAME_S2C = 7,
+	MSG_GAME_GAME_BEGIN_S2C = 8,
+	
+	MSG_GAME_TO_DEAL_S2C = 10,
+
+	MSG_GAME_PLAYER_INFO = 100,
+	MSG_GAME_PLAYER_ARRAY = 101,
 	} MSG_TYPE;
 	
 	class CMsg
@@ -67,11 +78,11 @@ namespace ctm
 
 		virtual bool DeSerialization(const std::string& InBuf);
 
-		virtual std::string ToString() const;
+		virtual std::string ToString();
 
 		virtual void FromString(const std::string& InBuf);
 
-		virtual const Json::Value& ToJson() const;
+		virtual const Json::Value& ToJson();
 
 		virtual void FromJson(const Json::Value& json);
 

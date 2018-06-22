@@ -49,6 +49,10 @@ namespace ctm
 
 #define DEBUG_LOG(format,...) CLog::GetInstance()->Write(CLog::LOG_DEBUG, "[%s:%d][%s]:"format, __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
 #define ERROR_LOG(format,...) CLog::GetInstance()->Write(CLog::LOG_ERROR, "[%s:%d][%s]:"format, __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
+
+#define FUNC_BEG() DEBUG_LOG("Begin...")
+#define FUNC_END() DEBUG_LOG("End...")
+
 		
 };
 

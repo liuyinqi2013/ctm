@@ -1,8 +1,6 @@
----- Thread Search Errors Encountered (2) ----
-The following 2 files could not be processed:
-D:\GitRoot\ctm\src\Thread.cpp : File could not be opened.
-D:\GitRoot\ctm\src\Thread.h : File could not be opened.
----- vector<CMsg*> Search Errors Encountered (2) ----
-The following 2 files could not be processed:
-D:\GitRoot\ctm\src\Thread.cpp : File could not be opened.
-D:\GitRoot\ctm\src\Thread.h : File could not be opened.
+---- Pack Matches (5 in 4 files) ----
+Center.cpp (d:\gitroot\ctm\src\game):				socket.Send(Pack("Message format error!"));
+Netclient.h (d:\gitroot\ctm\src\net):			return m_Socket.Send(m_Context.Pack(buf));
+Netmsg.h (d:\gitroot\ctm\src\net):		std::string Pack(const std::string& buf)
+Netmsg.h (d:\gitroot\ctm\src\net):	inline std::string Pack(const std::string& buf)
+Netserver.cpp (d:\gitroot\ctm\src\net):			std::string buf = m_Context.Pack(std::string(pNetPack->obuf, pNetPack->olen));

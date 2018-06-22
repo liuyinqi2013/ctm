@@ -1,7 +1,10 @@
 #include "center.h"
+#include "common/log.h"
+#include "net/netserver.h"
 #include "dask.h"
 #include "player.h"
-#include "common/log.h"
+#include "game.h"
+
 
 namespace ctm
 {
@@ -10,8 +13,8 @@ namespace ctm
 		m_totalDaskNum(2),
 		m_daskArray(NULL),
 		m_ip(ip),
-		m_port(port)
-		
+		m_port(port),
+		m_waitDask(NULL)	
 	{
 	}
 
@@ -21,6 +24,8 @@ namespace ctm
 
 	bool CGameCenter::Init()
 	{
+		FUNC_BEG();
+		
 		m_tcpNetServer =  new CTcpNetServer(m_ip, m_port);
 		if (!m_tcpNetServer)
 		{
@@ -28,7 +33,7 @@ namespace ctm
 			return false;
 		}
 
-		if (m_tcpNetServer.Init())
+		if (!m_tcpNetServer->Init())
 		{
 			DEBUG_LOG("Net server init failed!");
 			return false;
@@ -44,19 +49,30 @@ namespace ctm
 		for (int i = 0; i < m_totalDaskNum; ++i)
 		{
 			m_daskArray[i].m_daskId = i + 1;
+			m_daskArray[i].m_gameCenter = this;
 			m_vecFreeDask.push_back(m_daskArray + i);
 		}
 
+		m_waitDask = m_vecFreeDask.front();
+
+		m_vecFreeDask.pop_front();
+
+		m_tcpNetServer->SetEndFlag("[---@end@---]");
+		
 		m_tcpNetServer->StartUp();
+
+		FUNC_END();
 		
 		return true;
 	}
 
 	bool CGameCenter::Destroy()
 	{
+		FUNC_BEG();
+		
 		if (m_tcpNetServer)
 		{
-			m_tcpNetServer->ShotDown();
+			m_tcpNetServer->ShutDown();
 			delete m_tcpNetServer;
 			m_tcpNetServer = NULL;
 			DEBUG_LOG("Destroy Net Server!");
@@ -69,74 +85,150 @@ namespace ctm
 
 			m_vecFreeDask.clear();
 		}
+
+		FUNC_END();
+
+		return true;
 		
 	}
 
 	void CGameCenter::Run()
 	{
-		CNetPack *p = m_tcpNetServer->GetNetPack();
-		if (p)
+		while (1)
 		{
-			Json::Value root;
-			Json::Reader reader;
-			if (reader.parse(p->ibuf, root))
+			CNetPack *p = m_tcpNetServer->GetNetPack();
+			DEBUG_LOG("%s:%d recv : %s", p->ip, p->port, p->ibuf);
+			if (p)
 			{
-				CMsg* pMsg = CreateMsg(root["type"].asInt());
-				pMsg->FromJson(root);
-				HandleMsg(pMsg);
+				Json::Value root;
+				Json::Reader reader;
+				if (reader.parse(p->ibuf, root))
+				{
+					CMsg* pMsg = CreateMsg(root["type"].asInt());
+					CGameMsg* pGameMsg = (CGameMsg*)pMsg;
+					pGameMsg->m_sock  = p->sock;
+					pGameMsg->FromJson(root);
+					pGameMsg->TestPrint();
+					HandleMsg(pGameMsg);
+					DestroyMsg(pMsg);
+				}
+				else
+				{
+					CSocket socket(p->sock, CSocket::SOCK_TYPE_STREAM);
+					socket.Send(PackNetData("Message format error!"));
+				}	
 			}
-			else
-			{
-				CSocket socket(p->sock, SOCK_TYPE_STREAM);
-				socket.Send(Pack("Message format error!"));
-			}	
-		}
 
-		m_tcpNetServer->Recycle(p);
-	}
-
-
-	void CGameCenter::HandleMsg(CMsg * pMsg)
-	{
-		switch(pMsg->m_iType)
-		{
-		case MSG_GAME_LOGIN:
-			Login((CLoginMsg*)pMsg);
-			break;
-		case MSG_GAME_LOGOUT:
-			Logout((CLogOutMsg*)pMsg);
-			break;
-		default :
+			m_tcpNetServer->Recycle(p);
 			
 		}
 	}
 
-	void CGameCenter::Login(CLoginMsg * pMsg)
+
+	void CGameCenter::RecycleDask(CDask * dask)
 	{
-		std::map<std::string, CPlayer*>::iterator it = m_mapPlayers.find(pMsg->m_openId);
+		if (m_daskArray <= dask && dask < m_daskArray + m_totalDaskNum)
+		{
+			m_vecFreeDask.push_back(dask);
+		}
+	}
+
+
+	void CGameCenter::HandleMsg(CGameMsg * pMsg)
+	{
+		FUNC_BEG();
+		
+		switch(pMsg->m_iType)
+		{
+		case MSG_GAME_LOGIN_C2S:
+			Login((CLoginMsgC2S*)pMsg);
+			break;
+		case MSG_GAME_LOGOUT_C2S:
+			Logout((CLogOutMsgC2S*)pMsg);
+			break;
+		case MSG_GAME_JOIN_GAME_C2S:
+			JoinGame((CJoinGameC2S*)pMsg);
+			break;
+		default :
+			break;
+		}
+
+		FUNC_END();
+	}
+
+	void CGameCenter::Login(CLoginMsgC2S * pMsg)
+	{
+		FUNC_BEG();
+
+		std::map<std::string, CPlayer*>::iterator it = m_mapOpenidPlayers.find(pMsg->m_openId);
 		CPlayer* pPlayer = NULL;
-		if (it != m_mapPlayers.end()) //可能掉线，重新登录。
+		if (it != m_mapOpenidPlayers.end()) //可能掉线，重新登录。
 		{
 			pPlayer = it->second;
-			pPlayer.m_sock.Close();
 		}
 		else
 		{
 			pPlayer = new CPlayer;
 		}
 
-		pPlayer->m_sock = CSocket(pMsg->sock, SOCK_TYPE_STREAM);
+		pPlayer->m_sock = CSocket(pMsg->m_sock, CSocket::SOCK_TYPE_STREAM);
 		pPlayer->m_openId = pMsg->m_openId;
 		pPlayer->m_playerName = pMsg->m_userName;
 		pPlayer->m_headerImageUrl = pMsg->m_headerImageUrl;
 
-		m_mapPlayers[pPlayer->m_openId] = pPlayer;
-		
+		pPlayer->Print();
+		m_mapOpenidPlayers[pPlayer->m_openId] = pPlayer;
 
+		CLoginMsgS2C msg;
+		msg.m_gameInfo ="dou di zhu";
+		msg.m_onlineCount = m_mapOpenidPlayers.size();
+		pPlayer->SendMSG(&msg);
+		
+		DEBUG_LOG("player count : %d", m_mapOpenidPlayers.size());
+
+		FUNC_END();
 	}
 
-	void CGameCenter::Logout(CLogOutMsg * pMsg)
+	void CGameCenter::Logout(CLogOutMsgC2S * pMsg)
 	{	
+		FUNC_BEG();
+
+		FUNC_END();
+	}
+
+	void CGameCenter::JoinGame(CJoinGameC2S * pMsg)
+	{
+		FUNC_BEG();
+
+		if (m_waitDask->IsFull())
+		{
+			if (m_vecFreeDask.size() > 0)
+			{
+				m_waitDask = m_vecFreeDask.front();
+				m_vecFreeDask.pop_front();
+			}
+			else
+			{
+				return;
+			}
+		}
+
+		m_waitDask->Join(m_mapOpenidPlayers[pMsg->m_openId]);
+
+		FUNC_END();
+	}
+
+
+	void CGameCenter::HandlePlayerMsg(CGameMsg * pMsg)
+	{
+		FUNC_BEG();
 		
+		std::map<std::string, CPlayer*>::iterator it = m_mapOpenidPlayers.find(pMsg->m_openId);
+		if (it != m_mapOpenidPlayers.end())
+		{
+			it->second->HandleGameMsg(pMsg);
+		}
+		
+		FUNC_END();
 	}
 }

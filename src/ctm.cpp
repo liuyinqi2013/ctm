@@ -20,6 +20,7 @@
 #include "net/socket.h"
 
 #include "game/card.h"
+#include "game/center.h"
 
 
 #include "netserver.h"
@@ -108,22 +109,16 @@ int main(int argc, char **argv)
 	CLog::GetInstance()->SetLogPath("/opt/test/ctm/log");
 	//CLog::GetInstance()->SetOnlyBack(true);
 
-	CPokerCards poker;
 
-	DEBUG_LOG("%s", poker.ToString().c_str());
+	CGameCenter center;
 
-	poker.Shuffle();
-
-	DEBUG_LOG("%s", poker.ToString().c_str());
-
-	poker.Sort();
+	if (center.Init())
+	{
+		return -1;
+	}
 	
-	DEBUG_LOG("%s", poker.ToString().c_str());
-
-	poker.Sort1();
-	
-	DEBUG_LOG("%s", poker.ToString().c_str());
-	
+	center.Run();
+	/*
 	server.SetEndFlag("[---@end@---]");
 	
 	if (!server.Init())
@@ -179,27 +174,10 @@ int main(int argc, char **argv)
 			pPackRecv->obuf[pPackRecv->olen] = '\0';
 			//pPackRecv->TestPrint();
 			server.SendNetPack(pPackRecv);
-		}
-		
-		/*
-		CNetMsg* p = server.GetMsg();
-		DEBUG_LOG("recv a msg");
-		if (p) 
-		{
-			p->TestPrint();
-			int len = p->m_sock.Send(send, strlen(send));
-			if (len == -1) 
-			{
-				DEBUG_LOG("errcode = %d, errmsg = %s!", p->m_sock.GetErrCode(), p->m_sock.GetErrMsg().c_str());
-			}
-			DEBUG_LOG("ip = %s, port = %d, len = %d, send = %s", p->m_strIp.c_str(), p->m_iPort, len, send);
-			delete p;
-			p = NULL;
-		}
-		usleep(5);
-		*/
-		
+		}	
 	}
+	
 	server.Join();
+	*/
 	return 0;
 }
