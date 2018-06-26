@@ -37,7 +37,10 @@ COM_OBJ=../src/common/string_tools.o ../src/common/time_tools.o \
 	../src/net/netclient.o \
 	../src/thread/thread.o \
 	../src/net/netmsg.o \
-	../src/game/gamemsg.o
+	../src/game/gamemsg.o \
+	../src/common/inifile.o \
+	../src/game/card.o 
+
 	
 CPP_OBJ=$(patsubst %.cpp, %.o, $(CPP_SRC)) $(COM_OBJ)
 	

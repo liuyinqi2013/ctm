@@ -25,7 +25,42 @@ namespace ctm
 
 		daskCard.push_back(m_pokerCards.m_cards + 51);
 		daskCard.push_back(m_pokerCards.m_cards + 52);
-		daskCard.push_back(m_pokerCards.m_cards + 53);
-		
+		daskCard.push_back(m_pokerCards.m_cards + 53);	
 	}
+
+	void CGame::DeleteOutCards(std::vector<CCard*> & handCards, const std::vector<CCard> & outCards)
+	{
+		for (int i = 0 ; i < outCards.size(); ++i)
+		{
+			std::vector<CCard*>::iterator it = handCards.begin();
+			for (; it != handCards.end(); ++it)
+			{
+				if (**it == outCards[i])
+				{
+					handCards.erase(it);
+					break;
+				}
+			}
+		}
+	}
+
+	bool HaveCards(std::vector<CCard*> & handCards, const std::vector<CCard> & outCards)
+	{
+		for (int i = 0 ; i < outCards.size(); ++i)
+		{
+			std::vector<CCard*>::iterator it = handCards.begin();
+			for (; it != handCards.end(); ++it)
+			{
+				if (**it == outCards[i])
+				{
+					break;
+				}
+			}
+
+			if (it == handCards.end()) return false;
+		}
+
+		return true;
+	}
+	
 }

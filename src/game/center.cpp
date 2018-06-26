@@ -109,6 +109,14 @@ namespace ctm
 					pGameMsg->m_sock  = p->sock;
 					pGameMsg->FromJson(root);
 					pGameMsg->TestPrint();
+					if (pGameMsg->m_openId == "")
+					{
+						CSocket socket(p->sock, CSocket::SOCK_TYPE_STREAM);
+						pGameMsg->m_errCode = 1;
+						pGameMsg->m_errMsg  = "openid is null";
+						socket.Send(PackNetData(pGameMsg->ToString()));
+						continue;
+					}
 					HandleMsg(pGameMsg);
 					DestroyMsg(pMsg);
 				}
@@ -150,6 +158,7 @@ namespace ctm
 			JoinGame((CJoinGameC2S*)pMsg);
 			break;
 		default :
+			HandlePlayerMsg(pMsg);
 			break;
 		}
 

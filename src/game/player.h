@@ -3,16 +3,22 @@
 
 #include <string>
 #include "net/socket.h"
-#include "gamemsg.h"
 
+#include "json/json.h"
+#include "json/json-forwards.h"
 
 namespace ctm
 {
 
 	class CDask;
+	class CGameMsg;
+	class CPlayerItem;
 	
 	class CPlayer
 	{
+	
+	friend bool operator == (const CPlayer & lhs, const CPlayer & rhs);
+	
 	public:
 		CPlayer();
 		CPlayer(const CPlayer & other);
@@ -22,12 +28,19 @@ namespace ctm
 
 		void Print();
 
-		void CopyTo(CPlayerMsg & msg);
+		void Copy(const CPlayer & other);
+		
+		void CopyTo(CPlayerItem & msg) const;
 
-		void FormMsg(const CPlayerMsg & msg);
+		void FormMsg(const CPlayerItem & msg);
+
+		Json::Value ToJson();
+
+		void FromJson(const Json::Value& json);
 
 		void SendMSG(CGameMsg* pGameMsg);
 		
+		CPlayerItem ToPlayerItem() const;
 	public:
 		std::string m_openId;
 		std::string m_playerName;
@@ -39,6 +52,11 @@ namespace ctm
 		int     m_status;
 		int     m_daskId;
 	};
+
+	inline bool operator == (const CPlayer & lhs, const CPlayer & rhs)
+	{
+		return lhs.m_openId == rhs.m_openId;
+	}
 }
 
 

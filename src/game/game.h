@@ -17,7 +17,11 @@ namespace ctm
 		CGame();
 		virtual ~CGame();
 
-		virtual void ToDeal(std::vector<CCard*> handCardsArray[], std::vector<CCard*> & daskCard);
+		void ToDeal(std::vector<CCard*> handCardsArray[], std::vector<CCard*> & daskCard);
+
+		void DeleteOutCards(std::vector<CCard*> & handCards, const std::vector<CCard> & outCards);
+
+		bool HaveCards(std::vector<CCard*> & handCards, const std::vector<CCard> & outCards);
 		
 	public:
 		std::string m_gameName;

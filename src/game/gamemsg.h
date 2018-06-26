@@ -13,9 +13,9 @@ namespace ctm
 	{
 	public:
 		
-		CGameMsg() : CMsg("0", MSG_GAME, "GameMsg"), m_sock(-1), m_code(0) { }
-		CGameMsg(int type) : CMsg("0", type, "GameMsg"), m_sock(-1), m_code(0) { }
-		CGameMsg(int type, const std::string& name) : CMsg("0", type, name), m_sock(-1), m_code(0) { }
+		CGameMsg() : CMsg("0", MSG_GAME, "GameMsg"), m_sock(-1), m_errCode(0) { }
+		CGameMsg(int type) : CMsg("0", type, "GameMsg"), m_sock(-1), m_errCode(0) { }
+		CGameMsg(int type, const std::string& name) : CMsg("0", type, name), m_sock(-1), m_errCode(0) { }
 		virtual ~CGameMsg() { }
 
 		virtual const Json::Value& ToJson();
@@ -25,21 +25,23 @@ namespace ctm
 		virtual void TestPrint();
 	public:
 		int m_sock;
-		int m_code;
+		int m_errCode;
+		std::string m_errMsg;
 		std::string m_openId;
 	};
 
-	class CPlayerMsg : public CGameMsg
+	class CPlayerItem 
 	{
 	public:
-		CPlayerMsg() : CGameMsg(MSG_GAME_PLAYER_INFO, "PlayerMsg"), m_sex(0), m_daskPos(0), m_status(0) { }
-		virtual ~CPlayerMsg() { }
+		CPlayerItem() { }
+		virtual ~CPlayerItem() { }
 
-		virtual const Json::Value& ToJson();
+		virtual const Json::Value ToJson();
 
 		virtual void FromJson(const Json::Value& json);
 
 	public:
+		std::string m_openId;
 		std::string m_userName;
 		std::string m_headerImageUrl;
 		int m_sex;
@@ -58,10 +60,10 @@ namespace ctm
 
 		virtual void FromJson(const Json::Value& json);
 
-		void Push(const CPlayerMsg & player) { m_playerArray.push_back(player); }
+		void Push(const CPlayerItem & player) { m_playerArray.push_back(player); }
 		
 	public:
-		std::vector<CPlayerMsg> m_playerArray;
+		std::vector<CPlayerItem> m_playerArray;
 	};
 	
 	class CLoginMsgC2S : public CGameMsg
@@ -146,7 +148,7 @@ namespace ctm
 		virtual void FromJson(const Json::Value& json);
 		
 	public:
-		CPlayerMsg m_player;
+		CPlayerItem m_player;
 	};
 
 	class CGameBeginS2C : public CGameMsg
@@ -162,6 +164,92 @@ namespace ctm
 	public:
 		int m_callPos;
 		std::vector<CCard> m_handVec;
+	};
+
+	class CCallDiZhuC2S : public CGameMsg
+	{
+	public:
+		CCallDiZhuC2S() : CGameMsg(MSG_GAME_CALL_DIZHU_C2S, "CallDiZhuC2S") { }
+		virtual ~CCallDiZhuC2S() { }
+
+		virtual const Json::Value& ToJson();
+
+		virtual void FromJson(const Json::Value& json);
+		
+	public:
+		int m_score;
+		int m_callPos;
+	};
+
+	class CCallDiZhuS2C : public CGameMsg
+	{
+	public:
+		CCallDiZhuS2C() : CGameMsg(MSG_GAME_CALL_DIZHU_S2C, "CallDiZhuC2S") { }
+		virtual ~CCallDiZhuS2C() { }
+
+		virtual const Json::Value& ToJson();
+
+		virtual void FromJson(const Json::Value& json);
+		
+	public:
+		int m_score;
+		int m_zhuangPos;
+		int m_callPos;
+		int m_nextCallPos;
+		std::string m_callOpenId;
+		std::vector<CCard> m_daskCardVec;
+	};
+
+	class COptS2C : public CGameMsg
+	{
+	public:
+		typedef enum opt_type
+		{
+			OPT_CALL_DIZHU = 1
+		};
+	public:
+		COptS2C() : CGameMsg(MSG_GAME_OPT_S2C, "OptS2C") { }
+		virtual ~COptS2C() { }
+
+		virtual const Json::Value& ToJson();
+
+		virtual void FromJson(const Json::Value& json);
+		
+	public:
+		int m_optType;
+		std::string m_optOpenId;
+	};
+		
+	class COutCardsC2S : public CGameMsg
+	{
+	public:
+		COutCardsC2S() : CGameMsg(MSG_GAME_OUT_CARD_C2S, "OutCardsC2S") { }
+		virtual ~COutCardsC2S() { }
+
+		virtual const Json::Value& ToJson();
+
+		virtual void FromJson(const Json::Value& json);
+		
+	public:
+		int m_outPos;
+		std::vector<CCard> m_outCardVec;
+	};
+
+	class COutCardsS2C : public CGameMsg
+	{
+	public:
+		COutCardsS2C() : CGameMsg(MSG_GAME_OUT_CARD_S2C, "OutCardsS2C") { }
+		virtual ~COutCardsS2C() { }
+
+		virtual const Json::Value& ToJson();
+
+		virtual void FromJson(const Json::Value& json);
+		
+	public:
+		int m_outPos;
+		std::string m_outOpenId;
+		int m_nextOutPos;
+		std::vector<CCard> m_outCardVec;
 	};
 }
 

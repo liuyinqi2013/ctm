@@ -34,6 +34,10 @@ namespace ctm
 		void Clear();
 
 		void BroadCast(CGameMsg * pMsg);
+
+		void HandleGameMSG(CGameMsg * pMsg);
+		void HandleCallDiZhuMSG(CCallDiZhuC2S * pMsg);
+		void HandleOutCardsMSG(COutCardsC2S * pMsg);
 		
 	public:
 		int m_daskId;
@@ -44,11 +48,15 @@ namespace ctm
 		std::vector<CCard*> m_handCardsArray[DASK_MAX_PLAYERS];
 		std::vector<CCard*> m_daskCardsArray[DASK_MAX_PLAYERS];
 		std::vector<CCard*> m_daskCards;
+		std::vector<CCard> m_lastOutCards;
 		int m_playerOutBombCount[DASK_MAX_PLAYERS];
 		int m_playerOutHandleCount[DASK_MAX_PLAYERS];
 		int m_zhuangPos;
 		int m_currOptPos;
 		int m_gameStatus;
+		int m_callCount;
+		int m_callMaxScore;
+		int m_callMaxScorePos;
 		CGameCenter* m_gameCenter;	
 	};
 }

@@ -1,8 +1,20 @@
 #include "gameclient.h"
 #include <fstream>
 #include <string.h>
+#include <iostream>
 
-CGameClient::CGameClient()
+
+CClientPlayer::CClientPlayer() :
+	m_openId("0000000"),
+	m_userName("Player"),
+	m_headerImageUrl("www.doudizhu.com"),
+	m_daskPos(-1),
+	m_status(1)
+{
+}
+
+CGameClient::CGameClient() :
+	m_zhuangPos(-1)
 {
 }
 
@@ -12,10 +24,10 @@ CGameClient::~CGameClient()
 
 bool CGameClient::Init()
 {
-	ReadIni();
+	FUNC_BEG();
 	
-	m_tcpClient.SetServerIp("127.0.0.1");
-	m_tcpClient.SetServerPort(6666);
+	m_tcpClient.SetServerIp(m_serverIp);
+	m_tcpClient.SetServerPort(m_port);
 	m_tcpClient.SetEndFlag("[---@end@---]");
 	if (!m_tcpClient.Init())
 	{
@@ -25,21 +37,19 @@ bool CGameClient::Init()
 	
 	m_tcpClient.Start();
 
-	/*m_openId = "44509740";
-	m_userName = "pandaliu";
-	m_headerImageUrl = "www.baidu.com";
-	*/
-
 	CLoginMsgC2S loginMsg;
 
-	loginMsg.m_openId = m_openId;
-	loginMsg.m_userName = m_userName;
-	loginMsg.m_headerImageUrl = m_headerImageUrl;
+	loginMsg.m_openId = m_clientPlayer.m_openId;
+	loginMsg.m_userName = m_clientPlayer.m_userName;
+	loginMsg.m_headerImageUrl = m_clientPlayer.m_headerImageUrl;
 
+	DEBUG_LOG("send msg : %s", loginMsg.ToString().c_str());
 	m_tcpClient.SendNetPack(loginMsg.ToString());
 	m_tcpClient.SetConnSendMsg(loginMsg.ToString());
 
 	DEBUG_LOG("initialization ok!");
+
+	FUNC_END();
 
 	return true;
 }
@@ -72,12 +82,22 @@ void CGameClient::HandleMsg(CGameMsg * pMsg)
 	switch(pMsg->m_iType)
 	{
 	case MSG_GAME_LOGIN_S2C:
-			HandleLoginMsgS2C((CLoginMsgS2C*)pMsg);
-			break;
+		HandleLoginMsgS2C((CLoginMsgS2C*)pMsg);
+		break;
 	case MSG_GAME_LOGOUT_S2C:
-			break;
+		break;
+	case MSG_GAME_PLAYER_ARRAY:
+		HandlePlayerArrayMsgS2C((CPlayerArrayMsg*)pMsg);
+		break;
 	case MSG_GAME_JOIN_GAME_S2C:
-			break;
+		HandleJoinGameS2C((CJoinGameS2C*)pMsg);
+		break;
+	case MSG_GAME_GAME_BEGIN_S2C:
+		HandleGameBeginS2C((CGameBeginS2C*)pMsg);
+		break;
+	case MSG_GAME_CALL_DIZHU_S2C:
+		HandleCallDiZhuS2C((CCallDiZhuS2C*)pMsg);
+		break;
 	default :
 		break;
 	}
@@ -91,54 +111,141 @@ void CGameClient::HandleLoginMsgS2C(CLoginMsgS2C * pMsg)
 
 	CJoinGameC2S msg;
 
-	msg.m_openId = m_openId;
-	m_tcpClient.SendNetPack(msg.ToString());
+	msg.m_openId = m_clientPlayer.m_openId;
+	SendMSG(&msg);
 
 	FUNC_END();
 }
 
-void CGameClient::ReadIni()
+
+void CGameClient::HandleJoinGameS2C(CJoinGameS2C * pMsg)
+{
+	FUNC_BEG();
+	
+	if (m_clientPlayer.m_openId == pMsg->m_player.m_openId)
+	{
+		m_clientPlayer = pMsg->m_player;
+	}
+	else
+	{
+		m_otherPlayers[pMsg->m_player.m_openId] = pMsg->m_player;
+		m_posOpenIdMap[pMsg->m_player.m_daskPos] = pMsg->m_player.m_openId;
+	}
+
+	FUNC_END();
+}
+
+void CGameClient::HandlePlayerArrayMsgS2C(CPlayerArrayMsg * pMsg)
+{
+	FUNC_BEG();
+	
+	for (int i = 0; i < pMsg->m_playerArray.size(); i++)
+	{
+		m_otherPlayers[pMsg->m_playerArray[i].m_openId]  = pMsg->m_playerArray[i];
+		m_posOpenIdMap[pMsg->m_playerArray[i].m_daskPos] = pMsg->m_playerArray[i].m_openId;
+	}
+
+	FUNC_END();
+}
+
+
+void CGameClient::HandleGameBeginS2C(CGameBeginS2C * pMsg)
 {
 	FUNC_BEG();
 
-	fstream fileIni("conf.ini",  std::fstream::in | std::fstream::out);
-
-	char buf[512] = {0};
-	string strBuf;
-	string key;
-	string value;
-	while(!fileIni.eof())
+	for (int i = 0; i < pMsg->m_handVec.size(); ++i)
 	{
-		fileIni.getline(buf, sizeof(buf) - 1);
-		if (buf[0] == '#') continue;
-		strBuf = buf;
-		
-		int pos = strBuf.find("=");
-		
-		if (pos == string::npos) continue;
-
-		key = strBuf.substr(0, pos);
-		value = strBuf.substr(pos + 1);
-
-		if (key == "openid") m_openId = value;
-		else if (key == "username") m_userName = value;
-		else if (key == "headurl")  m_headerImageUrl = value;
+		m_handCards.push_back(pMsg->m_handVec[i]);
 	}
 
-	int id = S2I(m_openId) + 1;
-	string centent = "openid=" + I2S(id) + "\n";
-		centent += "username=" + m_userName + "\n";
-		centent += "headurl=" + m_headerImageUrl + "\n";
-
-	DEBUG_LOG("openid : %s", m_openId.c_str());
-	DEBUG_LOG("username : %s", m_userName.c_str());
-	DEBUG_LOG("headurl : %s", m_headerImageUrl.c_str());
-
-	//DEBUG_LOG("centent : %s", centent.c_str());
-	ofstream out("conf.ini");
-	out<<centent;
+	DEBUG_LOG("my pos : %d", m_clientPlayer.m_daskPos);
+	DEBUG_LOG("call pos : %d", pMsg->m_callPos);
 	
-	FUNC_BEG();
+	if (pMsg->m_callPos == m_clientPlayer.m_daskPos)
+	{
+		CCallDiZhuC2S callDizhu;
+		callDizhu.m_score = -1;
+		callDizhu.m_callPos = m_clientPlayer.m_daskPos;
+		while (callDizhu.m_score < 0 || callDizhu.m_score > 3)
+		{
+			cout<<"call di zhu [0-3] : "<<endl;
+			cin>>callDizhu.m_score;
+		}
+		
+		SendMSG(&callDizhu);
+	}
+	
+	FUNC_END();
 }
+
+void CGameClient::HandleCallDiZhuS2C(CCallDiZhuS2C * pMsg)
+{
+	FUNC_BEG();
+
+	if (pMsg->m_zhuangPos == -1)
+	{
+		if (pMsg->m_nextCallPos == m_clientPlayer.m_daskPos)
+		{
+			CCallDiZhuC2S callDizhu;
+			callDizhu.m_score = -1;
+			callDizhu.m_callPos = m_clientPlayer.m_daskPos;
+			while ((callDizhu.m_score < pMsg->m_score || callDizhu.m_score > 3) && callDizhu.m_score != 0)
+			{
+				cout<<"call di zhu [0,"<<pMsg->m_score<<"-3] : "<<endl;
+				cin>>callDizhu.m_score;
+			}
+			
+			SendMSG(&callDizhu);
+		}
+		else
+		{
+			if (pMsg->m_callPos != m_clientPlayer.m_daskPos)
+			{
+				DEBUG_LOG("%s call di zhu %d score", m_otherPlayers[pMsg->m_callOpenId].m_userName.c_str(), pMsg->m_score);
+			}
+		}
+	}
+	else 
+	{
+		if (pMsg->m_zhuangPos == m_clientPlayer.m_daskPos)
+		{
+			DEBUG_LOG("I am king @-@");
+			for (int i = 0; i < pMsg->m_daskCardVec.size(); ++i)
+			{
+				m_handCards.push_back(pMsg->m_daskCardVec[i]);
+				Sort1(m_handCards);
+			}
+		}
+		else
+		{
+			DEBUG_LOG("%s is king *-*", m_otherPlayers[m_posOpenIdMap[pMsg->m_zhuangPos]].m_userName.c_str());
+			DEBUG_LOG("I am a farmer .-.");
+		}
+		
+		ShowHandCards();
+	}
+
+	FUNC_END();
+
+}
+
+
+void CGameClient::SendMSG(CGameMsg * pMsg)
+{
+	pMsg->m_openId = m_clientPlayer.m_openId;
+	m_tcpClient.SendNetPack(pMsg->ToString());
+}
+
+void CGameClient::ShowHandCards()
+{
+	cout<<"Total card num : "<<m_handCards.size()<<endl;
+	for (int i = 0; i < m_handCards.size(); ++i)
+	{
+		cout<<m_handCards[i].ToString()<<endl;
+	}
+}
+
+
+
 
 

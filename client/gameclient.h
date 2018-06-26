@@ -15,20 +15,33 @@
 #include "ipc/sharememory.h"
 
 #include "game/gamemsg.h"
-#include "game/player.h"
-
-
 
 #include <string.h>
 #include <signal.h>
 
-
 #include <iostream>
 #include <ctype.h>
 #include <iostream>
+#include <map>
 
 using namespace ctm;
 using namespace std;
+
+class CClientPlayer
+{
+public:
+	CClientPlayer();
+	~CClientPlayer()
+	{
+	}
+
+public:
+	string m_openId;
+	string m_userName;
+	string m_headerImageUrl;
+	int    m_daskPos;
+	int    m_status;
+};
 
 class CGameClient
 {
@@ -37,6 +50,13 @@ public:
 	~CGameClient();
 
 	bool Init();
+	
+	bool Init(const string & serverIp, int port)
+	{
+		m_serverIp = serverIp;
+		m_port	   = port;
+		return Init();
+	}
 
 	void Run();
 
@@ -46,17 +66,30 @@ private:
 
 	void HandleLoginMsgS2C(CLoginMsgS2C * pMsg);
 
-	void ReadIni();
+	void HandleJoinGameS2C(CJoinGameS2C * pMsg);
+
+	void HandlePlayerArrayMsgS2C(CPlayerArrayMsg * pMsg);
+
+	void HandleGameBeginS2C(CGameBeginS2C * pMsg);
+
+	void HandleCallDiZhuS2C(CCallDiZhuS2C * pMsg);
+
+	void SendMSG(CGameMsg * pMsg);
+
+	void ShowHandCards();
 	
 private:
 
 	CNetTcpClient m_tcpClient;
 
-	string m_openId;
-	string m_userName;
-	string m_headerImageUrl;
+	string m_serverIp;
+	int    m_port;
 
-	CPlayer m_player;
-	
+public:
+	int m_zhuangPos;
+	CPlayerItem m_clientPlayer;
+	map<string, CPlayerItem> m_otherPlayers;
+	map<int, string> m_posOpenIdMap;
+	std::vector<CCard> m_handCards;
 };
 

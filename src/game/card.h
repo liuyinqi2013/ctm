@@ -78,7 +78,7 @@ namespace ctm
 
 		std::string ToString() const
 		{
-			return I2S(m_type) + "-" + I2S(m_number); 
+			return "[" + I2S(m_type) + "-" + I2S(m_number) + "]"; 
 		}
 
 		Json::Value ToJson()
@@ -135,6 +135,16 @@ namespace ctm
 		return (lhs.Compare(rhs) == 0);
 	}
 
+	inline int Compare(const CCard & lhs, const CCard & rhs)
+	{
+		return lhs.Compare(rhs);
+	}
+
+	inline int Compare1(const CCard & lhs, const CCard & rhs)
+	{
+		return lhs.Compare1(rhs);
+	}
+		
 	inline bool CompareLt(const CCard & lhs, const CCard & rhs)
 	{
 		return (lhs.Compare(rhs) < 0);
@@ -158,8 +168,36 @@ namespace ctm
 	void Sort(std::vector<CCard *> & vecCards);
 
 	void Sort1(std::vector<CCard *> & vecCards);
+
+	void Sort(std::vector<CCard> & vecCards);
+
+	void Sort1(std::vector<CCard> & vecCards);
 	
 	void Shuffle(std::vector<CCard *> & vecCards);
+
+	typedef enum cards_type
+	{
+		CARDS_TYPE_UNKNOWN = 0,
+		CARDS_TYPE_SINGLE,
+		CARDS_TYPE_PAIR,
+		CARDS_TYPE_THREE,
+		CARDS_TYPE_THREE_ONE,
+		CARDS_TYPE_THREE_TWO,
+		CARDS_TYPE_FOUR_TWO,
+		CARDS_TYPE_FLY,
+		CARDS_TYPE_SHUN,
+		CARDS_TYPE_SHUN_PAIR,
+		CARDS_TYPE_BOMB,
+		CARDS_TYPE_KING_BOMB
+	};
+
+	int CardsType(std::vector<CCard> & vecCards);
+
+	int CardsCompare(const std::vector<CCard> & vecCards1, const std::vector<CCard> & vecCards2);
+
+	bool IsShun(std::vector<CCard> & vecCards);
+
+	bool IsFly(std::vector<CCard> & vecCards);
 
 }
 

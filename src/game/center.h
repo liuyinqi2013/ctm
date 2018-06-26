@@ -24,6 +24,13 @@ namespace ctm
 
 		bool Init();
 
+		bool Init(const std::string& ip, int port)
+		{
+			m_ip = ip;
+			m_port = port;
+			return Init();
+		}
+
 		bool Destroy();
 
 		void Run();
