@@ -250,6 +250,7 @@ namespace ctm
 		std::string m_outOpenId;
 		int m_nextOutPos;
 		std::vector<CCard> m_outCardVec;
+		std::vector<CCard> m_lastOutCardVec;
 	};
 }
 

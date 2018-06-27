@@ -197,8 +197,13 @@ namespace ctm
 
 	bool IsShun(std::vector<CCard> & vecCards);
 
+	bool IsShunPair(std::vector<CCard> & vecCards);
+
 	bool IsFly(std::vector<CCard> & vecCards);
 
+	void ShowCards(const std::vector<CCard> & vecCards);
+
+	std::string CardsTypeToStr(int type);
 }
 
 #endif

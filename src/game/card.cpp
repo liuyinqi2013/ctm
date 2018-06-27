@@ -1,7 +1,8 @@
 #include "card.h"
 #include "common/random.h"
 #include "common/log.h"
-
+#include <map>
+#include <iostream>
 
 namespace ctm
 {
@@ -138,7 +139,7 @@ namespace ctm
 				return CARDS_TYPE_THREE_TWO;
 			}
 			else if (Compare1(vecCards[0], vecCards[1]) == 0 &&
-				Compare1(vecCards[4], vecCards[2]) == 0 )
+				Compare1(vecCards[2], vecCards[4]) == 0 )
 			{
 				return CARDS_TYPE_THREE_TWO;
 			}
@@ -153,13 +154,21 @@ namespace ctm
 			{
 				return CARDS_TYPE_FOUR_TWO;
 			}
-			else if (Compare1(vecCards[5], vecCards[2]) == 0)
+			else if (Compare1(vecCards[1], vecCards[4]) == 0)
+			{
+				return CARDS_TYPE_FOUR_TWO;
+			}
+			else if (Compare1(vecCards[2], vecCards[5]) == 0)
 			{
 				return CARDS_TYPE_FOUR_TWO;
 			}
 			else if (IsShun(vecCards))
 			{
 				return CARDS_TYPE_SHUN;
+			}
+			else if (IsShunPair(vecCards))
+			{
+				return CARDS_TYPE_SHUN_PAIR;
 			}
 			else if (IsFly(vecCards))
 			{
@@ -171,6 +180,10 @@ namespace ctm
 			if (IsShun(vecCards))
 			{
 				return CARDS_TYPE_SHUN;
+			}
+			else if (IsShunPair(vecCards))
+			{
+				return CARDS_TYPE_SHUN_PAIR;
 			}
 			else if (IsFly(vecCards))
 			{
@@ -189,10 +202,9 @@ namespace ctm
 	{
 		if (vecCards.size() < 5) return false;
 		
-		int i = 1;
-		for (i = 1; i < vecCards.size(); ++i)
+		for (int i = 1; i < vecCards.size(); ++i)
 		{
-			if (vecCards[i - 1].m_number - vecCards[i].m_number != -1)
+			if (vecCards[i].m_number - vecCards[i - 1].m_number != 1)
 			{
 				return false;
 			}
@@ -201,21 +213,105 @@ namespace ctm
  		return true;	
 	}
 
-	bool IsFly(std::vector<CCard> & vecCards)
+	bool IsShunPair(std::vector<CCard> & vecCards)
 	{
-		if (vecCards.size() < 6 || vecCards.size() % 3 != 0) return false;
-
-		int step = vecCards.size() / 3;
-		int i = 0;
-		for (i = 0; i < step - 1; ++i)
+		if (vecCards.size() < 6) return false;
+		
+		for (int i = 2; i < vecCards.size(); i += 2)
 		{
-			if (vecCards[3 * i].m_number - vecCards[3 * i + 3].m_number != -1 || Compare1(vecCards[3 * i], vecCards[3 * i + 2]) != 0)
+			if (vecCards[i].m_number - vecCards[i - 2].m_number != 1 || 
+				vecCards[i - 1].m_number != vecCards[i - 2].m_number || 
+				vecCards[i].m_number != vecCards[i + 1].m_number)
 			{
 				return false;
 			}
 		}
 		
  		return true;
+	}
+
+	bool IsFly(std::vector<CCard> & vecCards)
+	{
+		if (vecCards.size() < 8 || (vecCards.size() % 4 != 0 && vecCards.size() % 5 != 0)) return false;
+
+		std::map<int, int> cardCountMap;
+
+		std::map<int, int>::iterator it;
+		for (int i = 0; i < vecCards.size(); ++i)
+		{
+			it = cardCountMap.find(vecCards[i].m_number);
+			if (it == cardCountMap.end()) 
+				cardCountMap[vecCards[i].m_number] = 1;
+			else
+				cardCountMap[vecCards[i].m_number] += 1;
+		}
+
+		it = cardCountMap.begin();
+		std::map<int, int>::iterator it1 = it;
+		int count = 0;
+		int maxcount = 0;
+		int paircount = 0;
+		if (it->second == 2) ++paircount;
+		for (++it1; it1 != cardCountMap.end(); ++it, ++it1)
+		{
+			if (it->second >= 3 && it1->second >= 3 && it1->first - it->first == 1)
+			{
+				++count;
+			}
+			else
+			{
+				if (maxcount < count) maxcount = count;
+				count = 0;
+			}
+
+			if (it1->second == 2) ++paircount;
+		}
+
+		if ((maxcount + 1) * 4 == vecCards.size() || ((maxcount + 1) * 5 == vecCards.size() && paircount == maxcount + 1))
+			return true;
+		
+ 		return false;
+	}
+
+	void ShowCards(const std::vector<CCard> & vecCards)
+	{
+		for (int i = 0; i < vecCards.size(); ++i)
+		{
+			std::cout<<i<<":"<<vecCards[i].ToString()<<std::endl;
+		}
+		
+	}
+
+	std::string CardsTypeToStr(int type)
+	{
+		switch(type)
+		{
+		case CARDS_TYPE_SINGLE:
+			return std::string("single");
+		case CARDS_TYPE_PAIR:
+			return std::string("pair");
+		case CARDS_TYPE_THREE:
+			return std::string("three");
+		case CARDS_TYPE_THREE_ONE:
+			return std::string("three plus one");
+		case CARDS_TYPE_THREE_TWO:
+			return std::string("three plus two");
+		case CARDS_TYPE_FOUR_TWO:
+			return std::string("four plus two");
+		case CARDS_TYPE_FLY:
+			return std::string("fly chack");
+		case CARDS_TYPE_SHUN:
+			return std::string("shun");
+		case CARDS_TYPE_SHUN_PAIR:
+			return std::string("shun pair");
+		case CARDS_TYPE_BOMB:
+			return std::string("bomb");
+		case CARDS_TYPE_KING_BOMB:
+			return std::string("king bomb");
+		default :
+			return std::string("unknown");
+		}
+		
 	}
 }
 

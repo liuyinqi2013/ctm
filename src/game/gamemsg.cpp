@@ -196,7 +196,7 @@ namespace ctm
 	{
 		CGameMsg::FromJson(json);
 
-		m_callPos = m_root["callPos"].asInt();
+		m_callPos = json["callPos"].asInt();
 
 		m_handVec.clear();
 		CCard card;
@@ -324,6 +324,14 @@ namespace ctm
 			daskCards.append(m_outCardVec[i].ToJson());
 		}
 		m_root["outCards"] = daskCards;
+		
+		Json::Value lastCards;
+		for (int i = 0; i < m_lastOutCardVec.size(); ++i)
+		{
+			lastCards.append(m_lastOutCardVec[i].ToJson());
+		}
+		m_root["lastOutCards"] = lastCards;
+		
 		return m_root;
 	}
 
@@ -335,12 +343,18 @@ namespace ctm
 		m_outOpenId = json["outOpenId"].asString();
 		m_nextOutPos = json["nextOutPos"].asInt();
 		m_outCardVec.clear();
+		m_lastOutCardVec.clear();
 		CCard card;
 		for (int i = 0; i < json["outCards"].size(); ++i)
 		{
 			card.FromJson(json["outCards"][i]);
 			m_outCardVec.push_back(card);
-		}		
+		}
+		for (int i = 0; i < json["lastOutCards"].size(); ++i)
+		{
+			card.FromJson(json["lastOutCards"][i]);
+			m_lastOutCardVec.push_back(card);
+		}
 	}
 
 	REG_MSG(MSG_GAME_LOGIN_C2S, CLoginMsgC2S);

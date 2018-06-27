@@ -53,6 +53,7 @@ namespace ctm
 		int m_playerOutHandleCount[DASK_MAX_PLAYERS];
 		int m_zhuangPos;
 		int m_currOptPos;
+		int m_lastOptPos;
 		int m_gameStatus;
 		int m_callCount;
 		int m_callMaxScore;

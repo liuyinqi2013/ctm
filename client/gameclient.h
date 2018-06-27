@@ -74,9 +74,13 @@ private:
 
 	void HandleCallDiZhuS2C(CCallDiZhuS2C * pMsg);
 
+	void HandleOutCardsS2C(COutCardsS2C * pMsg);
+
 	void SendMSG(CGameMsg * pMsg);
 
 	void ShowHandCards();
+
+	void GetOutCards(std::vector<CCard> & outCards);
 	
 private:
 

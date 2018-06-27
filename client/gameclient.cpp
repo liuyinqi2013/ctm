@@ -98,6 +98,9 @@ void CGameClient::HandleMsg(CGameMsg * pMsg)
 	case MSG_GAME_CALL_DIZHU_S2C:
 		HandleCallDiZhuS2C((CCallDiZhuS2C*)pMsg);
 		break;
+	case MSG_GAME_OUT_CARD_S2C:
+		HandleOutCardsS2C((COutCardsS2C*)pMsg);
+		break;
 	default :
 		break;
 	}
@@ -215,18 +218,78 @@ void CGameClient::HandleCallDiZhuS2C(CCallDiZhuS2C * pMsg)
 				m_handCards.push_back(pMsg->m_daskCardVec[i]);
 				Sort1(m_handCards);
 			}
+			
+			ShowHandCards();
+			COutCardsC2S outCardsC2S;
+			outCardsC2S.m_outPos = m_clientPlayer.m_daskPos;
+			GetOutCards(outCardsC2S.m_outCardVec);
+			if (outCardsC2S.m_outCardVec.size() == 0)
+			{
+				DEBUG_LOG("I No out cards");
+			}
+			else
+			{
+				int type = CardsType(outCardsC2S.m_outCardVec);
+				DEBUG_LOG("I out : %s ", CardsTypeToStr(type).c_str());
+				ShowCards(outCardsC2S.m_outCardVec);
+			}
+			
+			SendMSG(&outCardsC2S);
+
 		}
 		else
 		{
 			DEBUG_LOG("%s is king *-*", m_otherPlayers[m_posOpenIdMap[pMsg->m_zhuangPos]].m_userName.c_str());
 			DEBUG_LOG("I am a farmer .-.");
+			ShowHandCards();
 		}
 		
-		ShowHandCards();
+		
 	}
 
 	FUNC_END();
 
+}
+
+void CGameClient::HandleOutCardsS2C(COutCardsS2C * pMsg)
+{
+	FUNC_BEG();
+
+	if (pMsg->m_outPos != m_clientPlayer.m_daskPos)
+	{
+		if (pMsg->m_outCardVec.size() == 0)
+		{
+			DEBUG_LOG("%s No out", m_otherPlayers[m_posOpenIdMap[pMsg->m_outPos]].m_userName.c_str());
+		}
+		else
+		{
+			int type = CardsType(pMsg->m_outCardVec);
+			DEBUG_LOG("%s out : %s ", m_otherPlayers[m_posOpenIdMap[pMsg->m_outPos]].m_userName.c_str(), CardsTypeToStr(type).c_str());
+			ShowCards(pMsg->m_outCardVec);
+		}
+	}
+
+	if (pMsg->m_nextOutPos == m_clientPlayer.m_daskPos)
+	{
+		ShowHandCards();
+		COutCardsC2S outCardsC2S;
+		outCardsC2S.m_outPos = m_clientPlayer.m_daskPos;
+		GetOutCards(outCardsC2S.m_outCardVec);
+		if (outCardsC2S.m_outCardVec.size() == 0)
+		{
+			DEBUG_LOG("I No out cards");
+		}
+		else
+		{
+			int type = CardsType(outCardsC2S.m_outCardVec);
+			DEBUG_LOG("I out : %s ", CardsTypeToStr(type).c_str());
+			ShowCards(outCardsC2S.m_outCardVec);
+		}
+		
+		SendMSG(&outCardsC2S);
+	}
+
+	FUNC_END();
 }
 
 
@@ -239,11 +302,46 @@ void CGameClient::SendMSG(CGameMsg * pMsg)
 void CGameClient::ShowHandCards()
 {
 	cout<<"Total card num : "<<m_handCards.size()<<endl;
-	for (int i = 0; i < m_handCards.size(); ++i)
-	{
-		cout<<m_handCards[i].ToString()<<endl;
-	}
+	ShowCards(m_handCards);
+
 }
+
+void CGameClient::GetOutCards(std::vector<CCard> & outCards)
+{
+	do
+	{
+		string input;
+		cout<<"Please out cards[0|num,num...]:"<<endl;
+		cin>>input;
+		if (input == "0")
+		{
+			break;
+		}
+		
+		std::vector<string> items;
+		CutString(input, items, ",");
+		int i = 0;
+		for (; i < items.size(); ++i)
+		{
+			int index = S2I(items[i]);
+			if (index < 0 || index > m_handCards.size())
+			{
+				break;
+			}
+			else
+			{
+				outCards.push_back(m_handCards[index]);
+			}
+		}
+
+		if (i == items.size())
+			break;
+		else
+			cout<<"Input format error!"<<endl;
+	}
+	while(1);
+}
+
 
 
 

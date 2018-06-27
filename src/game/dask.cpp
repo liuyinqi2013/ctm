@@ -16,6 +16,7 @@ namespace ctm
 		m_playerCount(0),
 		m_zhuangPos(0),
 		m_currOptPos(0),
+		m_lastOptPos(-1),
 		m_gameStatus(0),
 		m_callCount(0),
 		m_callMaxScore(0),
@@ -87,6 +88,7 @@ namespace ctm
 		
 		m_game->ToDeal(m_handCardsArray, m_daskCards);
 
+		CRandom::SetSeed();
 		m_currOptPos = CRandom::Random(0, m_game->m_playerNum - 1);
 		
 		CGameBeginS2C gameBeginS2C;
@@ -219,7 +221,7 @@ namespace ctm
 		}
 		else
 		{
-			m_currOptPos =  (pMsg->m_callPos + 1) % 3;
+			m_currOptPos =  (pMsg->m_callPos + 1) % m_game->m_playerNum;
 			callDizhuS2C.m_nextCallPos = m_currOptPos;
 		}
 
@@ -237,6 +239,7 @@ namespace ctm
 		outCardsS2C.m_outPos = pMsg->m_outPos;
 		outCardsS2C.m_outOpenId = m_playerArray[pMsg->m_outPos]->m_openId;
 		outCardsS2C.m_outCardVec = pMsg->m_outCardVec;
+		
 		if (pMsg->m_outPos != m_currOptPos)
 		{
 			outCardsS2C.m_errCode = -1;
@@ -245,14 +248,24 @@ namespace ctm
 			return;
 		}
 
-		if (m_game->HaveCards(m_handCardsArray[pMsg->m_outPos], pMsg->m_outCardVec))
+		m_currOptPos = (m_currOptPos + 1) % m_game->m_playerNum;
+		outCardsS2C.m_nextOutPos = m_currOptPos;
+		if (pMsg->m_outCardVec.size() == 0)
 		{
+			outCardsS2C.m_lastOutCardVec = m_lastOutCards;
+		}
+		else if (m_lastOptPos == pMsg->m_outPos /*|| m_game->HaveCards(m_handCardsArray[pMsg->m_outPos], pMsg->m_outCardVec)*/)
+		{
+			m_lastOptPos = pMsg->m_outPos;
 			m_lastOutCards = pMsg->m_outCardVec;
+			outCardsS2C.m_lastOutCardVec = m_lastOutCards;
 		}
 		else
 		{
 			DEBUG_LOG("no cards");
 		}
+
+		BroadCast(&outCardsS2C);
 		
 		FUNC_END();
 	}

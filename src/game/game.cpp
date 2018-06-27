@@ -44,7 +44,7 @@ namespace ctm
 		}
 	}
 
-	bool HaveCards(std::vector<CCard*> & handCards, const std::vector<CCard> & outCards)
+	bool CGame::HaveCards(std::vector<CCard*> & handCards, const std::vector<CCard> & outCards)
 	{
 		for (int i = 0 ; i < outCards.size(); ++i)
 		{
