@@ -97,9 +97,12 @@ namespace ctm
 
 	int CardsType(std::vector<CCard> & vecCards)
 	{
+		int count = vecCards.size();
+		
+		if (0 == count) return CARDS_TYPE_UNKNOWN;
+			
 		Sort1(vecCards);
 		
-		int count = vecCards.size();
 		if (1 == count)
 		{
 			return CARDS_TYPE_SINGLE;
@@ -170,10 +173,6 @@ namespace ctm
 			{
 				return CARDS_TYPE_SHUN_PAIR;
 			}
-			else if (IsFly(vecCards))
-			{
-				return CARDS_TYPE_FLY;
-			}
 		}
 		else
 		{
@@ -189,14 +188,15 @@ namespace ctm
 			{
 				return CARDS_TYPE_FLY;
 			}
+			else if (IsFlyTwo(vecCards))
+			{
+				return CARDS_TYPE_FLY_TWO;
+			}
 		}
 
 		return CARDS_TYPE_UNKNOWN;
 	}
 
-	int CardsCompare(const std::vector<CCard> & vecCards1, const std::vector<CCard> & vecCards2)
-	{
-	}
 
 	bool IsShun(std::vector<CCard> & vecCards)
 	{
@@ -232,45 +232,128 @@ namespace ctm
 
 	bool IsFly(std::vector<CCard> & vecCards)
 	{
-		if (vecCards.size() < 8 || (vecCards.size() % 4 != 0 && vecCards.size() % 5 != 0)) return false;
+		if (vecCards.size() < 8 || vecCards.size() % 4 != 0 ) return false;
 
-		std::map<int, int> cardCountMap;
-
-		std::map<int, int>::iterator it;
-		for (int i = 0; i < vecCards.size(); ++i)
-		{
-			it = cardCountMap.find(vecCards[i].m_number);
-			if (it == cardCountMap.end()) 
-				cardCountMap[vecCards[i].m_number] = 1;
-			else
-				cardCountMap[vecCards[i].m_number] += 1;
-		}
-
-		it = cardCountMap.begin();
-		std::map<int, int>::iterator it1 = it;
+		int array[15] = {0};
+		CardsToArray(vecCards, array);
+		
 		int count = 0;
 		int maxcount = 0;
 		int paircount = 0;
-		if (it->second == 2) ++paircount;
-		for (++it1; it1 != cardCountMap.end(); ++it, ++it1)
+		int i = 1;
+		int j = 0;
+		for (; i < 15; ++i, ++j)
 		{
-			if (it->second >= 3 && it1->second >= 3 && it1->first - it->first == 1)
+			if (array[i] >= 3 && array[j] >= 3)
 			{
 				++count;
+
+				if (maxcount < count) maxcount = count;
 			}
 			else
 			{
-				if (maxcount < count) maxcount = count;
 				count = 0;
 			}
-
-			if (it1->second == 2) ++paircount;
 		}
-
-		if ((maxcount + 1) * 4 == vecCards.size() || ((maxcount + 1) * 5 == vecCards.size() && paircount == maxcount + 1))
+		
+		if ((maxcount + 1) * 4 == vecCards.size())
 			return true;
 		
  		return false;
+	}
+
+	bool IsFlyTwo(std::vector<CCard> & vecCards)
+	{
+		if (vecCards.size() < 10 || vecCards.size() % 5 != 0) return false;
+
+		int array[15] = {0};
+		CardsToArray(vecCards, array);
+
+		int count = 0;
+		int maxcount = 0;
+		int paircount = 0;
+		int i = 1;
+		int j = 0;
+
+		if(array[j] == 2) ++paircount;
+		
+		for (; i < 15; ++i, ++j)
+		{
+			if (array[i] >= 3 && array[j] >= 3)
+			{
+				++count;
+
+				if (maxcount < count) maxcount = count; 
+			}
+			else
+			{
+				count = 0;
+			}
+
+			if(array[i] == 2) ++paircount;
+		}
+		
+		if ((maxcount + 1) * 5 == vecCards.size() && paircount == maxcount + 1)
+			return true;
+		
+ 		return false;
+	}
+
+	int CardsCompare(std::vector<CCard> & vecCards1, std::vector<CCard> & vecCards2)
+	{
+		int iCardsType1 = CardsType(vecCards1);
+		int iCardsType2 = CardsType(vecCards2);
+
+		if (iCardsType1 != iCardsType2)
+		{
+			if (iCardsType1 == CARDS_TYPE_KING_BOMB || iCardsType1 == CARDS_TYPE_BOMB) return 1;
+			else if (iCardsType2 == CARDS_TYPE_KING_BOMB || iCardsType2 != CARDS_TYPE_BOMB) return -1;
+			else return -100;
+		}
+		else
+		{
+			if (vecCards1.size() != vecCards2.size()) return -100;
+
+			if (iCardsType1 == CARDS_TYPE_SINGLE ||
+				iCardsType1 == CARDS_TYPE_PAIR   ||
+				iCardsType1 == CARDS_TYPE_SHUN   ||
+				iCardsType1 == CARDS_TYPE_SHUN_PAIR)
+			{
+				return Compare1(vecCards1[0], vecCards2[0]);				
+			}
+			else if (iCardsType1 == CARDS_TYPE_THREE ||
+				iCardsType1 == CARDS_TYPE_THREE_ONE  ||
+				iCardsType1 == CARDS_TYPE_THREE_TWO  ||
+				iCardsType1 == CARDS_TYPE_FOUR_TWO   ||
+				iCardsType1 == CARDS_TYPE_FLY        ||
+				iCardsType1 == CARDS_TYPE_FLY_TWO    ||
+				iCardsType1 == CARDS_TYPE_BOMB)
+			{
+				CCard card1;
+				CCard card2;
+				for (int i = 0; i < vecCards1.size() - 2; ++i)
+				{
+					if (Compare1(vecCards1[i], vecCards1[i + 2]) == 0)
+					{
+						card1 = vecCards1[i];
+						break;
+					}
+				}
+
+				for (int i = 0; i < vecCards2.size() - 2; ++i)
+				{
+					if (Compare1(vecCards2[i], vecCards2[i + 2]) == 0)
+					{
+						card2 = vecCards2[i];
+						break;
+					}
+				}
+
+				return Compare1(card1, card2);
+			}
+		}
+		
+		return -100;
 	}
 
 	void ShowCards(const std::vector<CCard> & vecCards)
@@ -300,6 +383,8 @@ namespace ctm
 			return std::string("four plus two");
 		case CARDS_TYPE_FLY:
 			return std::string("fly chack");
+		case CARDS_TYPE_FLY_TWO:
+			return std::string("fly chack two");
 		case CARDS_TYPE_SHUN:
 			return std::string("shun");
 		case CARDS_TYPE_SHUN_PAIR:
@@ -313,5 +398,59 @@ namespace ctm
 		}
 		
 	}
+
+	void CardsToArray(const std::vector<CCard> & vecCards, int array[15])
+	{
+		for (int i = 0; i < vecCards.size(); ++i)
+		{
+			if (vecCards[i].m_number >= 0 && vecCards[i].m_number < 15)
+				array[vecCards[i].m_number] += 1; 
+		}
+	}
+
+	void CardsToArray(const std::vector<CCard*> & vecCards, int array[15])
+	{
+		for (int i = 0; i < vecCards.size(); ++i)
+		{
+			if (vecCards[i]->m_number >= 0 && vecCards[i]->m_number < 15)
+				array[vecCards[i]->m_number] += 1; 
+		}
+	}
+
+	void TestCardsType()
+	{
+		std::vector<CCard> vec;
+		CCard card;
+		
+		card.m_number = 0;
+		vec.push_back(card);
+		vec.push_back(card);
+
+		card.m_number = 8;
+		//vec.push_back(card);
+		//vec.push_back(card);
+		
+		card.m_number = 10;
+		
+		//vec.push_back(card);
+		//vec.push_back(card);
+
+				
+		card.m_number = 11;
+		
+		//vec.push_back(card);
+		//vec.push_back(card);
+		//vec.push_back(card);
+
+		card.m_number = 8;		
+		//vec.push_back(card);
+		//vec.push_back(card);
+		//card.m_number = 11;	
+		//vec.push_back(card);
+		//vec.push_back(card);
+
+		DEBUG_LOG("card type : %s", CardsTypeToStr(CardsType(vec)).c_str());	
+	}
+
 }
 

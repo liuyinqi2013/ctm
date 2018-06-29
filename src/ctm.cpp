@@ -115,7 +115,7 @@ int main(int argc, char **argv)
 		return -1;
 	}
 
-	DEBUG_LOG("centont :\n%s", iniFile.ToString().c_str());
+	//DEBUG_LOG("centont :\n%s", iniFile.ToString().c_str());
 	
 	CLog::GetInstance()->SetLogName(iniFile["logfile"].AsString());
 	CLog::GetInstance()->SetLogPath(iniFile["logpath"].AsString());

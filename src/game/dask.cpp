@@ -21,6 +21,7 @@ namespace ctm
 		m_callCount(0),
 		m_callMaxScore(0),
 		m_callMaxScorePos(0),
+		m_tatolOutBombCount(0),
 		m_gameCenter(NULL)
 	{
 		for(int i = 0; i < DASK_MAX_PLAYERS; i++)
@@ -31,6 +32,8 @@ namespace ctm
 		}
 
 		m_game = new CGame;
+
+		DEBUG_LOG("bomb count :%d", m_tatolOutBombCount);
 	}
 	
 	CDask::~CDask()
@@ -155,6 +158,25 @@ namespace ctm
 		FUNC_END();
 	}
 
+	void CDask::BroadCastOutCardsMSG(COutCardsS2C * pMsg)
+	{
+		FUNC_BEG();
+		
+		for (int i = 0; i < DASK_MAX_PLAYERS; i++)
+		{
+			if (m_playerArray[i] != NULL)
+			{
+				if (i == pMsg->m_outPos) {
+					for (int k = 0; k < m_handCardsArray[i].size(); ++k)
+						pMsg->m_handVec.push_back(*m_handCardsArray[i][k]);
+				}
+				m_playerArray[i]->SendMSG(pMsg);
+			}
+		}
+
+		FUNC_END();
+	}
+
 	void CDask::HandleGameMSG(CGameMsg * pMsg)
 	{
 		FUNC_BEG();
@@ -239,33 +261,84 @@ namespace ctm
 		outCardsS2C.m_outPos = pMsg->m_outPos;
 		outCardsS2C.m_outOpenId = m_playerArray[pMsg->m_outPos]->m_openId;
 		outCardsS2C.m_outCardVec = pMsg->m_outCardVec;
-		
+
 		if (pMsg->m_outPos != m_currOptPos)
 		{
-			outCardsS2C.m_errCode = -1;
-			outCardsS2C.m_errMsg  = "should not you out cards";
+			outCardsS2C.m_errCode = 1;
+			outCardsS2C.m_errMsg  = "Should not you out cards";
 			m_playerArray[pMsg->m_outPos]->SendMSG(&outCardsS2C);
 			return;
 		}
-
-		m_currOptPos = (m_currOptPos + 1) % m_game->m_playerNum;
-		outCardsS2C.m_nextOutPos = m_currOptPos;
+		
 		if (pMsg->m_outCardVec.size() == 0)
 		{
+			m_currOptPos = (m_currOptPos + 1) % m_game->m_playerNum;
+			outCardsS2C.m_nextOutPos = m_currOptPos;
 			outCardsS2C.m_lastOutCardVec = m_lastOutCards;
-		}
-		else if (m_lastOptPos == pMsg->m_outPos /*|| m_game->HaveCards(m_handCardsArray[pMsg->m_outPos], pMsg->m_outCardVec)*/)
-		{
-			m_lastOptPos = pMsg->m_outPos;
-			m_lastOutCards = pMsg->m_outCardVec;
-			outCardsS2C.m_lastOutCardVec = m_lastOutCards;
+			outCardsS2C.m_lastOutCardType = CardsType(m_lastOutCards);
+			
+			BroadCastOutCardsMSG(&outCardsS2C);
 		}
 		else
 		{
-			DEBUG_LOG("no cards");
-		}
+			int outCardsType  = CardsType(pMsg->m_outCardVec);
+			
+			if (CARDS_TYPE_UNKNOWN == outCardsType)
+			{
+				outCardsS2C.m_errCode = 2;
+				outCardsS2C.m_errMsg  = "Unknown card type";
+				m_playerArray[pMsg->m_outPos]->SendMSG(&outCardsS2C);
+			}
+			else if (!m_game->HaveCards(m_handCardsArray[pMsg->m_outPos], pMsg->m_outCardVec))
+			{
+				outCardsS2C.m_errCode = 3;
+				outCardsS2C.m_errMsg  = "You no cards";
+				m_playerArray[pMsg->m_outPos]->SendMSG(&outCardsS2C);
+			}
+			else if (m_lastOptPos == pMsg->m_outPos || 
+				m_lastOutCards.size() == 0 ||
+				CardsCompare(pMsg->m_outCardVec,m_lastOutCards) > 0)               //                             
+			{
+				m_lastOutCards = pMsg->m_outCardVec;
+				m_game->DeleteOutCards(m_handCardsArray[pMsg->m_outPos], pMsg->m_outCardVec);
+				m_lastOutCards = pMsg->m_outCardVec;
+				m_lastOptPos = pMsg->m_outPos;
 
-		BroadCast(&outCardsS2C);
+				if (CARDS_TYPE_BOMB == outCardsType || CARDS_TYPE_KING_BOMB == outCardsType) 
+					++m_tatolOutBombCount;
+
+				DEBUG_LOG("bomb count :%d", m_tatolOutBombCount);
+				
+				if (m_handCardsArray[pMsg->m_outPos].size() == 0)  // game over
+				{
+					CGameOverS2C gameOver;
+					gameOver.m_gameScore = m_callMaxScore;
+					gameOver.m_bombCount = m_tatolOutBombCount;
+					if (m_zhuangPos == pMsg->m_outPos) 
+						gameOver.m_winer = 1;
+					else 
+						gameOver.m_winer = 2;
+
+					BroadCast(&gameOver);
+				}
+				else
+				{
+					m_currOptPos = (m_currOptPos + 1) % m_game->m_playerNum;
+					outCardsS2C.m_nextOutPos = m_currOptPos;
+					outCardsS2C.m_lastOutCardVec = m_lastOutCards;
+					outCardsS2C.m_lastOutCardType = CardsType(m_lastOutCards);
+					
+					BroadCastOutCardsMSG(&outCardsS2C);
+				}
+			}
+			else
+			{
+				int iRet = 
+				outCardsS2C.m_errCode = 5;
+				outCardsS2C.m_errMsg  = "Card type too small";
+				m_playerArray[pMsg->m_outPos]->SendMSG(&outCardsS2C);
+			}
+		}
 		
 		FUNC_END();
 	}

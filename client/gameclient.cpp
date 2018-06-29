@@ -219,23 +219,7 @@ void CGameClient::HandleCallDiZhuS2C(CCallDiZhuS2C * pMsg)
 				Sort1(m_handCards);
 			}
 			
-			ShowHandCards();
-			COutCardsC2S outCardsC2S;
-			outCardsC2S.m_outPos = m_clientPlayer.m_daskPos;
-			GetOutCards(outCardsC2S.m_outCardVec);
-			if (outCardsC2S.m_outCardVec.size() == 0)
-			{
-				DEBUG_LOG("I No out cards");
-			}
-			else
-			{
-				int type = CardsType(outCardsC2S.m_outCardVec);
-				DEBUG_LOG("I out : %s ", CardsTypeToStr(type).c_str());
-				ShowCards(outCardsC2S.m_outCardVec);
-			}
-			
-			SendMSG(&outCardsC2S);
-
+			OutCards();
 		}
 		else
 		{
@@ -254,7 +238,7 @@ void CGameClient::HandleCallDiZhuS2C(CCallDiZhuS2C * pMsg)
 void CGameClient::HandleOutCardsS2C(COutCardsS2C * pMsg)
 {
 	FUNC_BEG();
-
+	
 	if (pMsg->m_outPos != m_clientPlayer.m_daskPos)
 	{
 		if (pMsg->m_outCardVec.size() == 0)
@@ -263,30 +247,31 @@ void CGameClient::HandleOutCardsS2C(COutCardsS2C * pMsg)
 		}
 		else
 		{
-			int type = CardsType(pMsg->m_outCardVec);
-			DEBUG_LOG("%s out : %s ", m_otherPlayers[m_posOpenIdMap[pMsg->m_outPos]].m_userName.c_str(), CardsTypeToStr(type).c_str());
-			ShowCards(pMsg->m_outCardVec);
+			DEBUG_LOG("%s out : %s ", m_otherPlayers[m_posOpenIdMap[pMsg->m_outPos]].m_userName.c_str(), CardsTypeToStr(pMsg->m_lastOutCardType).c_str());
 		}
+	}
+	else if (pMsg->m_outPos == m_clientPlayer.m_daskPos)
+	{
+		if (pMsg->m_errCode != 0)
+		{
+			DEBUG_LOG("error code %d", pMsg->m_errCode);
+			DEBUG_LOG("error msg %s", pMsg->m_errMsg.c_str());
+			ShowCards(pMsg->m_lastOutCardVec);
+			OutCards();
+		}
+		else
+		{
+			m_handCards = pMsg->m_handVec;
+			ShowHandCards();
+		}
+		
+		return;
 	}
 
 	if (pMsg->m_nextOutPos == m_clientPlayer.m_daskPos)
 	{
-		ShowHandCards();
-		COutCardsC2S outCardsC2S;
-		outCardsC2S.m_outPos = m_clientPlayer.m_daskPos;
-		GetOutCards(outCardsC2S.m_outCardVec);
-		if (outCardsC2S.m_outCardVec.size() == 0)
-		{
-			DEBUG_LOG("I No out cards");
-		}
-		else
-		{
-			int type = CardsType(outCardsC2S.m_outCardVec);
-			DEBUG_LOG("I out : %s ", CardsTypeToStr(type).c_str());
-			ShowCards(outCardsC2S.m_outCardVec);
-		}
-		
-		SendMSG(&outCardsC2S);
+		ShowCards(pMsg->m_lastOutCardVec);
+		OutCards();
 	}
 
 	FUNC_END();
@@ -311,9 +296,9 @@ void CGameClient::GetOutCards(std::vector<CCard> & outCards)
 	do
 	{
 		string input;
-		cout<<"Please out cards[0|num,num...]:"<<endl;
+		cout<<"Please out cards[-1|num,num...]:"<<endl;
 		cin>>input;
-		if (input == "0")
+		if (input == "-1")
 		{
 			break;
 		}
@@ -340,6 +325,37 @@ void CGameClient::GetOutCards(std::vector<CCard> & outCards)
 			cout<<"Input format error!"<<endl;
 	}
 	while(1);
+}
+
+
+void CGameClient::OutCards()
+{
+	COutCardsC2S outCardsC2S;
+	
+	do
+	{
+		outCardsC2S.m_outCardVec.clear();
+		ShowHandCards();
+		outCardsC2S.m_outPos = m_clientPlayer.m_daskPos;
+		GetOutCards(outCardsC2S.m_outCardVec);
+		if (outCardsC2S.m_outCardVec.size() == 0)
+		{
+			DEBUG_LOG("I No out cards");
+			break;
+		}
+		else
+		{
+			int type = CardsType(outCardsC2S.m_outCardVec);
+			DEBUG_LOG("I out : %s ", CardsTypeToStr(type).c_str());
+			ShowCards(outCardsC2S.m_outCardVec);
+			
+			if (CARDS_TYPE_UNKNOWN != type)
+				break;
+		}
+	}
+	while(1);
+		
+	SendMSG(&outCardsC2S);
 }
 
 

@@ -81,6 +81,8 @@ private:
 	void ShowHandCards();
 
 	void GetOutCards(std::vector<CCard> & outCards);
+
+	void OutCards();
 	
 private:
 

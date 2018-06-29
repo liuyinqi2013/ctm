@@ -251,6 +251,24 @@ namespace ctm
 		int m_nextOutPos;
 		std::vector<CCard> m_outCardVec;
 		std::vector<CCard> m_lastOutCardVec;
+		int m_lastOutCardType;
+		std::vector<CCard> m_handVec;
+	};
+
+	class CGameOverS2C : public CGameMsg
+	{
+	public:
+		CGameOverS2C() : CGameMsg(MSG_GAME_GAME_OVER_S2C, "GameOverS2C") { }
+		virtual ~CGameOverS2C() { }
+
+		virtual const Json::Value& ToJson();
+
+		virtual void FromJson(const Json::Value& json);
+		
+	public:
+		int m_gameScore;
+		int m_bombCount;
+		int m_winer;
 	};
 }
 

@@ -331,6 +331,15 @@ namespace ctm
 			lastCards.append(m_lastOutCardVec[i].ToJson());
 		}
 		m_root["lastOutCards"] = lastCards;
+
+		m_root["lastOutCardType"] = m_lastOutCardType;
+
+		Json::Value handCards;
+		for (int i = 0; i < m_handVec.size(); ++i)
+		{
+			handCards.append(m_handVec[i].ToJson());
+		}
+		m_root["handCards"] = handCards;
 		
 		return m_root;
 	}
@@ -355,6 +364,36 @@ namespace ctm
 			card.FromJson(json["lastOutCards"][i]);
 			m_lastOutCardVec.push_back(card);
 		}
+
+		m_lastOutCardType = json["lastOutCardType"].asInt();
+
+		m_handVec.clear();
+		for (int i = 0; i < json["handCards"].size(); ++i)
+		{
+			card.FromJson(json["handCards"][i]);
+			m_handVec.push_back(card);
+		}
+		
+	}
+
+	const Json::Value& CGameOverS2C::ToJson()
+	{
+		CGameMsg::ToJson();
+
+		m_root["gameScore"] = m_gameScore;
+		m_root["bombCount"] = m_bombCount;
+		m_root["winer"] = m_winer;
+
+		return m_root;
+	}
+
+	void CGameOverS2C::FromJson(const Json::Value& json)
+	{
+		CGameMsg::FromJson(json);
+
+		m_gameScore = json["gameScore"].asInt();
+		m_bombCount = json["bombCount"].asInt();
+		m_winer = json["winer"].asInt();	
 	}
 
 	REG_MSG(MSG_GAME_LOGIN_C2S, CLoginMsgC2S);
@@ -372,5 +411,6 @@ namespace ctm
 	REG_MSG(MSG_GAME_OPT_S2C, COptS2C);
 	REG_MSG(MSG_GAME_OUT_CARD_C2S, COutCardsC2S);
 	REG_MSG(MSG_GAME_OUT_CARD_S2C, COutCardsS2C);
+	REG_MSG(MSG_GAME_GAME_OVER_S2C, CGameOverS2C);
 
 }

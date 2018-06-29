@@ -29,7 +29,7 @@ namespace ctm
 			CARD_NUM_Q ,
 			CARD_NUM_K ,
 			CARD_NUM_A ,
-			CARD_NUM_JOKER
+			CARD_NUM_JOKER = 14
 		} CARD_NUM;
 
 		typedef enum card_type
@@ -46,7 +46,7 @@ namespace ctm
 		{
 		}
 		
-		CCard(int number,  int type) : m_type(type), m_number(number)
+		CCard(int type, int number) : m_type(type), m_number(number)
 		{
 		}
 
@@ -185,6 +185,7 @@ namespace ctm
 		CARDS_TYPE_THREE_TWO,
 		CARDS_TYPE_FOUR_TWO,
 		CARDS_TYPE_FLY,
+		CARDS_TYPE_FLY_TWO,
 		CARDS_TYPE_SHUN,
 		CARDS_TYPE_SHUN_PAIR,
 		CARDS_TYPE_BOMB,
@@ -193,7 +194,7 @@ namespace ctm
 
 	int CardsType(std::vector<CCard> & vecCards);
 
-	int CardsCompare(const std::vector<CCard> & vecCards1, const std::vector<CCard> & vecCards2);
+	int CardsCompare(std::vector<CCard> & vecCards1, std::vector<CCard> & vecCards2);
 
 	bool IsShun(std::vector<CCard> & vecCards);
 
@@ -201,9 +202,17 @@ namespace ctm
 
 	bool IsFly(std::vector<CCard> & vecCards);
 
+	bool IsFlyTwo(std::vector<CCard> & vecCards);
+
 	void ShowCards(const std::vector<CCard> & vecCards);
 
 	std::string CardsTypeToStr(int type);
+
+	void CardsToArray(const std::vector<CCard> & vecCards, int array[15]);
+
+	void CardsToArray(const std::vector<CCard*> & vecCards, int array[15]);
+
+	void TestCardsType();
 }
 
 #endif

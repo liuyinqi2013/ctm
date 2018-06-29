@@ -5,6 +5,9 @@
 
 int main(int argc, char **argv)
 {
+
+	//TestCardsType();
+	
 	CIniFile iniFile("conf.ini");
 
 	if (!iniFile.Load())
@@ -28,8 +31,12 @@ int main(int argc, char **argv)
 	iniFile["username"] = "Panda" + iniFile["openid"].AsString();
 	iniFile.Save();
 	
-	game_client.Init(iniFile["serverip"].AsString(), iniFile["serverport"].AsInt());
-
+	if (!game_client.Init(iniFile["serverip"].AsString(), iniFile["serverport"].AsInt()))
+	{
+		DEBUG_LOG("Init error!");
+		return -1;
+	}
+	
 	game_client.Run();
 		
 	return 0;

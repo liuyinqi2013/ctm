@@ -35,6 +35,8 @@ namespace ctm
 
 		void BroadCast(CGameMsg * pMsg);
 
+		void BroadCastOutCardsMSG(COutCardsS2C * pMsg);
+
 		void HandleGameMSG(CGameMsg * pMsg);
 		void HandleCallDiZhuMSG(CCallDiZhuC2S * pMsg);
 		void HandleOutCardsMSG(COutCardsC2S * pMsg);
@@ -58,6 +60,7 @@ namespace ctm
 		int m_callCount;
 		int m_callMaxScore;
 		int m_callMaxScorePos;
+		int m_tatolOutBombCount;
 		CGameCenter* m_gameCenter;	
 	};
 }

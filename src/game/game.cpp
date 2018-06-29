@@ -44,15 +44,18 @@ namespace ctm
 		}
 	}
 
-	bool CGame::HaveCards(std::vector<CCard*> & handCards, const std::vector<CCard> & outCards)
+	bool CGame::HaveCards(const std::vector<CCard*> & handCards, const std::vector<CCard> & outCards)
 	{
+		std::vector<CCard*> tmpCards = handCards;
+		
 		for (int i = 0 ; i < outCards.size(); ++i)
 		{
-			std::vector<CCard*>::iterator it = handCards.begin();
-			for (; it != handCards.end(); ++it)
+			std::vector<CCard*>::iterator it = tmpCards.begin();
+			for (; it != tmpCards.end(); ++it)
 			{
 				if (**it == outCards[i])
 				{
+					tmpCards.erase(it);
 					break;
 				}
 			}

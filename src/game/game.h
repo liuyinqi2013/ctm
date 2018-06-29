@@ -21,7 +21,7 @@ namespace ctm
 
 		void DeleteOutCards(std::vector<CCard*> & handCards, const std::vector<CCard> & outCards);
 
-		bool HaveCards(std::vector<CCard*> & handCards, const std::vector<CCard> & outCards);
+		bool HaveCards(const std::vector<CCard*> & handCards, const std::vector<CCard> & outCards);
 		
 	public:
 		std::string m_gameName;
