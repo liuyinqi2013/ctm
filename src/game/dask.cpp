@@ -22,12 +22,14 @@ namespace ctm
 		m_callMaxScore(0),
 		m_callMaxScorePos(0),
 		m_tatolOutBombCount(0),
+		m_readyCount(0),
+		m_quitCount(0),
 		m_gameCenter(NULL)
 	{
 		for(int i = 0; i < DASK_MAX_PLAYERS; i++)
 		{
 			m_playerArray[i] = NULL;
-			m_playerOutBombCount[i]   = 0;
+			m_playerGameOverOpt[i]   = 0;
 			m_playerOutHandleCount[i] = 0;
 		}
 
@@ -122,19 +124,26 @@ namespace ctm
 		
 		for(int i = 0; i < DASK_MAX_PLAYERS; i++)
 		{
-			m_playerArray[i] = NULL;
-			m_playerOutBombCount[i]   = 0;
+			m_playerGameOverOpt[i]   = 0;
 			m_playerOutHandleCount[i] = 0;
 			m_handCardsArray[i].clear();
 			m_daskCardsArray[i].clear();
 		}
 
 		m_daskCards.clear();
+		m_lastOutCards.clear();
+		
 		m_zhuangPos = 0;
 		m_currOptPos = 0;
 		m_playerCount = 0;
 		m_gameStatus = 0;
-
+		m_callCount = 0;
+		m_callMaxScore = 0;
+		m_callMaxScorePos = 0;
+		m_tatolOutBombCount = 0;
+		m_readyCount = 0;
+		m_quitCount = 0;
+		
 		FUNC_END();	
 	}
 
@@ -190,6 +199,9 @@ namespace ctm
 			break;
 		case MSG_GAME_OUT_CARD_C2S:
 			HandleOutCardsMSG((COutCardsC2S*)pMsg);
+			break;
+		case MSG_GAME_GAME_OVER_OPT:
+			HandleGameOverOptMSG((CGameOverOpt*)pMsg);
 			break;
 		default :
 			break;
@@ -319,7 +331,11 @@ namespace ctm
 					else 
 						gameOver.m_winer = 2;
 
+					m_gameStatus = 1;
+
 					BroadCast(&gameOver);
+
+					Clear();
 				}
 				else
 				{
@@ -333,10 +349,38 @@ namespace ctm
 			}
 			else
 			{
-				int iRet = 
 				outCardsS2C.m_errCode = 5;
 				outCardsS2C.m_errMsg  = "Card type too small";
 				m_playerArray[pMsg->m_outPos]->SendMSG(&outCardsS2C);
+			}
+		}
+		
+		FUNC_END();
+	}
+
+	void CDask::HandleGameOverOptMSG(CGameOverOpt * pMsg)
+	{
+
+		FUNC_BEG();
+
+		if (pMsg->m_optPos >= 0 || pMsg->m_optPos < m_game->m_playerNum)
+		{
+			m_playerGameOverOpt[pMsg->m_optPos] = pMsg->m_opt;
+			BroadCast(pMsg);
+
+			if (1 == pMsg->m_opt)
+			{
+				++m_readyCount;
+			}
+			else if (2 == pMsg->m_opt)
+			{
+				++m_quitCount;
+				m_playerArray[pMsg->m_optPos] = NULL;
+			}
+
+			if (m_readyCount == m_game->m_playerNum)
+			{
+				GameStart();
 			}
 		}
 		

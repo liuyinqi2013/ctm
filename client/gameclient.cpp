@@ -101,6 +101,12 @@ void CGameClient::HandleMsg(CGameMsg * pMsg)
 	case MSG_GAME_OUT_CARD_S2C:
 		HandleOutCardsS2C((COutCardsS2C*)pMsg);
 		break;
+	case MSG_GAME_GAME_OVER_S2C:
+		HandleGameOverS2C((CGameOverS2C*)pMsg);
+		break;
+	case MSG_GAME_GAME_OVER_OPT:
+		HandleGameOverOpt((CGameOverOpt*)pMsg);
+		break;
 	default :
 		break;
 	}
@@ -156,11 +162,8 @@ void CGameClient::HandleGameBeginS2C(CGameBeginS2C * pMsg)
 {
 	FUNC_BEG();
 
-	for (int i = 0; i < pMsg->m_handVec.size(); ++i)
-	{
-		m_handCards.push_back(pMsg->m_handVec[i]);
-	}
-
+	m_handCards = pMsg->m_handVec;
+	
 	DEBUG_LOG("my pos : %d", m_clientPlayer.m_daskPos);
 	DEBUG_LOG("call pos : %d", pMsg->m_callPos);
 	
@@ -275,6 +278,52 @@ void CGameClient::HandleOutCardsS2C(COutCardsS2C * pMsg)
 	}
 
 	FUNC_END();
+}
+
+
+void CGameClient::HandleGameOverS2C(CGameOverS2C * pMsg)
+{
+	if ((m_zhuangPos == m_clientPlayer.m_daskPos && pMsg->m_winer == 1) ||
+		(m_zhuangPos != m_clientPlayer.m_daskPos && pMsg->m_winer == 2))
+	{
+		DEBUG_LOG("I win");
+	}
+	else
+	{
+		DEBUG_LOG("I failed");
+	}
+
+	do
+	{
+		int input;
+		string buf;
+		cout<<"Your choose [1-restart or 2-quit]:"<<endl;
+		cin>>buf;
+
+		input = S2I(buf);
+		if (input != 1 && input != 2)
+		{
+			cout<<"invalid option"<<endl;
+			continue;
+		}
+
+		CGameOverOpt gameOverOpt;
+		gameOverOpt.m_opt = input;
+		gameOverOpt.m_optPos = m_clientPlayer.m_daskPos;
+		SendMSG(&gameOverOpt);
+		break;
+	}
+	while(1);
+	
+}
+
+void CGameClient::HandleGameOverOpt(CGameOverOpt * pMsg)
+{
+	if (pMsg->m_optPos != m_clientPlayer.m_daskPos)
+	{
+		string openid = m_posOpenIdMap[pMsg->m_optPos];
+		DEBUG_LOG("%s %s game", openid.c_str(), (pMsg->m_opt == 1 ? "Ready" : "Quit"));
+	}
 }
 
 

@@ -396,6 +396,25 @@ namespace ctm
 		m_winer = json["winer"].asInt();	
 	}
 
+
+	const Json::Value& CGameOverOpt::ToJson()
+	{
+		CGameMsg::ToJson();
+
+		m_root["opt"]    = m_opt;
+		m_root["optPos"] = m_optPos;
+
+		return m_root;
+	}
+
+	void CGameOverOpt::FromJson(const Json::Value& json)
+	{
+		CGameMsg::FromJson(json);
+
+		m_opt    = json["opt"].asInt();
+		m_optPos = json["optPos"].asInt();	
+	}
+
 	REG_MSG(MSG_GAME_LOGIN_C2S, CLoginMsgC2S);
 	REG_MSG(MSG_GAME_LOGIN_S2C, CLoginMsgS2C);
 	REG_MSG(MSG_GAME_LOGOUT_C2S, CLogOutMsgC2S);
@@ -412,5 +431,6 @@ namespace ctm
 	REG_MSG(MSG_GAME_OUT_CARD_C2S, COutCardsC2S);
 	REG_MSG(MSG_GAME_OUT_CARD_S2C, COutCardsS2C);
 	REG_MSG(MSG_GAME_GAME_OVER_S2C, CGameOverS2C);
+	REG_MSG(MSG_GAME_GAME_OVER_OPT, CGameOverOpt);
 
 }

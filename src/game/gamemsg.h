@@ -270,6 +270,21 @@ namespace ctm
 		int m_bombCount;
 		int m_winer;
 	};
+
+	class CGameOverOpt : public CGameMsg
+	{
+	public:
+		CGameOverOpt() : CGameMsg(MSG_GAME_GAME_OVER_OPT, "GameOverOptC2S") { }
+		virtual ~CGameOverOpt() { }
+
+		virtual const Json::Value& ToJson();
+
+		virtual void FromJson(const Json::Value& json);
+		
+	public:
+		int m_opt; //1,2
+		int m_optPos;
+	};
 }
 
 #endif

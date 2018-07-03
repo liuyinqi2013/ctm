@@ -76,6 +76,10 @@ private:
 
 	void HandleOutCardsS2C(COutCardsS2C * pMsg);
 
+	void HandleGameOverS2C(CGameOverS2C * pMsg);
+
+	void HandleGameOverOpt(CGameOverOpt * pMsg);
+
 	void SendMSG(CGameMsg * pMsg);
 
 	void ShowHandCards();

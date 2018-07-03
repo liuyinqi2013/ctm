@@ -1,6 +1,4 @@
----- Pack Matches (5 in 4 files) ----
-Center.cpp (d:\gitroot\ctm\src\game):				socket.Send(Pack("Message format error!"));
-Netclient.h (d:\gitroot\ctm\src\net):			return m_Socket.Send(m_Context.Pack(buf));
-Netmsg.h (d:\gitroot\ctm\src\net):		std::string Pack(const std::string& buf)
-Netmsg.h (d:\gitroot\ctm\src\net):	inline std::string Pack(const std::string& buf)
-Netserver.cpp (d:\gitroot\ctm\src\net):			std::string buf = m_Context.Pack(std::string(pNetPack->obuf, pNetPack->olen));
+---- m_playerOutBombCount Matches (3 in 2 files) ----
+Dask.cpp (d:\gitroot\ctm\src\game):			m_playerOutBombCount[i]   = 0;
+Dask.cpp (d:\gitroot\ctm\src\game):			m_playerOutBombCount[i]   = 0;
+Dask.h (d:\gitroot\ctm\src\game):		int m_playerOutBombCount[DASK_MAX_PLAYERS];
