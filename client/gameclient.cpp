@@ -14,7 +14,8 @@ CClientPlayer::CClientPlayer() :
 }
 
 CGameClient::CGameClient() :
-	m_zhuangPos(-1)
+	m_zhuangPos(-1),
+	m_stop(false)
 {
 }
 
@@ -46,6 +47,7 @@ bool CGameClient::Init()
 	DEBUG_LOG("send msg : %s", loginMsg.ToString().c_str());
 	m_tcpClient.SendNetPack(loginMsg.ToString());
 	m_tcpClient.SetConnSendMsg(loginMsg.ToString());
+	m_tcpClient.SetNeedReConn(true);
 
 	DEBUG_LOG("initialization ok!");
 
@@ -56,7 +58,7 @@ bool CGameClient::Init()
 
 void CGameClient::Run()
 {
-	DEBUG_LOG("Run !");
+	DEBUG_LOG("Run Begin !");
 	while (1)
 	{
 		std::string buf = m_tcpClient.GetNetPack();
@@ -71,8 +73,12 @@ void CGameClient::Run()
 			pMsg->TestPrint();
 			HandleMsg((CGameMsg*)pMsg);
 			DestroyMsg(pMsg);
+
+			if (m_stop) break;
 		}
 	}
+
+	DEBUG_LOG("Run End !");
 }
 
 void CGameClient::HandleMsg(CGameMsg * pMsg)
@@ -85,6 +91,7 @@ void CGameClient::HandleMsg(CGameMsg * pMsg)
 		HandleLoginMsgS2C((CLoginMsgS2C*)pMsg);
 		break;
 	case MSG_GAME_LOGOUT_S2C:
+		HandleLogoutMsgS2C((CLogoutMsgS2C*)pMsg);
 		break;
 	case MSG_GAME_PLAYER_ARRAY:
 		HandlePlayerArrayMsgS2C((CPlayerArrayMsg*)pMsg);
@@ -107,6 +114,9 @@ void CGameClient::HandleMsg(CGameMsg * pMsg)
 	case MSG_GAME_GAME_OVER_OPT:
 		HandleGameOverOpt((CGameOverOpt*)pMsg);
 		break;
+	case MSG_GAME_GAME_INFO_S2C:
+		HandleGameInfoS2C((CGameInfoS2C*)pMsg);
+		break;
 	default :
 		break;
 	}
@@ -126,6 +136,15 @@ void CGameClient::HandleLoginMsgS2C(CLoginMsgS2C * pMsg)
 	FUNC_END();
 }
 
+void CGameClient::HandleLogoutMsgS2C(CLogoutMsgS2C * pMsg)
+{
+	FUNC_BEG();
+
+	m_tcpClient.SetNeedReConn(false);
+	m_stop = true;
+	
+	FUNC_END();
+}
 
 void CGameClient::HandleJoinGameS2C(CJoinGameS2C * pMsg)
 {
@@ -169,16 +188,7 @@ void CGameClient::HandleGameBeginS2C(CGameBeginS2C * pMsg)
 	
 	if (pMsg->m_callPos == m_clientPlayer.m_daskPos)
 	{
-		CCallDiZhuC2S callDizhu;
-		callDizhu.m_score = -1;
-		callDizhu.m_callPos = m_clientPlayer.m_daskPos;
-		while (callDizhu.m_score < 0 || callDizhu.m_score > 3)
-		{
-			cout<<"call di zhu [0-3] : "<<endl;
-			cin>>callDizhu.m_score;
-		}
-		
-		SendMSG(&callDizhu);
+		OptCallZhuang(1);
 	}
 	
 	FUNC_END();
@@ -192,16 +202,7 @@ void CGameClient::HandleCallDiZhuS2C(CCallDiZhuS2C * pMsg)
 	{
 		if (pMsg->m_nextCallPos == m_clientPlayer.m_daskPos)
 		{
-			CCallDiZhuC2S callDizhu;
-			callDizhu.m_score = -1;
-			callDizhu.m_callPos = m_clientPlayer.m_daskPos;
-			while ((callDizhu.m_score < pMsg->m_score || callDizhu.m_score > 3) && callDizhu.m_score != 0)
-			{
-				cout<<"call di zhu [0,"<<pMsg->m_score<<"-3] : "<<endl;
-				cin>>callDizhu.m_score;
-			}
-			
-			SendMSG(&callDizhu);
+			OptCallZhuang(pMsg->m_score);
 		}
 		else
 		{
@@ -293,38 +294,68 @@ void CGameClient::HandleGameOverS2C(CGameOverS2C * pMsg)
 		DEBUG_LOG("I failed");
 	}
 
-	do
-	{
-		int input;
-		string buf;
-		cout<<"Your choose [1-restart or 2-quit]:"<<endl;
-		cin>>buf;
-
-		input = S2I(buf);
-		if (input != 1 && input != 2)
-		{
-			cout<<"invalid option"<<endl;
-			continue;
-		}
-
-		CGameOverOpt gameOverOpt;
-		gameOverOpt.m_opt = input;
-		gameOverOpt.m_optPos = m_clientPlayer.m_daskPos;
-		SendMSG(&gameOverOpt);
-		break;
-	}
-	while(1);
-	
+	OptReady();
 }
 
 void CGameClient::HandleGameOverOpt(CGameOverOpt * pMsg)
 {
+	FUNC_END();
+	
 	if (pMsg->m_optPos != m_clientPlayer.m_daskPos)
 	{
 		string openid = m_posOpenIdMap[pMsg->m_optPos];
 		DEBUG_LOG("%s %s game", openid.c_str(), (pMsg->m_opt == 1 ? "Ready" : "Quit"));
 	}
+
+	FUNC_END();
 }
+
+
+void CGameClient::HandleGameInfoS2C(CGameInfoS2C * pMsg)
+{
+	FUNC_BEG();
+
+	m_zhuangPos = pMsg->m_zhuangPos;
+	m_handCards = pMsg->m_handCards;
+	
+	m_otherPlayers.clear();
+	for (int i = 0; i < pMsg->m_players.size(); ++i)
+	{
+		if (m_clientPlayer.m_openId == pMsg->m_players[i].m_openId)
+		{
+			m_clientPlayer = pMsg->m_players[i];
+		}
+		else
+		{
+			m_otherPlayers[pMsg->m_players[i].m_openId]  = pMsg->m_players[i];
+			m_posOpenIdMap[pMsg->m_players[i].m_daskPos] = pMsg->m_players[i].m_openId;
+		}
+	}
+
+	if (pMsg->m_currOptPos == m_clientPlayer.m_daskPos)
+	{
+		switch(pMsg->m_gameStatus)
+		{
+		case 0:
+			break;
+		case 1:
+			OptCallZhuang(pMsg->m_maxScore);
+			break;
+		case 2:
+			ShowCards(pMsg->m_lastOutCards);
+			OutCards();
+			break;
+		case 3:
+			break;
+		case 4:
+			OptReady();
+			break;
+		}
+	}
+	
+	FUNC_END();
+}
+
 
 
 void CGameClient::SendMSG(CGameMsg * pMsg)
@@ -405,6 +436,55 @@ void CGameClient::OutCards()
 	while(1);
 		
 	SendMSG(&outCardsC2S);
+}
+
+
+void CGameClient::OptCallZhuang(int currScore)
+{
+	FUNC_BEG();
+	
+	CCallDiZhuC2S callDizhu;
+	callDizhu.m_score = -1;
+	callDizhu.m_callPos = m_clientPlayer.m_daskPos;
+	while ((callDizhu.m_score < currScore || callDizhu.m_score > 3) && callDizhu.m_score != 0)
+	{
+		cout<<"call di zhu [0,"<<currScore<<"-3] : "<<endl;
+		cin>>callDizhu.m_score;
+	}
+			
+	SendMSG(&callDizhu);
+
+	FUNC_END();
+}
+
+
+void CGameClient::OptReady()
+{
+	FUNC_BEG();
+
+	do
+	{
+		int input;
+		string buf;
+		cout<<"Your choose [1-restart or 2-quit]:"<<endl;
+		cin>>buf;
+
+		input = S2I(buf);
+		if (input != 1 && input != 2)
+		{
+			cout<<"invalid option"<<endl;
+			continue;
+		}
+
+		CGameOverOpt gameOverOpt;
+		gameOverOpt.m_opt = input;
+		gameOverOpt.m_optPos = m_clientPlayer.m_daskPos;
+		SendMSG(&gameOverOpt);
+		break;
+	}
+	while(1);
+	
+	FUNC_END();
 }
 
 

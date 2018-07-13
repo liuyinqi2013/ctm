@@ -97,11 +97,11 @@ namespace ctm
 		int m_onlineCount;
 	};
 
-	class CLogOutMsgC2S : public CGameMsg
+	class CLogoutMsgC2S : public CGameMsg
 	{
 	public:
-		CLogOutMsgC2S() : CGameMsg(MSG_GAME_LOGOUT_C2S, "LogOutMsgC2S") { }
-		virtual ~CLogOutMsgC2S() { }
+		CLogoutMsgC2S() : CGameMsg(MSG_GAME_LOGOUT_C2S, "LogOutMsgC2S") { }
+		virtual ~CLogoutMsgC2S() { }
 
 		virtual const Json::Value& ToJson();
 
@@ -111,17 +111,18 @@ namespace ctm
 		std::string m_userName;
 	};
 
-	class CLogOutMsgS2C : public CGameMsg
+	class CLogoutMsgS2C : public CGameMsg
 	{
 	public:
-		CLogOutMsgS2C() : CGameMsg(MSG_GAME_LOGOUT_S2C, "LogOutMsgS2C") { }
-		virtual ~CLogOutMsgS2C() { }
+		CLogoutMsgS2C() : CGameMsg(MSG_GAME_LOGOUT_S2C, "LogOutMsgS2C") { }
+		virtual ~CLogoutMsgS2C() { }
 
 		virtual const Json::Value& ToJson();
 
 		virtual void FromJson(const Json::Value& json);
 		
 	public:
+		int m_opt;
 		std::string m_userName;
 	};
 
@@ -284,6 +285,27 @@ namespace ctm
 	public:
 		int m_opt; //1,2
 		int m_optPos;
+	};
+
+	class CGameInfoS2C : public CGameMsg
+	{
+	public:
+		CGameInfoS2C() : CGameMsg(MSG_GAME_GAME_INFO_S2C, "GameOverS2C") { }
+		virtual ~CGameInfoS2C() { }
+
+		virtual const Json::Value& ToJson();
+
+		virtual void FromJson(const Json::Value& json);
+		
+	public:
+		int m_gameStatus;
+		int m_zhuangPos;
+		std::vector<CPlayerItem> m_players;
+		std::vector<CCard> m_handCards;
+		int m_currOptPos;
+		int m_lastOptPos;
+		int m_maxScore;
+		std::vector<CCard> m_lastOutCards;
 	};
 }
 

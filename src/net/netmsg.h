@@ -30,6 +30,27 @@ namespace ctm
 		std::string m_buf;
 	};
 
+	
+	class CSystemNetMsg : public CMsg
+	{
+	public:
+		CSystemNetMsg();
+		CSystemNetMsg(int port, const std::string& ip, const int sock, const int opt);
+		virtual ~CSystemNetMsg();
+		
+		void TestPrint();
+
+		virtual const Json::Value& ToJson();
+
+		virtual void FromJson(const Json::Value& json);
+		
+	public:
+		int m_iPort;
+		std::string m_strIp;
+		int m_sock;
+		int m_opt;
+	};
+
 	typedef struct CNetPack
 	{
 		CNetPack();

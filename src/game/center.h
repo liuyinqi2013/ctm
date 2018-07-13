@@ -41,7 +41,7 @@ namespace ctm
 		
 		void Login(CLoginMsgC2S * pMsg);
 
-		void Logout(CLogOutMsgC2S * pMsg);
+		void Logout(CLogoutMsgC2S * pMsg);
 
 		void JoinGame(CJoinGameC2S * pMsg);
 

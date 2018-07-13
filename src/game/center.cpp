@@ -105,19 +105,36 @@ namespace ctm
 				if (reader.parse(p->ibuf, root))
 				{
 					CMsg* pMsg = CreateMsg(root["type"].asInt());
-					CGameMsg* pGameMsg = (CGameMsg*)pMsg;
-					pGameMsg->m_sock  = p->sock;
-					pGameMsg->FromJson(root);
-					pGameMsg->TestPrint();
-					if (pGameMsg->m_openId == "")
+					pMsg->FromJson(root);
+					if (MSG_SYSTEM_NET == pMsg->m_iType)
 					{
-						CSocket socket(p->sock, CSocket::SOCK_TYPE_STREAM);
-						pGameMsg->m_errCode = 1;
-						pGameMsg->m_errMsg  = "openid is null";
-						socket.Send(PackNetData(pGameMsg->ToString()));
-						continue;
+						CSystemNetMsg* pNet = (CSystemNetMsg*)pMsg;
+						std::map<int, CPlayer*>::iterator it = m_mapSockPlayers.find(pNet->m_sock);
+						if (it != m_mapSockPlayers.end())
+						{
+							it->second->m_status = pNet->m_opt;
+							it->second->Print();
+							DEBUG_LOG("player %s off line", it->second->m_openId.c_str());
+						}
+					} 
+					else 
+					{
+						CGameMsg* pGameMsg = (CGameMsg*)pMsg;
+						pGameMsg->m_sock  = p->sock;
+						pGameMsg->TestPrint();
+						if (pGameMsg->m_openId == "")
+						{
+							CSocket socket(p->sock, CSocket::SOCK_TYPE_STREAM);
+							pGameMsg->m_errCode = 1;
+							pGameMsg->m_errMsg  = "openid is null";
+							socket.Send(PackNetData(pGameMsg->ToString()));
+						}
+						else
+						{
+							HandleMsg(pGameMsg);
+						}
 					}
-					HandleMsg(pGameMsg);
+					
 					DestroyMsg(pMsg);
 				}
 				else
@@ -152,7 +169,7 @@ namespace ctm
 			Login((CLoginMsgC2S*)pMsg);
 			break;
 		case MSG_GAME_LOGOUT_C2S:
-			Logout((CLogOutMsgC2S*)pMsg);
+			Logout((CLogoutMsgC2S*)pMsg);
 			break;
 		case MSG_GAME_JOIN_GAME_C2S:
 			JoinGame((CJoinGameC2S*)pMsg);
@@ -174,6 +191,17 @@ namespace ctm
 		if (it != m_mapOpenidPlayers.end()) //可能掉线，重新登录。
 		{
 			pPlayer = it->second;
+			if (pPlayer->m_status == 1)
+			{
+				CLogoutMsgS2C logout;
+				logout.m_opt = 2;
+				pPlayer->SendMSG(&logout);
+			}
+			
+			/*
+			pPlayer->m_sock.Close();
+			m_tcpNetServer->DelClientConnect(pPlayer->m_sock.GetSock());
+			*/
 		}
 		else
 		{
@@ -184,9 +212,11 @@ namespace ctm
 		pPlayer->m_openId = pMsg->m_openId;
 		pPlayer->m_playerName = pMsg->m_userName;
 		pPlayer->m_headerImageUrl = pMsg->m_headerImageUrl;
-
+		pPlayer->m_status = 1;
+		
 		pPlayer->Print();
 		m_mapOpenidPlayers[pPlayer->m_openId] = pPlayer;
+		m_mapSockPlayers[pMsg->m_sock] = pPlayer;
 
 		CLoginMsgS2C msg;
 		msg.m_gameInfo ="dou di zhu";
@@ -198,7 +228,7 @@ namespace ctm
 		FUNC_END();
 	}
 
-	void CGameCenter::Logout(CLogOutMsgC2S * pMsg)
+	void CGameCenter::Logout(CLogoutMsgC2S * pMsg)
 	{	
 		FUNC_BEG();
 
@@ -209,6 +239,13 @@ namespace ctm
 	{
 		FUNC_BEG();
 
+		if (m_mapOpenidPlayers[pMsg->m_openId]->m_dask != NULL)
+		{
+			m_mapOpenidPlayers[pMsg->m_openId]->SendGameInfo();
+			DEBUG_LOG("Player %s already in the game", pMsg->m_openId.c_str());
+			return;
+		}
+		
 		if (m_waitDask->IsFull())
 		{
 			if (m_vecFreeDask.size() > 0)

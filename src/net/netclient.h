@@ -22,7 +22,7 @@ namespace ctm
 		{
 		}
 		
-		CNetTcpClient(const std::string& ip, int port) : m_strServerIp(ip), m_iPort(port)
+		CNetTcpClient(const std::string& ip, int port) : m_strServerIp(ip), m_iPort(port),m_bNeedReConn(true)
 		{
 		}
 		
@@ -64,6 +64,11 @@ namespace ctm
 
 		void ShutDown();
 
+		void SetNeedReConn(bool bVal)
+		{
+			m_bNeedReConn = bVal;
+		}
+
 	protected:
 		
 		virtual int Run();
@@ -79,6 +84,8 @@ namespace ctm
 		fd_set m_readFds;
 
 		std::string m_connSendMsg;
+
+		bool m_bNeedReConn;
 	};
 }
 

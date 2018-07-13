@@ -31,6 +31,58 @@ namespace ctm
 		DEBUG_LOG("buf  = %s", m_buf.c_str());
 	}
 
+	CSystemNetMsg::CSystemNetMsg() :
+		CMsg("0", MSG_SYSTEM_NET, "SystemNetMsg"),
+		m_iPort(0),
+		m_sock(0),
+		m_opt(0)
+	{
+	}
+
+	CSystemNetMsg::CSystemNetMsg(int port, const std::string& ip, const int sock, const int opt) :
+		CMsg("0", MSG_SYSTEM_NET, "SystemNetMsg"),
+		m_iPort(port),
+		m_strIp(ip),
+		m_sock(sock),
+		m_opt(opt)
+	{
+	}
+	
+	CSystemNetMsg::~CSystemNetMsg()
+	{
+	}
+
+	void CSystemNetMsg::TestPrint()
+	{
+		CMsg::TestPrint();
+		DEBUG_LOG("sock = %d", m_sock);
+		DEBUG_LOG("Port = %d", m_iPort);
+		DEBUG_LOG("IP  = %s",  m_strIp.c_str());
+		DEBUG_LOG("opt = %s",  m_opt);
+	}
+
+	const Json::Value& CSystemNetMsg::ToJson()
+	{
+		CMsg::ToJson();
+
+		m_root["sock"] = m_sock;
+		m_root["Port"] = m_iPort;
+		m_root["strIp"] = m_strIp;
+		m_root["opt"] = m_opt;
+		
+		return m_root;
+	}
+	
+	void CSystemNetMsg::FromJson(const Json::Value& json)
+	{
+		CMsg::FromJson(json);
+
+		m_sock  = json["sock"].asInt();
+		m_iPort = json["Port"].asInt();
+		m_strIp = json["strIp"].asString();
+		m_opt   = json["opt"].asInt();
+	}
+
 	CNetPack::CNetPack() :
 		sock(-1),
 		port(-1),
@@ -99,5 +151,7 @@ namespace ctm
 			m_mapContext.erase(it);
 		}
 	}
+
+	REG_MSG(MSG_SYSTEM_NET, CSystemNetMsg);
 }
 

@@ -41,6 +41,9 @@ namespace ctm
 		void SendMSG(CGameMsg* pGameMsg);
 		
 		CPlayerItem ToPlayerItem() const;
+
+		void SendGameInfo();
+		
 	public:
 		std::string m_openId;
 		std::string m_playerName;

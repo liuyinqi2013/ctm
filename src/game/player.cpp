@@ -6,7 +6,10 @@
 namespace ctm
 {
 	CPlayer::CPlayer() :
-		m_daskPos(-1)
+		m_daskPos(-1),
+		m_dask(NULL),
+		m_status(0),
+		m_daskId(-1)
 		
 	{
 	
@@ -42,6 +45,7 @@ namespace ctm
 		DEBUG_LOG("m_headerImageUrl = %s", m_headerImageUrl.c_str());
 		DEBUG_LOG("m_daskPos = %u", m_daskPos);
 		DEBUG_LOG("m_daskId  = %u", m_daskId);
+		DEBUG_LOG("m_status  = %u", m_status);
 	}
 
 	void CPlayer::Copy(const CPlayer & other)
@@ -101,8 +105,11 @@ namespace ctm
 
 	void CPlayer::SendMSG(CGameMsg* pGameMsg)
 	{	
-		pGameMsg->m_openId = m_openId;
-		m_sock.Send(PackNetData(pGameMsg->ToString()));
+		if (1 == m_status)
+		{
+			pGameMsg->m_openId = m_openId;
+			m_sock.Send(PackNetData(pGameMsg->ToString()));
+		}
 	}
 
 	CPlayerItem CPlayer::ToPlayerItem() const
@@ -111,5 +118,35 @@ namespace ctm
 		this->CopyTo(playerItem);
 
 		return playerItem;
+	}
+
+	void CPlayer::SendGameInfo()
+	{	
+		if (!m_dask) return;
+		CGameInfoS2C gameinfo;
+		gameinfo.m_currOptPos = m_dask->m_currOptPos;
+		gameinfo.m_lastOptPos = m_dask->m_lastOptPos;
+		gameinfo.m_zhuangPos  = m_dask->m_zhuangPos;
+		gameinfo.m_gameStatus = m_dask->m_gameStatus;
+		gameinfo.m_maxScore   = m_dask->m_callMaxScore;
+
+		for (int i = 0; i < DASK_MAX_PLAYERS; i++)
+		{
+			if (m_dask->m_playerArray[i])
+				gameinfo.m_players.push_back(m_dask->m_playerArray[i]->ToPlayerItem());
+		}
+
+		for (int i = 0; i < m_dask->m_handCardsArray[m_daskPos].size(); i++)
+		{
+			gameinfo.m_handCards.push_back(*m_dask->m_handCardsArray[m_daskPos][i]);
+		}
+
+		for (int i = 0; i < m_dask->m_lastOutCards.size(); i++)
+		{
+			gameinfo.m_lastOutCards.push_back(m_dask->m_lastOutCards[i]);
+		}
+
+		SendMSG(&gameinfo);
+		
 	}
 }

@@ -17,7 +17,7 @@ namespace ctm
 		m_zhuangPos(0),
 		m_currOptPos(0),
 		m_lastOptPos(-1),
-		m_gameStatus(0),
+		m_gameStatus(CAME_WAIT),
 		m_callCount(0),
 		m_callMaxScore(0),
 		m_callMaxScorePos(0),
@@ -91,6 +91,8 @@ namespace ctm
 	{
 		FUNC_BEG();
 		
+		m_gameStatus = GAME_CALL;
+			
 		m_game->ToDeal(m_handCardsArray, m_daskCards);
 
 		CRandom::SetSeed();
@@ -136,7 +138,7 @@ namespace ctm
 		m_zhuangPos = 0;
 		m_currOptPos = 0;
 		m_playerCount = 0;
-		m_gameStatus = 0;
+		m_gameStatus = GAME_WAIT_READY;
 		m_callCount = 0;
 		m_callMaxScore = 0;
 		m_callMaxScorePos = 0;
@@ -209,7 +211,7 @@ namespace ctm
 
 		FUNC_END();
 	}
-
+	
 	void CDask::HandleCallDiZhuMSG(CCallDiZhuC2S * pMsg)
 	{
 		FUNC_BEG();
@@ -239,6 +241,8 @@ namespace ctm
 				m_handCardsArray[m_zhuangPos].push_back(m_daskCards[i]);
 			}
 			Sort1(m_handCardsArray[m_zhuangPos]);
+
+			m_gameStatus = GAME_RUN;
 		}
 		else if (m_callCount == m_game->m_playerNum)
 		{
@@ -252,6 +256,8 @@ namespace ctm
 				m_handCardsArray[m_zhuangPos].push_back(m_daskCards[i]);
 			}
 			Sort1(m_handCardsArray[m_zhuangPos]);
+
+			m_gameStatus = GAME_RUN;
 		}
 		else
 		{
@@ -284,6 +290,14 @@ namespace ctm
 		
 		if (pMsg->m_outCardVec.size() == 0)
 		{
+			if (m_lastOptPos == pMsg->m_outPos)
+			{
+				outCardsS2C.m_errCode = 6;
+				outCardsS2C.m_errMsg  = "You need get out cards";
+				m_playerArray[pMsg->m_outPos]->SendMSG(&outCardsS2C);
+				return;
+			}
+			
 			m_currOptPos = (m_currOptPos + 1) % m_game->m_playerNum;
 			outCardsS2C.m_nextOutPos = m_currOptPos;
 			outCardsS2C.m_lastOutCardVec = m_lastOutCards;
@@ -331,7 +345,7 @@ namespace ctm
 					else 
 						gameOver.m_winer = 2;
 
-					m_gameStatus = 1;
+					m_gameStatus = GAME_OVER;
 
 					BroadCast(&gameOver);
 

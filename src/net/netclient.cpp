@@ -56,6 +56,10 @@ namespace ctm
 				}
 				else
 				{
+					sleep(1);
+
+					if (!m_bNeedReConn) break;
+						
 					while(!m_Socket.ReConnect())
 					{
 						ERROR_LOG("ReConnect %s:%d failed!", m_strServerIp.c_str(), m_iPort);

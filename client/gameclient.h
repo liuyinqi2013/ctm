@@ -66,6 +66,8 @@ private:
 
 	void HandleLoginMsgS2C(CLoginMsgS2C * pMsg);
 
+	void HandleLogoutMsgS2C(CLogoutMsgS2C * pMsg);
+
 	void HandleJoinGameS2C(CJoinGameS2C * pMsg);
 
 	void HandlePlayerArrayMsgS2C(CPlayerArrayMsg * pMsg);
@@ -80,6 +82,8 @@ private:
 
 	void HandleGameOverOpt(CGameOverOpt * pMsg);
 
+	void HandleGameInfoS2C(CGameInfoS2C * pMsg);
+
 	void SendMSG(CGameMsg * pMsg);
 
 	void ShowHandCards();
@@ -87,6 +91,10 @@ private:
 	void GetOutCards(std::vector<CCard> & outCards);
 
 	void OutCards();
+
+	void OptCallZhuang(int currScore);
+
+	void OptReady();
 	
 private:
 
@@ -94,6 +102,7 @@ private:
 
 	string m_serverIp;
 	int    m_port;
+	bool   m_stop;
 
 public:
 	int m_zhuangPos;

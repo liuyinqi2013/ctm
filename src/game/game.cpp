@@ -65,5 +65,14 @@ namespace ctm
 
 		return true;
 	}
+
+	std::vector<CCard> CGame::GetOutCardsTip(const std::vector<CCard*> & handCards, std::vector<CCard> & outCards)
+	{
+		std::vector<CCard> tmpCards;
+
+		int type = CardsType(outCards);
+
+		return tmpCards;
+	}
 	
 }

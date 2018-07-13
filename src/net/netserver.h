@@ -150,7 +150,7 @@ namespace ctm
 		
 		virtual int Run();
 
-	private:
+	public:
 
 		ClientConnect* GetClientConnect(SOCKET_T sock);
 		

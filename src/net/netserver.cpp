@@ -376,6 +376,24 @@ namespace ctm
 				
 				ERROR_LOG("epoll_ctl del failed fd : %d errno = %d, errmsg = %s", conn->m_ConnSock.GetSock(), errCode, errMsg.c_str());
 			}
+
+			//通知上层应用网络断开
+			CSystemNetMsg systemNetMsg(conn->m_iConnPort, conn->m_strConnIp, conn->m_ConnSock.GetSock(), 2);
+			CNetPack* pNetPack = m_netPackPool.Get();
+			if (pNetPack)
+			{
+					pNetPack->sock = conn->m_ConnSock.GetSock();
+					strcpy(pNetPack->ip, conn->m_strConnIp.c_str());
+					pNetPack->port = conn->m_iConnPort;
+					pNetPack->ilen = systemNetMsg.ToString().size();
+					strncpy(pNetPack->ibuf, systemNetMsg.ToString().c_str(), BUF_MAX_SIZE);
+					pNetPack->ibuf[pNetPack->ilen] = 0x0;
+					pNetPack->olen = 0;
+					pNetPack->obuf[0] = 0x0;
+					m_recvQueue.Push(pNetPack);
+					DEBUG_LOG("Net off line");
+			}
+			
 			conn->m_ConnSock.Close();
 			delete conn;
 			conn = NULL;

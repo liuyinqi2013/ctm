@@ -45,6 +45,15 @@ namespace ctm
 		void HandleGameOverOptMSG(CGameOverOpt * pMsg);
 		
 	public:
+		typedef enum GAME_STATUS
+		{
+			CAME_WAIT = 0,
+			GAME_CALL = 1,
+			GAME_RUN  = 2,
+			GAME_OVER = 3,
+			GAME_WAIT_READY = 4
+		};
+		
 		int m_daskId;
 		int m_capacity;
 		CGame* m_game;

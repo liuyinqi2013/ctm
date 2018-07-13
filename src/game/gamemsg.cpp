@@ -117,7 +117,7 @@ namespace ctm
 		m_onlineCount = json["onlineCount"].asInt();
 	}
 
-	const Json::Value& CLogOutMsgC2S::ToJson()
+	const Json::Value& CLogoutMsgC2S::ToJson()
 	{
 		m_root["userName"] = m_userName;
 
@@ -126,28 +126,29 @@ namespace ctm
 		return m_root;
 	}
 
-	void CLogOutMsgC2S::FromJson(const Json::Value& json)
+	void CLogoutMsgC2S::FromJson(const Json::Value& json)
 	{
 		CGameMsg::FromJson(json);
 
 		m_userName = json["userName"].asString();	
 	}
 
-	const Json::Value& CLogOutMsgS2C::ToJson()
+	const Json::Value& CLogoutMsgS2C::ToJson()
 	{
 		m_root["userName"] = m_userName;
-
+		m_root["opt"] = m_opt;
 		CGameMsg::ToJson();
 		
 		return m_root;
 	}
 
-	void CLogOutMsgS2C::FromJson(const Json::Value& json)
+	void CLogoutMsgS2C::FromJson(const Json::Value& json)
 	{
 		CGameMsg::FromJson(json);
 
 		m_openId = json["openId"].asString();
-		m_userName = json["userName"].asString();	
+		m_userName = json["userName"].asString();
+		m_opt = m_root["opt"].asInt();
 	}
 
 	const Json::Value& CJoinGameC2S::ToJson()
@@ -415,14 +416,84 @@ namespace ctm
 		m_optPos = json["optPos"].asInt();	
 	}
 
+	
+	const Json::Value& CGameInfoS2C::ToJson()
+	{
+		CGameMsg::ToJson();
+
+		m_root["gameStatus"] = m_gameStatus;
+		m_root["zhuangPos"]  = m_zhuangPos;
+		m_root["currOptPos"] = m_currOptPos;
+		m_root["lastOptPos"] = m_lastOptPos;
+		m_root["m_maxScore"] = m_maxScore;
+		
+		Json::Value array;
+		for (int i = 0; i < m_players.size(); ++i)
+		{
+			array.append(m_players[i].ToJson());
+		}
+		m_root["players"] = array;
+
+		Json::Value handCards;
+		for (int i = 0; i < m_handCards.size(); ++i)
+		{
+			handCards.append(m_handCards[i].ToJson());
+		}
+		m_root["handCards"] = handCards;
+
+		Json::Value lastOutCards;
+		for (int i = 0; i < m_lastOutCards.size(); ++i)
+		{
+			lastOutCards.append(m_lastOutCards[i].ToJson());
+		}
+		m_root["lastOutCards"] = lastOutCards;
+
+		return m_root;
+	}
+
+	void CGameInfoS2C::FromJson(const Json::Value& json)
+	{
+		CGameMsg::FromJson(json);
+
+		m_gameStatus = json["gameStatus"].asInt();
+		m_zhuangPos  = json["zhuangPos"].asInt();
+		m_currOptPos = json["currOptPos"].asInt();
+		m_lastOptPos = json["lastOptPos"].asInt();
+		m_maxScore   = json["m_maxScore"].asInt();
+
+		m_players.clear();
+		m_handCards.clear();
+		m_lastOutCards.clear();
+		
+		CCard card;
+		for (int i = 0; i < json["handCards"].size(); ++i)
+		{
+			card.FromJson(json["handCards"][i]);
+			m_handCards.push_back(card);
+		}
+		
+		for (int i = 0; i < json["lastOutCards"].size(); ++i)
+		{
+			card.FromJson(json["lastOutCards"][i]);
+			m_lastOutCards.push_back(card);
+		}
+		
+		CPlayerItem player;
+		for (int i = 0; i < json["players"].size(); ++i)
+		{
+			player.FromJson(json["players"][i]);
+			m_players.push_back(player);
+		}
+		
+	}
+
 	REG_MSG(MSG_GAME_LOGIN_C2S, CLoginMsgC2S);
 	REG_MSG(MSG_GAME_LOGIN_S2C, CLoginMsgS2C);
-	REG_MSG(MSG_GAME_LOGOUT_C2S, CLogOutMsgC2S);
-	REG_MSG(MSG_GAME_LOGOUT_S2C, CLogOutMsgS2C);
+	REG_MSG(MSG_GAME_LOGOUT_C2S, CLogoutMsgC2S);
+	REG_MSG(MSG_GAME_LOGOUT_S2C, CLogoutMsgS2C);
 	REG_MSG(MSG_GAME_JOIN_GAME_C2S, CJoinGameC2S);
 	REG_MSG(MSG_GAME_JOIN_GAME_S2C, CJoinGameS2C);
 
-	//REG_MSG(MSG_GAME_PLAYER_INFO, CPlayerItem);
 	REG_MSG(MSG_GAME_PLAYER_ARRAY, CPlayerArrayMsg);
 	REG_MSG(MSG_GAME_GAME_BEGIN_S2C, CGameBeginS2C);
 	REG_MSG(MSG_GAME_CALL_DIZHU_C2S, CCallDiZhuC2S);
@@ -432,5 +503,6 @@ namespace ctm
 	REG_MSG(MSG_GAME_OUT_CARD_S2C, COutCardsS2C);
 	REG_MSG(MSG_GAME_GAME_OVER_S2C, CGameOverS2C);
 	REG_MSG(MSG_GAME_GAME_OVER_OPT, CGameOverOpt);
+	REG_MSG(MSG_GAME_GAME_INFO_S2C, CGameInfoS2C);
 
 }
