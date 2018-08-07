@@ -114,6 +114,7 @@ namespace ctm
 						{
 							it->second->m_status = pNet->m_opt;
 							it->second->Print();
+							it->second->m_manager = true;
 							DEBUG_LOG("player %s off line", it->second->m_openId.c_str());
 						}
 					} 

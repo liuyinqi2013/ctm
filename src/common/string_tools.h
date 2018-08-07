@@ -59,6 +59,10 @@ namespace ctm
 	std::string Join(std::vector<std::string>& vecIn, const std::string& strFlag = " ");
 
 	std::vector<std::string> Split(std::string& strIn, const std::string sep = " ");
+
+	std::string BaseFileName(const std::string& strPathFileName);
+
+	std::string PathName(const std::string& strPathFileName);
 }
 
 #endif

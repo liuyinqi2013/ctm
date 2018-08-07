@@ -54,6 +54,8 @@ namespace ctm
 		int     m_daskPos;
 		int     m_status;
 		int     m_daskId;
+
+		bool    m_manager;
 	};
 
 	inline bool operator == (const CPlayer & lhs, const CPlayer & rhs)

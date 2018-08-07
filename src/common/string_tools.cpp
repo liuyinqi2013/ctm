@@ -385,4 +385,36 @@ namespace ctm
 		
 		return vecOutput;
 	}
+
+	std::string BaseFileName(const std::string& strPathFileName)
+	{
+	#ifdef WIN32
+		char sep = '\\';
+	#else
+		char sep = '/';
+	#endif
+		int pos = strPathFileName.rfind(sep);
+		if (pos != strPathFileName.npos)
+		{
+			return strPathFileName.substr(pos + 1);
+		}
+
+		return strPathFileName;
+	}
+
+	std::string PathName(const std::string& strPathFileName)
+	{
+	#ifdef WIN32
+		char sep = '\\';
+	#else
+		char sep = '/';
+	#endif
+		int pos = strPathFileName.rfind(sep);
+		if (pos != strPathFileName.npos)
+		{
+			return strPathFileName.substr(0, pos + 1);
+		}
+
+		return std::string(".") + sep;
+	}
 }

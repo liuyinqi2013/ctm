@@ -40,21 +40,7 @@ COM_OBJ=../src/common/string_tools.o ../src/common/time_tools.o \
 	../src/thread/thread.o \
 	../src/net/netmsg.o
 	
-CPP_OBJ=$(patsubst %.cpp, %.o, $(CPP_SRC)) ../src/common/string_tools.o ../src/common/time_tools.o \
-	../src/net/socket.o \
-	../src/net/select.o \
-	../src/common/refcount.o \
-	../src/common/msg.o \
-	../src/common/log.o \
-	../src/common/platform.o \
-	../src/ipc/mmap.o \
-	../src/thread/sem.o \
-	../src/ipc/semaphore.o \
-	../src/ipc/sharememory.o \
-	../src/jsoncpp/jsoncpp.o \
-	../src/net/netclient.o \
-	../src/thread/thread.o \
-	../src/net/netmsg.o
+CPP_OBJ=$(patsubst %.cpp, %.o, $(CPP_SRC)) $(COM_OBJ)
 	
 	
 OBJS0=$(COM_OBJ) testdemo.o

@@ -9,7 +9,8 @@ namespace ctm
 		m_daskPos(-1),
 		m_dask(NULL),
 		m_status(0),
-		m_daskId(-1)
+		m_daskId(-1),
+		m_manager(false)
 		
 	{
 	
@@ -23,7 +24,7 @@ namespace ctm
 		m_dask(other.m_dask),
 		m_daskPos(other.m_daskPos),
 		m_status(other.m_status)
-		
+		m_manager(false)
 	{
 	}
 	

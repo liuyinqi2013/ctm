@@ -42,7 +42,7 @@ namespace ctm
 		typedef enum
 		{
 			T_OK = 0,
-			T_ERR   = 1
+			T_ERR = 1
 		} terrno;
 		
 		CThread() : 

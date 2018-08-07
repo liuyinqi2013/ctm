@@ -20,6 +20,9 @@
 #include <ctype.h>
 #include <iostream>
 
+#include "thread/thread.h"
+
+
 using namespace ctm;
 using namespace std;
 
@@ -38,6 +41,29 @@ class TestSingleton : public CSingleton<TestSingleton>
 public:
 	void Hello() { cout<<"hello"<<endl; }
 };
+
+
+class TestThread : public CThread
+{
+public:
+	TestThread() {}
+	~TestThread() {}
+protected:
+	virtual int Run();
+};
+
+int TestThread::Run()
+{	
+	cout<<"----------xxxxxx----------"<<endl;
+
+	while(1)
+	{
+		cout<<"----------dddddddddd----------"<<endl;
+		sleep(1);
+	}
+
+	return 0;
+}
 
 void TestStringFunc()
 {
@@ -58,6 +84,21 @@ void TestStringFunc()
 	{
 		cout<<"item = "<<vecOutput[i]<<endl;
 	}
+
+	cout<<"-----------------BaseFileName----------------------"<<endl;
+	cout<<BaseFileName("laod/wuda/laod.txt")<<endl;
+	cout<<BaseFileName("/laod.txt")<<endl;
+	cout<<BaseFileName("laod\\wuda\\laod.txt")<<endl;
+	cout<<BaseFileName("laod/wuda/")<<endl;
+	cout<<BaseFileName("wuda.txt")<<endl;
+	cout<<"-----------------BaseFileName----------------------"<<endl;
+
+	cout<<PathName("laod/wuda/laod.txt")<<endl;
+	cout<<PathName("/laod.txt")<<endl;
+	cout<<PathName("laod\\wuda\\laod.txt")<<endl;
+	cout<<PathName("laod/wuda/")<<endl;
+	cout<<PathName("wuda.txt")<<endl;
+	
 }
 
 void TestTcpClient()
@@ -420,16 +461,22 @@ int main(int argc, char **argv)
 	CLog::GetInstance()->SetLogName("test");
 	CLog::GetInstance()->SetLogPath("/opt/test/ctm/log");
 	//TestStringFunc();
+	TestThread t;
+	t.Start();
+	if (t.Detach() != 0)
+	{
+		cout<<"Detach failed"<<endl;
+	}
 	//TestRandom();
 	//HandleSign();
 	//TestGetHostByAddr();
 	//TestGetHostByName();
 	//TestSelect();
-	TestMsg();
+	//TestMsg();
 	//TestMmap(S2I(argv[1]));
 	//TestSem(S2I(argv[1]));
 	//TestShareMem(S2I(argv[1]));
-	//int a;
-	//cin>>a;
+	int a;
+	cin>>a;
 	return 0;
 }

@@ -3,8 +3,9 @@
 default: all
 
 .DEFAULT:
-	cd src && $(MAKE) $@
-	cd test && $(MAKE) $@
+	make -C src
+	make -C test
+	make -C client
 install:
 	cd src && $(MAKE) $@
 
