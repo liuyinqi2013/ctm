@@ -399,6 +399,39 @@ namespace ctm
 		
 	}
 
+	std::string CardsTypeToCN(int type)
+	{
+		switch(type)
+		{
+		case CARDS_TYPE_SINGLE:
+			return std::string("单牌");
+		case CARDS_TYPE_PAIR:
+			return std::string("对子");
+		case CARDS_TYPE_THREE:
+			return std::string("三张");
+		case CARDS_TYPE_THREE_ONE:
+			return std::string("三带一");
+		case CARDS_TYPE_THREE_TWO:
+			return std::string("三带二");
+		case CARDS_TYPE_FOUR_TWO:
+			return std::string("四带二");
+		case CARDS_TYPE_FLY:
+			return std::string("飞机");
+		case CARDS_TYPE_FLY_TWO:
+			return std::string("飞机2");
+		case CARDS_TYPE_SHUN:
+			return std::string("顺子");
+		case CARDS_TYPE_SHUN_PAIR:
+			return std::string("连对");
+		case CARDS_TYPE_BOMB:
+			return std::string("炸弹");
+		case CARDS_TYPE_KING_BOMB:
+			return std::string("王炸");
+		default :
+			return std::string("未知");
+		}
+	}
+
 	void CardsToArray(const std::vector<CCard> & vecCards, int array[15])
 	{
 		for (int i = 0; i < vecCards.size(); ++i)

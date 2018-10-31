@@ -1,4 +1,6 @@
----- m_playerOutBombCount Matches (3 in 2 files) ----
-Dask.cpp (d:\gitroot\ctm\src\game):			m_playerOutBombCount[i]   = 0;
-Dask.cpp (d:\gitroot\ctm\src\game):			m_playerOutBombCount[i]   = 0;
-Dask.h (d:\gitroot\ctm\src\game):		int m_playerOutBombCount[DASK_MAX_PLAYERS];
+---- CardsTypeToStr Matches (5 in 3 files) ----
+Card.cpp (d:\gitroot\ctm\src\game):	std::string CardsTypeToStr(int type)
+Card.cpp (d:\gitroot\ctm\src\game):		DEBUG_LOG("card type : %s", CardsTypeToStr(CardsType(vec)).c_str());	
+Card.h (d:\gitroot\ctm\src\game):	std::string CardsTypeToStr(int type);
+Gameclient.cpp (d:\gitroot\ctm\client):			DEBUG_LOG("%s out : %s ", m_otherPlayers[m_posOpenIdMap[pMsg->m_outPos]].m_userName.c_str(), CardsTypeToStr(pMsg->m_lastOutCardType).c_str());
+Gameclient.cpp (d:\gitroot\ctm\client):			DEBUG_LOG("I out : %s ", CardsTypeToStr(type).c_str());

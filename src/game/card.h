@@ -208,6 +208,8 @@ namespace ctm
 
 	std::string CardsTypeToStr(int type);
 
+	std::string CardsTypeToCN(int type);
+
 	void CardsToArray(const std::vector<CCard> & vecCards, int array[15]);
 
 	void CardsToArray(const std::vector<CCard*> & vecCards, int array[15]);

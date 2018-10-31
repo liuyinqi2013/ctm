@@ -251,7 +251,7 @@ void CGameClient::HandleOutCardsS2C(COutCardsS2C * pMsg)
 		}
 		else
 		{
-			DEBUG_LOG("%s out : %s ", m_otherPlayers[m_posOpenIdMap[pMsg->m_outPos]].m_userName.c_str(), CardsTypeToStr(pMsg->m_lastOutCardType).c_str());
+			DEBUG_LOG("%s out : ¡¾%s¡¿ ", m_otherPlayers[m_posOpenIdMap[pMsg->m_outPos]].m_userName.c_str(), CardsTypeToCN(pMsg->m_lastOutCardType).c_str());
 		}
 	}
 	else if (pMsg->m_outPos == m_clientPlayer.m_daskPos)
@@ -426,7 +426,7 @@ void CGameClient::OutCards()
 		else
 		{
 			int type = CardsType(outCardsC2S.m_outCardVec);
-			DEBUG_LOG("I out : %s ", CardsTypeToStr(type).c_str());
+			DEBUG_LOG("I out : ¡¾%s¡¿", CardsTypeToCN(type).c_str());
 			ShowCards(outCardsC2S.m_outCardVec);
 			
 			if (CARDS_TYPE_UNKNOWN != type)
