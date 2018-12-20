@@ -33,7 +33,13 @@ namespace ctm
 		SOCKET_T fd = Socket(AF_INET, SOCK_STREAM, 0);
 		if(SOCKET_INVALID == fd) 
 			return SOCKET_INVALID;
-
+		
+		int val = 1;
+		if (!SetSockOpt(SOL_SOCKET, SO_REUSEADDR, (const char*)&val, sizeof(val)))
+		{
+			return SOCKET_INVALID;
+		}
+		
 		struct sockaddr_in addr = {0};
 		addr.sin_family = AF_INET;
 		addr.sin_port = htons(port);
