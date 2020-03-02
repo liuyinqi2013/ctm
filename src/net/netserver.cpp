@@ -314,7 +314,8 @@ namespace ctm
 	bool CTcpNetServer::AddClientConnect(ClientConnect* conn)
 	{
 		DEBUG_LOG("BEGIN");
-		if (!conn) return false;
+		if (!conn) return false;
+
 			
 		CLockOwner owner(m_mutexLock);
 			
@@ -334,7 +335,8 @@ namespace ctm
 			conn->m_ConnSock.Close();
 			delete conn;
 			conn = NULL;
-			return false;
+			return false;
+
 		}
 		m_mapConns[conn->m_ConnSock.GetSock()] = conn;
 		DEBUG_LOG("END");
@@ -365,7 +367,8 @@ namespace ctm
 		{
 			DEBUG_LOG("find");
 			ClientConnect* conn = it->second;
-			if (!conn) return false;
+			if (!conn) return false;
+
 
 			int iRet = epoll_ctl(m_epollFd, EPOLL_CTL_DEL, conn->m_ConnSock.GetSock(), NULL);
 			DEBUG_LOG("Delete connect [%s]", conn->ToString().c_str());
@@ -406,7 +409,8 @@ namespace ctm
 
 	bool CTcpNetServer::DelClientConnect(ClientConnect* conn)
 	{
-		if (!conn) return false;
+		if (!conn) return false;
+
 		return DelClientConnect(conn->m_ConnSock.GetSock());
 	}
 
@@ -619,7 +623,8 @@ namespace ctm
 		
 		DEBUG_LOG("END");
 		return 0;
-	}
+	}
+
 
 	int CTcpNetServer::Readn(ClientConnect* conn, char* buf, int len)
 	{

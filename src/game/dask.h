@@ -13,7 +13,9 @@ namespace ctm
 	class CGame;
 	class CPlayer;
 	class CCard;
-	class CGameCenter;
+	class CGameCenter;
+
+
 		
 	class CDask
 	{

@@ -23,7 +23,7 @@ namespace ctm
 		m_sock(other.m_sock),
 		m_dask(other.m_dask),
 		m_daskPos(other.m_daskPos),
-		m_status(other.m_status)
+		m_status(other.m_status),
 		m_manager(false)
 	{
 	}
@@ -105,7 +105,8 @@ namespace ctm
 	}
 
 	void CPlayer::SendMSG(CGameMsg* pGameMsg)
-	{	
+	{
+	
 		if (1 == m_status)
 		{
 			pGameMsg->m_openId = m_openId;

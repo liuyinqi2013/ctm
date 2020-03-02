@@ -56,9 +56,9 @@ namespace ctm
 
 	bool IsAlnum(const std::string& strIn);
 
-	std::string Join(std::vector<std::string>& vecIn, const std::string& strFlag = " ");
+	std::string Join(const std::vector<std::string>& vecIn, const std::string& strFlag = " ");
 
-	std::vector<std::string> Split(std::string& strIn, const std::string sep = " ");
+	std::vector<std::string>& Split(const std::string& strIn, std::vector<std::string>& outVec, const std::string sep = " ");
 
 	std::string BaseFileName(const std::string& strPathFileName);
 

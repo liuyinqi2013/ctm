@@ -99,7 +99,8 @@ namespace ctm
 		}
 
 		CNetPack* GetNetPack()
-		{
+		{
+
 			return m_recvQueue.GetAndPop();
 		}
 

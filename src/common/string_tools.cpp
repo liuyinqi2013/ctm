@@ -241,7 +241,7 @@ namespace ctm
 							'w','x','y','z','0','1','2','3',
 							'4','5','6','7','8','9','+','/','='};
 	
-	int B64Code2Index(char c)
+	static int B64Code2Index(char c)
 	{
 		int index = 64;
 		if (c >= 'A' && c <= 'Z') index = c - 'A';
@@ -351,7 +351,7 @@ namespace ctm
 		return true;
 	}
 	
-	std::string Join(std::vector<std::string>& vecIn, const std::string& strFlag)
+	std::string Join(const std::vector<std::string>& vecIn, const std::string& strFlag)
 	{
 		std::string strOut;
 		if(vecIn.size() > 0)
@@ -366,24 +366,21 @@ namespace ctm
 		return strOut;
 	}
 
-	std::vector<std::string> Split(std::string& strIn, const std::string sep)
+	std::vector<std::string>& Split(const std::string& strIn, std::vector<std::string>& outVec, const std::string sep)
 	{
-		std::vector<std::string> vecOutput;
 		size_t begin = 0;
 		size_t end   = strIn.find(sep, begin);
-		std::string strItem;
 		while(end != std::string::npos)
 		{
-			strItem = strIn.substr(begin, end - begin);
-			vecOutput.push_back(strItem);
+			outVec.push_back(strIn.substr(begin, end - begin));
 			begin = end + sep.size();
 			end   = strIn.find(sep, begin);
 		}
 
 		if (begin < strIn.size())
-			vecOutput.push_back(strIn.substr(begin));
+			outVec.push_back(strIn.substr(begin));
 		
-		return vecOutput;
+		return outVec;
 	}
 
 	std::string BaseFileName(const std::string& strPathFileName)

@@ -35,7 +35,7 @@ namespace ctm
 			return SOCKET_INVALID;
 		
 		int val = 1;
-		if (!SetSockOpt(SOL_SOCKET, SO_REUSEADDR, (const char*)&val, sizeof(val)))
+		if (!SetSockOpt(fd, SOL_SOCKET, SO_REUSEADDR, (const char*)&val, sizeof(val)))
 		{
 			return SOCKET_INVALID;
 		}
@@ -434,7 +434,6 @@ namespace ctm
 
 	bool CSocket::Renew()
 	{
-
 		SOCKET_T sock;
 		
 		if (SOCK_TYPE_STREAM == m_sockType)

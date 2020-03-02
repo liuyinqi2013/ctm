@@ -1,15 +1,15 @@
 RM=rm -rf
 CP=cp -rf
 CC=g++
-CFLAGS= -c -Wall -g
+CFLAGS= -c -Wall -g -fpermissive
 
 TARGET=ctm
 BIN_PATH=../bin
 INSTALL=
 
-SUBDIRS=$(shell find . -type d)
-INC_SUBDIRS=$(shell find . -type d | awk -F' ' '{print "-I"$$0}')
-INC_PATH=$(INC_SUBDIRS)
+SUBDIRS=$(shell find ./* -type d)
+INC_SUBDIRS=$(shell find ./* -type d | awk -F' ' '{print "-I"$$0}')
+INC_PATH=$(INC_SUBDIRS) -I./
 LIB_PATH=/usr/lib64/mysql/libmysqlclient.a
 LIB= -lpthread -ldl -lz
 

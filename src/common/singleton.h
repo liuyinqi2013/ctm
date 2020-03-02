@@ -3,7 +3,6 @@
 #include <stdlib.h>
 namespace ctm
 {
-
 	template <class T>  
 	class CSingleton  
 	{
