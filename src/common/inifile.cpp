@@ -2,6 +2,7 @@
 #include "string_tools.h"
 #include <fstream>
 #include <assert.h>
+#include <iostream>
 
 namespace ctm
 {
@@ -60,7 +61,7 @@ namespace ctm
 
 		for (int i = 0; i < m_vecChild.size(); ++i)
 		{
-			centont += "\n" + m_vecChild[i]->ToString() + "\n";
+			centont += "\n" + m_vecChild[i]->ToString();
 		}
 
 		return centont;
@@ -72,10 +73,7 @@ namespace ctm
 
 		if (m_mapChild.find(key) == m_mapChild.end())
 		{
-			CIniValue* pValue = new CIniValue;
-			pValue->m_key = key;
-			m_vecChild.push_back(pValue);
-			m_mapChild[pValue->m_key] = pValue;
+			AddChild(new CIniValue(key, "", this));
 		}
 
 		return *m_mapChild[key];
@@ -105,7 +103,7 @@ namespace ctm
 		if (!fileIni.is_open())
 		{
 			return false;
-		}
+		}
 
 		char buf[1024] = {0};
 		string strBuf;
@@ -124,16 +122,20 @@ namespace ctm
 
 			if (*pHead == '#') // ½âÎö×¢ÊÍ
 			{
-				pValue = new CIniValue(CIniValue::ECommentType, "", buf, pParent);
-				if (pParent) pParent->AddChild(pValue);
-				else m_vecIniValue.push_back(pValue);
+				pValue = new CIniValue(CIniValue::ECommentType, "", ++pHead, pParent);
+				if (pParent) {
+					pParent->AddChild(pValue);
+				}
+				else {
+					m_vecIniValue.push_back(pValue);
+				}
 			}
 			else if (*pHead == '[') // ½âÎö¶Î
 			{
 				strBuf = pHead;
 				int pos = strBuf.find("]", 2);
 				assert(pos != string::npos);
-				key = strBuf.substr(1, pos);
+				key = strBuf.substr(1, pos - 1);
 				key = Trimmed(key);
 				pParent = new CIniValue(CIniValue::ESectionType, key, "", NULL);
 				m_vecIniValue.push_back(pParent);
@@ -165,7 +167,6 @@ namespace ctm
 		return true;
 	}
 
-
 	bool CIniFile::Save(const string & fileName)
 	{
 		if (fileName.empty())
@@ -189,31 +190,95 @@ namespace ctm
 
 	string CIniFile::ToString() const
 	{
+		string global;
 		string centont;
 		if (m_vecIniValue.size())
 		{
-			int i = 0;
-			for (; i < m_vecIniValue.size() - 1; ++i)
-			{
-				centont += m_vecIniValue[i]->ToString() + "\n";
+			for (int i = 0; i < m_vecIniValue.size(); ++i)
+			{	
+				if (m_vecIniValue[i]->m_parent == NULL && m_vecIniValue[i]->m_type != CIniValue::ESectionType) {
+					
+					global += m_vecIniValue[i]->ToString() + "\n";
+				}
+				else {
+					centont += m_vecIniValue[i]->ToString() + "\n";
+				}
 			}
-			centont += m_vecIniValue[i]->ToString();
 		}
 
-		return centont;
+		return global + centont;
 	}
 
-
-	CIniValue & CIniFile::operator[] (const string & key)
+	CIniValue& CIniFile::operator[] (const string & key)
 	{
 		if (m_keyMap.find(key) == m_keyMap.end())
 		{
-			CIniValue * pValue = new CIniValue;
-			pValue->m_key = key;
+			CIniValue* pValue = new CIniValue(key, "");
 			m_vecIniValue.push_back(pValue);
 			m_keyMap[pValue->m_key] = pValue;
 		}
 
 		return *m_keyMap[key];
+	}
+
+	void CIniFile::Get(const string& key, int& val)
+	{
+		const CIniValue* p = GetIniValue(key);
+		if (p) val = p->AsInt();
+	}
+
+	void CIniFile::Get(const string& key, double& val)
+	{
+		const CIniValue* p = GetIniValue(key);
+		if (p) val = p->AsFloat();
+	}
+
+	void CIniFile::Get(const string& key, string& val)
+	{
+		const CIniValue* p = GetIniValue(key);
+		if (p) val = p->AsString();
+	}
+
+	void CIniFile::Get(const string& section, const string& key, int& val)
+	{
+		const CIniValue* p = GetIniValue(section, key);
+		if (p) val = p->AsInt();
+	}
+
+	void CIniFile::Get(const string& section, const string& key, double& val)
+	{
+		const CIniValue* p = GetIniValue(section, key);
+		if (p) val = p->AsFloat();
+	}
+
+	void CIniFile::Get(const string& section, const string& key, string& val)
+	{
+		const CIniValue* p = GetIniValue(section, key);
+		if (p) val = p->AsString();
+	}
+
+	CIniValue* CIniFile::GetIniValue(const string& key)
+	{
+		map<string, CIniValue*>::iterator it = m_keyMap.find(key);
+		if (it != m_keyMap.end())
+		{
+			return it->second;
+		}
+
+		return NULL;
+	}
+
+	CIniValue* CIniFile::GetIniValue(const string& section, const string& key)
+	{
+		CIniValue* p = GetIniValue(section);
+		if (p && p->m_type == CIniValue::ESectionType)
+		{
+			map<string, CIniValue*>::iterator it = p->m_mapChild.find(key);
+			if (it != p->m_mapChild.end()) {
+				return it->second;
+			}
+		}
+
+		return NULL;
 	}
 }

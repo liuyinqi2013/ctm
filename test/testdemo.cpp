@@ -5,6 +5,7 @@
 #include "common/com.h"
 #include "common/log.h"
 #include "common/random.h"
+#include "common/inifile.h"
 
 #include "net/socket.h"
 #include "net/select.h"
@@ -416,7 +417,6 @@ void TestShareMem(int flag = 1)
 	
 }
 
-
 void TestSem(int flag = 1)
 {
 	CSemaphore sem(1024);
@@ -456,17 +456,72 @@ void TestRandom()
 	}
 }
 
+void TestIni()
+{
+	CIniFile ini("conf.ini");
+	ini.Load();
+	//cout << "laod = " << ini["laod"].AsInt() << endl;
+	//cout << "laoer = " << ini["laoer"].AsInt() << endl;
+	//cout << "laosi = " << ini["laosi"].AsInt() << endl;
+	//cout << "mysql.host = " << ini["mysql"]["host"].AsString() << endl;
+	//cout << "redis.port = " << ini["redis"]["port"].AsString() << endl;
+
+	//ini.Set("set_str", "bbb");
+	//ini.Set("set_int", 20);
+	//ini.Set("set_float", 0.30);
+
+	//ini.Set("set", "set_str", "aaa");
+	//ini.Set("set", "set_int", 30);
+	//ini.Set("set", "set_float", 0.40);
+
+	string a;
+	int b;
+	double c;
+
+	ini.Get("set_str", a);
+	ini.Get("set_int", b);
+	ini.Get("set_float", c);
+
+	cout << a << endl;
+	cout << b << endl;
+	cout << c << endl;
+
+	ini.Get("set", "set_str", a);
+	ini.Get("set", "set_int", b);
+	ini.Get("set", "set_float", c);
+
+	cout << a << endl;
+	cout << b << endl;
+	cout << c << endl;
+
+	//cout << ini["set_str"].AsString() << endl;
+	//cout << ini["set_int"].AsInt() << endl;
+	//cout << ini["set_float"].AsFloat() << endl;
+
+	ini["set"]["set_str"] = "xxx";
+
+	//cout << ini["set"]["set_str"].AsString() << endl;
+	//cout << ini["set"]["set_int"].AsInt() << endl;
+	//cout << ini["set"]["set_float"].AsFloat() << endl;
+
+	//cout << ini.ToString()<<endl;
+
+	ini.Save();
+}
+
 int main(int argc, char **argv)
 {
 	CLog::GetInstance()->SetLogName("test");
-	CLog::GetInstance()->SetLogPath("/opt/test/ctm/log");
+	//CLog::GetInstance()->SetLogPath("./");
 	//TestStringFunc();
+	/*
 	TestThread t;
 	t.Start();
 	if (t.Detach() != 0)
 	{
 		cout<<"Detach failed"<<endl;
 	}
+	*/
 	//TestRandom();
 	//HandleSign();
 	//TestGetHostByAddr();
@@ -476,6 +531,7 @@ int main(int argc, char **argv)
 	//TestMmap(S2I(argv[1]));
 	//TestSem(S2I(argv[1]));
 	//TestShareMem(S2I(argv[1]));
+	TestIni();
 	int a;
 	cin>>a;
 	return 0;

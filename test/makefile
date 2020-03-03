@@ -10,11 +10,11 @@ TARGET2=clientdemo
 BIN_PATH=../bin
 INSTALL=
 
-SUBDIRS=$(shell find . -type d)
+SUBDIRS=$(shell find ./* -type d)
 SRCDIRS=$(shell find ../src -type d)
-INC_SUBDIRS=$(shell find . -type d | awk -F' ' '{print "-I"$$0}')
+INC_SUBDIRS=$(shell find ./* -type d | awk -F' ' '{print "-I"$$0}')
 INC_SRCDIS=$(shell find ../src -type d | awk -F' ' '{print "-I"$$0}')
-INC_PATH=$(INC_SUBDIRS) $(INC_SRCDIS)
+INC_PATH=$(INC_SUBDIRS) $(INC_SRCDIS) -I./
 LIB_PATH=/usr/lib64/mysql/libmysqlclient.a
 LIB= -lpthread -ldl -lz
 
@@ -38,7 +38,8 @@ COM_OBJ=../src/common/string_tools.o ../src/common/time_tools.o \
 	../src/jsoncpp/jsoncpp.o \
 	../src/net/netclient.o \
 	../src/thread/thread.o \
-	../src/net/netmsg.o
+	../src/net/netmsg.o \
+	../src/common/inifile.o
 	
 CPP_OBJ=$(patsubst %.cpp, %.o, $(CPP_SRC)) $(COM_OBJ)
 	
