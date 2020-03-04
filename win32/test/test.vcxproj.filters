@@ -30,6 +30,21 @@
     <ClCompile Include="..\..\src\net\select.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\test\clientdemo.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\test\serverdemo.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\test\tcdemo.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\test\tcpserver.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\test\testdemo.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\common\Singleton.h">
@@ -47,5 +62,12 @@
     <ClInclude Include="..\..\src\net\select.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\test\tcpserver.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\test\conf.ini" />
+    <None Include="..\..\test\makefile" />
   </ItemGroup>
 </Project>

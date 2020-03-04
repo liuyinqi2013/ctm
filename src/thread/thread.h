@@ -29,7 +29,7 @@ namespace ctm
 {
 	class CThread
 	{
-		NOCOPY(CThread)		
+		DISABLE_COPY_ASSIGN(CThread)		
 	public:
 		typedef enum
 		{

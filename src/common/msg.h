@@ -159,7 +159,7 @@ namespace ctm
 	class CMsgQueue
 	{
 	
-	NOCOPY(CMsgQueue)
+	DISABLE_COPY_ASSIGN(CMsgQueue)
 		
 	public:
 		CMsgQueue();
@@ -201,7 +201,8 @@ namespace ctm
 		size_t Size();
 
 		bool IsFull()
-		{
+		{
+
 			return (Size() >= m_maxSize);
 		}
 		

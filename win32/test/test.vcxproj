@@ -89,6 +89,11 @@
     <ClCompile Include="..\..\src\common\time_tools.cpp" />
     <ClCompile Include="..\..\src\net\select.cpp" />
     <ClCompile Include="..\..\src\net\socket.cpp" />
+    <ClCompile Include="..\..\test\clientdemo.cpp" />
+    <ClCompile Include="..\..\test\serverdemo.cpp" />
+    <ClCompile Include="..\..\test\tcdemo.cpp" />
+    <ClCompile Include="..\..\test\tcpserver.cpp" />
+    <ClCompile Include="..\..\test\testdemo.cpp" />
     <ClCompile Include="..\..\test\unit_test.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -97,6 +102,11 @@
     <ClInclude Include="..\..\src\common\time_tools.h" />
     <ClInclude Include="..\..\src\net\select.h" />
     <ClInclude Include="..\..\src\net\socket.h" />
+    <ClInclude Include="..\..\test\tcpserver.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\test\conf.ini" />
+    <None Include="..\..\test\makefile" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -6,10 +6,10 @@
 namespace ctm
 {
 
-#define NOCOPY(T) \
+#define DISABLE_COPY_ASSIGN(CLASS_NAME) \
 protected:\
-	T(const T&);\
-	T& operator= (const T&);
+	CLASS_NAME(const CLASS_NAME&);\
+	CLASS_NAME& operator= (const CLASS_NAME&);
 }
 
 #endif

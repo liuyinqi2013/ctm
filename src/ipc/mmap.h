@@ -8,7 +8,7 @@ namespace ctm
 	class CMmap
 	{
 	
-	NOCOPY(CMmap)
+	DISABLE_COPY_ASSIGN(CMmap)
 		
 	public:
 		CMmap(size_t len);
