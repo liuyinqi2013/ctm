@@ -5,42 +5,68 @@
 #include "thread/mutex.h"
 #include "singleton.h"
 
+
+// 定义默认值
+#define LOG_FILE_MIN_SIZE (2)
+#define LOG_FILE_MAX_SIZE (500)
+#define LOG_FILE_DEFAULT_SIZE (50) 
+#define STDOUT_LOG_FILE "STDOUT"
+#define LOG_FILE_DEFAULT_NAME STDOUT_LOG_FILE
+#define LOG_FILE_DEFAULT_PATH "./"
+
 namespace ctm
 {
 	class CLog : public CSingleton<CLog>
 	{
 	public:
-		static const unsigned int LOG_FILE_MIN_SIZE = 2;   //文件最大尺寸单位MB
-		static const unsigned int LOG_FILE_MAX_SIZE = 500; //文件最大尺寸单位MB
-
 		enum LogLevel
 		{
-			LOG_NORMAL = 0,
-			LOG_DEBUG,
+			LOG_DEBUG = 0,
+			LOG_INFO,
 			LOG_WARN,
-			LOG_ERROR
+			LOG_ERROR,
+			LOG_NOLOG,
 		};
 
-		CLog(const std::string& logName = "Run", const std::string& logPath = "./", unsigned int fileMaxSize = 50);
+		/*
+		CLog类构成函数
+		logName：日志文件名称，默认为标准输出
+		logPath：日志文件存放路径
+		fileMaxSize：日志文件大小，单位MB
+		level：日志文件等级，小于level等级的日志将不记录
+		*/
+		CLog(const std::string& logName = LOG_FILE_DEFAULT_NAME,
+			const std::string& logPath = LOG_FILE_DEFAULT_PATH,
+			unsigned int fileMaxSize = LOG_FILE_DEFAULT_SIZE,
+			enum LogLevel level = LOG_DEBUG);
+
 		~CLog();
 
 		void SetLogName(const std::string& logName);
 		void SetLogPath(const std::string& logPath);
 		void SetFileMaxSize(unsigned int fileMaxSize);
-		
+		void SetLogLevel(enum LogLevel level);
+
 		bool Write(enum LogLevel level, const char* format, ...);
+
+		// 递归创建文件夹
+		static void MakePath(const std::string& path);
 
 	private:
 
-		void InitFileName();
+		void Init();
 
-		void FormatPath(const std::string& path);
+		void AssignPath(const std::string& path);
+		void AssignMaxSize(unsigned int fileMaxSize);
 
+		// 前缀格式[datatime][pid][level]
 		std::string LinePrefix(enum LogLevel level);
-
 		long long GetFileSize(const std::string& fileName);
+		void ToNextFile();
+		std::string MilliSecondStr();
 
-		void SwitchNextFile();
+		void OpenFile();
+		void CloseFile();
 
 	private:
 		std::string m_logName;
@@ -52,14 +78,17 @@ namespace ctm
 		std::string m_fileName;
 		CMutex m_mutexLock;
 		unsigned long m_logFileSize;
+		int m_logLevel;
 	};
 
-#define DEBUG_LOG(format,...) CLog::GetInstance()->Write(CLog::LOG_DEBUG, "[%s:%d]:"format, __FILE__, __LINE__, ##__VA_ARGS__)
-#define ERROR_LOG(format,...) CLog::GetInstance()->Write(CLog::LOG_ERROR, "[%s:%d]:"format, __FILE__, __LINE__, ##__VA_ARGS__)
+#define DEBUG_LOG(format,...) CLog::GetInstance()->Write(CLog::LOG_DEBUG, "[%s:%d]:" format, __FILE__, __LINE__, ##__VA_ARGS__)
+#define ERROR_LOG(format,...) CLog::GetInstance()->Write(CLog::LOG_ERROR, "[%s:%d]:" format, __FILE__, __LINE__, ##__VA_ARGS__)
+#define WARN_LOG(format,...) CLog::GetInstance()->Write(CLog::LOG_WARN, "[%s:%d]:" format, __FILE__, __LINE__, ##__VA_ARGS__)
+#define INFO_LOG(format,...) CLog::GetInstance()->Write(CLog::LOG_INFO, "[%s:%d]:" format, __FILE__, __LINE__, ##__VA_ARGS__)
 
 #define FUNC_BEG() DEBUG_LOG("Begin...")
 #define FUNC_END() DEBUG_LOG("End...")
-		
+
 };
 
 #endif

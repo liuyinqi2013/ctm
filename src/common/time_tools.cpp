@@ -3,18 +3,38 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifndef WIN32
+#ifdef WIN32
+#include <Windows.h>
+#else
 #include <sys/time.h>
 #endif
 
 namespace ctm
 {
-	unsigned long long UTime()
+	unsigned long MilliTime()
 	{
-#ifndef WIN32
+#ifdef WIN32
+		SYSTEMTIME sys_time;
+		GetLocalTime(&sys_time);
+		return (time(NULL) * 1000 + sys_time.wMilliseconds);
+#else
 		struct timeval val = {0};
 		gettimeofday(&val, NULL);
-		return (val.tv_sec * 1000000 + val.tv_usec);
+		return (val.tv_sec * 1000 + val.tv_usec / 1000);
+#endif
+		return 0;
+	}
+
+	unsigned int MilliSeconds()
+	{
+#ifdef WIN32
+		SYSTEMTIME sys_time;
+		GetLocalTime(&sys_time);
+		return sys_time.wMilliseconds;
+#else
+		struct timeval val = { 0 };
+		gettimeofday(&val, NULL);
+		return (val.tv_usec / 1000);
 #endif
 		return 0;
 	}

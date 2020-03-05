@@ -8,10 +8,12 @@ namespace ctm
 {
 	inline unsigned long Time() { return time(NULL); }
 	
-	unsigned long long UTime();
+	// 获取当前时间（毫秒）
+	unsigned long MilliTime();
 
-	unsigned long Time2UTime();
-	
+	// 获取当前时间的毫秒数
+	unsigned int MilliSeconds();
+
 	enum TimeFmt
 	{
 		TFMT_0, //yyyy-MM-dd HH:mm:ss

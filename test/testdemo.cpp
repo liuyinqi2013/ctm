@@ -88,7 +88,7 @@ void TestStringFunc()
 	cout << StartsWith(a, "@@") << endl;
 	cout << Trimmed(a) << endl;
 	cout << Time() << endl;
-	cout << UTime() << endl;
+	cout << MilliTime() << endl;
 	cout << DateTime() << endl;
 	cout << DateTime(TFMT_1) << endl;
 	cout << DateTime(TFMT_2) << endl;
@@ -453,19 +453,24 @@ void TestSem(int flag = 1)
 void TestRandom()
 {
 	CRandom::SetSeed();
-	for (int i = 0; i < 1000; ++i)
+	for (int i = 0; i < 5000; ++i)
 	{
 		DEBUG_LOG("ddddddddddddddddddddddddddddddddddddddddddddd %f", CRandom::Random0());
 	}
 
 	for (int i = 0; i < 5000; ++i)
 	{
-		DEBUG_LOG("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa %d", CRandom::Random(30, 50));
+		WARN_LOG("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa %d", CRandom::Random(30, 50));
 	}
 
 	for (int i = 0; i < 5000; ++i)
 	{
-		DEBUG_LOG("cccccccccccccccccccccccccccccccccccccccccccccc %d", CRandom::Random(0, 1));
+		ERROR_LOG("cccccccccccccccccccccccccccccccccccccccccccccc %d", CRandom::Random(0, 1));
+	}
+
+	for (int i = 0; i < 5000; ++i)
+	{
+		INFO_LOG("cccccccccccccccccccccccccccccccccccccccccccccc %d", CRandom::Random(0, 1));
 	}
 }
 
@@ -525,7 +530,9 @@ void TestIni()
 int main(int argc, char** argv)
 {
 	CLog::GetInstance()->SetLogName("test");
+	CLog::GetInstance()->SetLogPath("logs/debug");
 	CLog::GetInstance()->SetFileMaxSize(2);
+	CLog::GetInstance()->SetLogLevel(CLog::LOG_DEBUG);
 	//CLog::GetInstance()->SetLogPath("./");
 	//TestStringFunc();
 	TestRandom();
