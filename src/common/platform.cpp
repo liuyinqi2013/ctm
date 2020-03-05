@@ -2,8 +2,10 @@
 
 #ifdef WIN32
 #include <Windows.h>
-#define  getpid() GetCurrentProcessId()
-#define  getppid() GetCurrentProcessId()
+#include <process.h>
+
+#define  getpid() _getpid()
+#define  getppid() _getpid()
 
 #else
 #include <sys/types.h>
