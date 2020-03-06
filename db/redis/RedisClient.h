@@ -9,9 +9,9 @@
 
 using namespace std;
 
-#define DEBUG_LOG(format,...) fprintf(stdout, "[%d][debug][%s:%d][%s]:"format"\n", time(NULL), __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
+#define DEBUG_LOG(format,...) fprintf(stdout, "[%d][debug][%s:%d][%s]:"format "\n", time(NULL), __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
 
-#define ERROR_LOG(format,...) fprintf(stderr, "[%d][error][%s:%d][%s]:"format"\n", time(NULL), __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
+#define ERROR_LOG(format,...) fprintf(stderr, "[%d][error][%s:%d][%s]:"format "\n", time(NULL), __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
 
 class CRefCount;
 class CRedisResult;
@@ -28,12 +28,12 @@ public:
 	CRefCount(const CRefCount& other) :
 		m_pCount(other.m_pCount)
 	{
-		++(*m_pCount);
+		++*m_pCount;
 	}
 
 	virtual ~CRefCount()
 	{
-		if (--(*m_pCount) == 0) 
+		if (--*m_pCount == 0)
 		{
 			delete m_pCount;
 			m_pCount = 0;
@@ -51,15 +51,13 @@ public:
 	{
 		return *m_pCount;
 	}
-
 private:
-	int* m_pCount;		
+	int* m_pCount;
 };
-
 
 class CRedisResult
 {
-	friend class CRedisClient;
+
 public:
 	CRedisResult(const CRedisResult& other) :
 		m_count(other.m_count),
@@ -84,7 +82,7 @@ public:
 	{
 		return (m_reply && m_reply->type == REDIS_REPLY_STRING);
 	}
-	
+
 	bool IsNumber() const
 	{
 		return (m_reply && m_reply->type == REDIS_REPLY_INTEGER);
@@ -111,19 +109,20 @@ private:
 
 	void Free()
 	{
-                if (m_reply && m_isRootNode && m_count.Only())
-                {
-			//DEBUG_LOG();
-                        freeReplyObject(m_reply);
-                        m_reply = NULL;
-                }
+		if (m_reply && m_isRootNode && m_count.Only())
+		{
+			freeReplyObject(m_reply);
+			m_reply = NULL;
+		}
 	}
 
 	string ToString(const vector<CRedisResult>& vecResult) const;
 private:
 	CRefCount m_count;
 	redisReply* m_reply;
-	bool  m_isRootNode;	
+	bool  m_isRootNode;
+
+	friend class CRedisClient;
 };
 
 class CRedisClient
@@ -140,9 +139,9 @@ public:
 	{
 		Free();
 	}
-	
+
 	bool Connect(const struct timeval tv);
-	
+
 	CRedisResult ExectueCommand(const char* format, ...);
 
 	int ErrorCode() const
@@ -156,18 +155,13 @@ public:
 	}
 
 private:
-	void Free()
-	{
-		if (m_context)
-		{
-			redisFree(m_context);
-			m_context = NULL;
-		}
-	}
+
+	void Free();
+
 private:
 	redisContext* m_context;
 	std::string m_serverIp;
-	int m_serverPort;	
+	int m_serverPort;
 };
 
 #endif

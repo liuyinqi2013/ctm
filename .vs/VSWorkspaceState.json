@@ -1,11 +1,14 @@
 {
   "ExpandedNodes": [
     "",
-    "\\src",
+    "\\db",
+    "\\db\\mysql",
+    "\\db\\redis",
     "\\src\\common",
-    "\\src\\net",
-    "\\src\\thread"
+    "\\src\\ipc",
+    "\\src\\thread",
+    "\\test"
   ],
-  "SelectedNode": "\\src\\common\\inifile.h",
+  "SelectedNode": "\\db\\mysql\\MySQLDB.cpp",
   "PreviewInSolutionExplorer": false
 }

@@ -16,12 +16,12 @@ namespace ctm
 		CRefCount(const CRefCount& other) :
 			m_pCount(other.m_pCount)
 		{
-			++(*m_pCount);
+			++*m_pCount;
 		}
 
 		virtual ~CRefCount()
 		{
-			if (--(*m_pCount) == 0) 
+			if (--*m_pCount == 0) 
 			{
 				delete m_pCount;
 				m_pCount = 0;

@@ -5,22 +5,22 @@
 template <typename T>
 inline std::string toString(T m)
 {
-    std::stringstream ss;
-    ss << m;
-    return ss.str();
+	std::stringstream ss;
+	ss << m;
+	return ss.str();
 }
 
-CRefCount& CRefCount::operator=(const CRefCount& other) 
+CRefCount& CRefCount::operator=(const CRefCount& other)
 {
-	if(m_pCount != other.m_pCount)
+	if (m_pCount != other.m_pCount)
 	{
-		if(--(*m_pCount) == 0)
+		if (-- * m_pCount == 0)
 		{
 			delete m_pCount;
 			m_pCount = 0;
 		}
 		m_pCount = other.m_pCount;
-		++(*m_pCount);
+		++* m_pCount;
 	}
 	return *this;
 }
@@ -31,25 +31,24 @@ CRedisResult& CRedisResult::operator=(const CRedisResult& other)
 	{
 		Free();
 		m_reply = other.m_reply;
-		m_count = other.m_count; 
+		m_count = other.m_count;
 	}
-	
+
 	return *this;
 }
-
 
 string CRedisResult::GetValueString() const
 {
 	if (IsNull()) return string("");
 
-	return string(m_reply->str,  m_reply->len);
+	return string(m_reply->str, m_reply->len);
 }
 
 int CRedisResult::GetValueNumber() const
 {
 	if (IsNull()) return -1;
 
-	return m_reply->integer;	
+	return m_reply->integer;
 }
 
 vector<CRedisResult> CRedisResult::GetValueArray() const
@@ -59,25 +58,26 @@ vector<CRedisResult> CRedisResult::GetValueArray() const
 	{
 		vecResult.push_back(CRedisResult(m_reply->element[i], false));
 	}
+
 	return vecResult;
 }
 
 string CRedisResult::ToString() const
 {
-        if (IsNull()) return string("");
+	if (IsNull()) return string("");
 
-        switch(m_reply->type)
-        {
-        case REDIS_REPLY_STRING:
-        case REDIS_REPLY_ERROR:
-                return  string(m_reply->str,  m_reply->len);
-        case REDIS_REPLY_INTEGER:
-                return toString(m_reply->integer);
-        case REDIS_REPLY_ARRAY:
-        	return ToString(GetValueArray());
-        }
+	switch (m_reply->type)
+	{
+	case REDIS_REPLY_STRING:
+	case REDIS_REPLY_ERROR:
+		return  string(m_reply->str, m_reply->len);
+	case REDIS_REPLY_INTEGER:
+		return toString(m_reply->integer);
+	case REDIS_REPLY_ARRAY:
+		return ToString(GetValueArray());
+	}
 
-        return string("");
+	return string("");
 }
 
 string CRedisResult::ToString(const vector<CRedisResult>& vecResult) const
@@ -116,21 +116,30 @@ CRedisResult CRedisClient::ExectueCommand(const char* format, ...)
 	va_start(vl, format);
 	redisReply* reply = (redisReply*)redisvCommand(m_context, format, vl);
 	va_end(vl);
-	
+
 	return CRedisResult(reply);
+}
+
+void CRedisClient::Free()
+{
+	if (m_context)
+	{
+		redisFree(m_context);
+		m_context = NULL;
+	}
 }
 
 
 int main()
 {
 	CRedisClient client;
-	struct timeval val = {1, 500000};
+	struct timeval val = { 1, 500000 };
 	if (!client.Connect(val))
 	{
 		printf("connect failed!\n");
 		return -1;
 	}
-	
+
 	CRedisResult res = client.ExectueCommand("HGETALL set1");
 	printf("res :  %s\n", res.ToString().c_str());
 	res = client.ExectueCommand("SET name panda");

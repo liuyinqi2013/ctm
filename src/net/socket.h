@@ -307,7 +307,7 @@ namespace ctm
 			return m_bindIp;
 		}
 
-		int GetBindPot() const
+		int GetBindPort() const
 		{
 			return m_bindPort;
 		}
