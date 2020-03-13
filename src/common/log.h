@@ -5,8 +5,7 @@
 #include "thread/mutex.h"
 #include "singleton.h"
 
-
-// ¶¨ÒåÄ¬ÈÏÖµ
+// å®šä¹‰é»˜è®¤å€¼
 #define LOG_FILE_MIN_SIZE (2)
 #define LOG_FILE_MAX_SIZE (500)
 #define LOG_FILE_DEFAULT_SIZE (50) 
@@ -29,11 +28,11 @@ namespace ctm
 		};
 
 		/*
-		CLogÀà¹¹³Éº¯Êı
-		logName£ºÈÕÖ¾ÎÄ¼şÃû³Æ£¬Ä¬ÈÏÎª±ê×¼Êä³ö
-		logPath£ºÈÕÖ¾ÎÄ¼ş´æ·ÅÂ·¾¶
-		fileMaxSize£ºÈÕÖ¾ÎÄ¼ş´óĞ¡£¬µ¥Î»MB
-		level£ºÈÕÖ¾ÎÄ¼şµÈ¼¶£¬Ğ¡ÓÚlevelµÈ¼¶µÄÈÕÖ¾½«²»¼ÇÂ¼
+		CLogç±»æ„æˆå‡½æ•°
+		logNameï¼šæ—¥å¿—æ–‡ä»¶åç§°ï¼Œé»˜è®¤ä¸ºæ ‡å‡†è¾“å‡º
+		logPathï¼šæ—¥å¿—æ–‡ä»¶å­˜æ”¾è·¯å¾„
+		fileMaxSizeï¼šæ—¥å¿—æ–‡ä»¶å¤§å°ï¼Œå•ä½MB
+		levelï¼šæ—¥å¿—æ–‡ä»¶ç­‰çº§ï¼Œå°äºlevelç­‰çº§çš„æ—¥å¿—å°†ä¸è®°å½•
 		*/
 		CLog(const std::string& logName = LOG_FILE_DEFAULT_NAME,
 			const std::string& logPath = LOG_FILE_DEFAULT_PATH,
@@ -49,7 +48,7 @@ namespace ctm
 
 		bool Write(enum LogLevel level, const char* format, ...);
 
-		// µİ¹é´´½¨ÎÄ¼ş¼Ğ
+		// é€’å½’åˆ›å»ºæ–‡ä»¶å¤¹
 		static void MakePath(const std::string& path);
 
 	private:
@@ -59,7 +58,7 @@ namespace ctm
 		void AssignPath(const std::string& path);
 		void AssignMaxSize(unsigned int fileMaxSize);
 
-		// Ç°×º¸ñÊ½[datatime][pid][level]
+		// å‰ç¼€æ ¼å¼[datatime][pid][level]
 		std::string LinePrefix(enum LogLevel level);
 		long long GetFileSize(const std::string& fileName);
 		void ToNextFile();

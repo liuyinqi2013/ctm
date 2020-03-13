@@ -40,7 +40,8 @@ namespace ctm
 	{
 		AssignPath(logPath);
 		AssignMaxSize(fileMaxSize);
-		Init();	}
+		Init();
+	}
 
 	CLog::~CLog()
 	{
@@ -91,7 +92,7 @@ namespace ctm
 		if (m_logName != STDOUT_LOG_FILE) 
 		{
 			m_Index = 0;
-			m_date = Date(TFMT_2);
+			m_date = Date(TDATE_FMT_2);
 			m_fileName = m_logPath + m_logName + "_" + m_date + ".log";
 			m_logFileSize = GetFileSize(m_fileName);
 
@@ -100,8 +101,6 @@ namespace ctm
 				ToNextFile();
 			}
 		}
-
-		OpenFile();
 	}
 
 	long long CLog::GetFileSize(const std::string& fileName)
@@ -196,18 +195,21 @@ namespace ctm
 
 		if (m_logName != STDOUT_LOG_FILE)
 		{
-			// ÆÕÍ¨ÈÕÖ¾ÎÄ¼þ
-			if (m_date != Date(TFMT_2))
+			// æ£€æŸ¥æ–‡ä»¶åˆ‡æ¢
+			if (m_date != Date(TDATE_FMT_2))
 			{
 				Init();
 			}
 			else if (m_logFileSize >= m_logFileMaxSize * MB)
 			{
 				ToNextFile();
-				OpenFile();
 			}
 		}
 
+		if (m_stream == NULL)
+		{
+			OpenFile();
+		}
 		std::string strFmt = LinePrefix(level) + format + std::string("\n");
 		va_list args;
 		va_start(args, format);

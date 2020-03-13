@@ -4,11 +4,11 @@
 
 namespace ctm
 {
-	std::map<int, CreateMsgFunc> gMapMsg;
+	std::map<int, CreateMessageFunction> global_message_Map;
 
 	CMsg* CreateMsg(int type)
 	{
-		return gMapMsg[type]();
+		return global_message_Map[type]();
 	}
 
 	void  DestroyMsg(CMsg*& msg)

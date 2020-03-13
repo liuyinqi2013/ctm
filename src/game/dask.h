@@ -15,8 +15,6 @@ namespace ctm
 	class CCard;
 	class CGameCenter;
 
-
-		
 	class CDask
 	{
 	public:

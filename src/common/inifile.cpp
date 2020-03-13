@@ -120,7 +120,7 @@ namespace ctm
 			
 			if (*pHead == '\0') continue;
 
-			if (*pHead == '#') // ½âÎö×¢ÊÍ
+			if (*pHead == '#') // è§£ææ³¨é‡Š
 			{
 				pValue = new CIniValue(CIniValue::ECommentType, "", ++pHead, pParent);
 				if (pParent) {
@@ -130,7 +130,7 @@ namespace ctm
 					m_vecIniValue.push_back(pValue);
 				}
 			}
-			else if (*pHead == '[') // ½âÎö¶Î
+			else if (*pHead == '[') // è§£æå±€åŸŸ
 			{
 				strBuf = pHead;
 				int pos = strBuf.find("]", 2);
@@ -141,7 +141,7 @@ namespace ctm
 				m_vecIniValue.push_back(pParent);
 				m_keyMap[key] = pParent;
 			}
-			else // ½âÎökey=value
+			else // è§£ækey=value
 			{
 				strBuf = pHead;
 				int pos = strBuf.find("=");

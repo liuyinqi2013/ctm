@@ -10,8 +10,8 @@ INSTALL=
 SUBDIRS=$(shell find ./* -type d)
 INC_SUBDIRS=$(shell find ./* -type d | awk -F' ' '{print "-I"$$0}')
 INC_PATH=$(INC_SUBDIRS) -I./
-LIB_PATH=/usr/lib64/mysql/libmysqlclient.a
-LIB= -lpthread -ldl -lz
+LIB_PATH=
+LIB= -lpthread -ldl
 
 C_SRC=$(shell find . -type f | grep "\.c$$" | grep -v grep)
 #C_SRC=$(notdir $(C_SRC_NAME)) 

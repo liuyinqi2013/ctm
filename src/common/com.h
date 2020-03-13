@@ -7,6 +7,7 @@
 #ifdef WIN32
 #define atoll  atol;
 #endif 
+
 namespace ctm
 {
 	template <class T>

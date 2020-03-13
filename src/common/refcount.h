@@ -8,24 +8,18 @@ namespace ctm
 	class CRefCount
 	{
 	public:
-		CRefCount() :
-			m_pCount(new int(1))
+		CRefCount() : m_pCount(new int(1))
 		{
 		}
 
-		CRefCount(const CRefCount& other) :
-			m_pCount(other.m_pCount)
+		CRefCount(const CRefCount& other) : m_pCount(other.m_pCount)
 		{
 			++*m_pCount;
 		}
 
 		virtual ~CRefCount()
 		{
-			if (--*m_pCount == 0) 
-			{
-				delete m_pCount;
-				m_pCount = 0;
-			}
+			Clear();
 		}
 
 		CRefCount& operator=(const CRefCount& other);
@@ -40,10 +34,11 @@ namespace ctm
 			return *m_pCount;
 		}
 
+		void Clear();
+
 	private:
 		int* m_pCount;		
 	};
-
 }
 
 #endif

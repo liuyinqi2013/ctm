@@ -1,4 +1,5 @@
 #include "time_tools.h"
+#include "com.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,7 +12,7 @@
 
 namespace ctm
 {
-	unsigned long MilliTime()
+	unsigned long long MilliTimestamp()
 	{
 #ifdef WIN32
 		SYSTEMTIME sys_time;
@@ -39,47 +40,28 @@ namespace ctm
 		return 0;
 	}
 
-	std::string DateTime(int fmt)
+	string TimeTm2FormatDate(const struct tm* st, int dateFmt)
 	{
-		time_t t;
-		time(&t);
-		struct tm* st = localtime(&t);
-		char buf[64] = {0};
-		switch (fmt)
+		char buf[32] = {0};
+		switch (dateFmt)
 		{
-		case TFMT_0:
-			strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", st);
-			break;
-		case TFMT_1:
-			strftime(buf, sizeof(buf), "%Y/%m/%d %H:%M:%S", st);
-			break;
-		case TFMT_2:
-			strftime(buf, sizeof(buf), "%Y%m%d%H%M%S", st);
-			break;
-		default:
-			strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", st);
-			break;
-		}
-
-		return std::string(buf);
-	}
-
-	std::string Date(int fmt)
-	{
-		time_t t;
-		time(&t);
-		struct tm* st = localtime(&t);
-		char buf[64] = {0};
-		switch (fmt)
-		{
-		case TFMT_0:
+		case TDATE_FMT_0:
 			strftime(buf, sizeof(buf), "%Y-%m-%d", st);
 			break;
-		case TFMT_1:
+		case TDATE_FMT_1:
 			strftime(buf, sizeof(buf), "%Y/%m/%d", st);
 			break;
-		case TFMT_2:
+		case TDATE_FMT_2:
 			strftime(buf, sizeof(buf), "%Y%m%d", st);
+			break;
+		case TDATE_FMT_3:
+			strftime(buf, sizeof(buf), "%y-%m-%d", st);
+			break;
+		case TDATE_FMT_4:
+			strftime(buf, sizeof(buf), "%y/%m/%d", st);
+			break;
+		case TDATE_FMT_5:
+			strftime(buf, sizeof(buf), "%y%m%d", st);
 			break;
 		default:
 			strftime(buf, sizeof(buf), "%Y-%m-%d", st);
@@ -89,6 +71,72 @@ namespace ctm
 		return std::string(buf);
 	}
 
+	string TimeTm2FormatTime(const struct tm* st, int timeFmt)
+	{
+		char buf[32] = {0};
+		switch (timeFmt)
+		{
+		case TTIME_FMT_0:
+			strftime(buf, sizeof(buf), "%H:%M:%S", st);
+			break;
+		case TTIME_FMT_1:
+			strftime(buf, sizeof(buf), "%H:%M", st);
+			break;
+		case TTIME_FMT_2:
+			strftime(buf, sizeof(buf), "%H%M%S", st);
+			break;
+		case TTIME_FMT_3:
+			strftime(buf, sizeof(buf), "%H%M", st);
+			break;
+		default:
+			strftime(buf, sizeof(buf), "%H:%M:%S", st);
+			break;
+		}
+
+		return std::string(buf);
+	}
+
+	string Timestamp2FormatDateTime(time_t time, int dateFmt, int timeFmt, const string& join)
+	{
+		struct tm* st = localtime(&time);
+		return TimeTm2FormatDate(st, dateFmt) + join + TimeTm2FormatTime(st, timeFmt);
+	}
+
+	int DayOfWeek(time_t time)
+	{
+		char buf[4] = {0};
+		struct tm* st = localtime((const time_t *)&time);
+		strftime(buf, sizeof(buf), "%w", st);
+
+		return S2D(buf);
+	}
+
+	int WeekOfYear(time_t time)
+	{
+		char buf[4] = {0};
+		struct tm* st = localtime((const time_t *)&time);
+		strftime(buf, sizeof(buf), "%W", st);
+
+		return S2D(buf);
+	}
+
+	string MilliTimestamp2DateTime(unsigned long long time)
+	{
+		char buf[64] = {0};
+		snprintf(buf, sizeof(buf), "%s.%03d", Timestamp2FormatDateTime(time / 1000).c_str(), time % 1000);
+		return string(buf);
+	}
+
+	string CClock::RunInfo() const
+	{
+		unsigned long long currentTime = MilliTimestamp();
+		string head = "[" + m_tips + "]";
+		string info = head + "Begin time : " + MilliTimestamp2DateTime(m_begin);
+		info += "\n" + head + "End time : " + MilliTimestamp2DateTime(currentTime);
+		info += "\n" + head + "Use times : " + I2S(currentTime - m_begin) + "(ms).";
+
+		return info;
+	}
 };
 
 

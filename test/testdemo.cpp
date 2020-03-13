@@ -87,11 +87,6 @@ void TestStringFunc()
 	cout << EndsWith(a, "@@") << endl;
 	cout << StartsWith(a, "@@") << endl;
 	cout << Trimmed(a) << endl;
-	cout << Time() << endl;
-	cout << MilliTime() << endl;
-	cout << DateTime() << endl;
-	cout << DateTime(TFMT_1) << endl;
-	cout << DateTime(TFMT_2) << endl;
 	std::vector<std::string> vecOutput;
 	CutString(a, vecOutput, "[@end@]", false);
 	cout << "item size = " << vecOutput.size() << endl;
@@ -113,7 +108,42 @@ void TestStringFunc()
 	cout << PathName("laod\\wuda\\laod.txt") << endl;
 	cout << PathName("laod/wuda/") << endl;
 	cout << PathName("wuda.txt") << endl;
+}
 
+void TestTime()
+{
+	CClock clock;
+	cout << Timestamp() << endl;
+	cout << MilliTimestamp() << endl;
+
+	cout << DateTime() << endl;
+	cout << DateTime(TDATE_FMT_1) << endl;
+	cout << DateTime(TDATE_FMT_2) << endl;
+	cout << DateTime(TDATE_FMT_3) << endl;
+	cout << DateTime(TDATE_FMT_4) << endl;
+	cout << DateTime(TDATE_FMT_5) << endl;
+
+	cout << DateTime(TDATE_FMT_1, TTIME_FMT_0) << endl;
+	cout << DateTime(TDATE_FMT_1, TTIME_FMT_1) << endl;
+	cout << DateTime(TDATE_FMT_1, TTIME_FMT_2) << endl;
+	cout << DateTime(TDATE_FMT_1, TTIME_FMT_3) << endl;
+
+	cout << Date(TDATE_FMT_0) << endl;
+	cout << Date(TDATE_FMT_1) << endl;
+	cout << Date(TDATE_FMT_2) << endl;
+	cout << Date(TDATE_FMT_3) << endl;
+	cout << Date(TDATE_FMT_4) << endl;
+	cout << Date(TDATE_FMT_5) << endl;
+
+	cout << Time(TTIME_FMT_0) << endl;
+	cout << Time(TTIME_FMT_1) << endl;
+	cout << Time(TTIME_FMT_2) << endl;
+	cout << Time(TTIME_FMT_3) << endl;
+
+	cout << DayOfWeek() << endl;
+	cout << WeekOfYear() << endl;
+
+	cout << clock.RunInfo() << endl;
 }
 
 void TestTcpClient()
@@ -452,25 +482,29 @@ void TestSem(int flag = 1)
 
 void TestRandom()
 {
-	CRandom::SetSeed();
-	for (int i = 0; i < 5000; ++i)
+	for (int i = 0; i < 2000; ++i)
 	{
-		DEBUG_LOG("ddddddddddddddddddddddddddddddddddddddddddddd %f", CRandom::Random0());
+		DEBUG_LOG("ddddddddddddddddddddddddddddddddddddddddddddd %f", CRandom::Random0_1());
 	}
 
-	for (int i = 0; i < 5000; ++i)
+	for (int i = 0; i < 2000; ++i)
 	{
-		WARN_LOG("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa %d", CRandom::Random(30, 50));
+		WARN_LOG("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa %d", CRandom::IntRandom(30, 50));
 	}
 
-	for (int i = 0; i < 5000; ++i)
+	for (int i = 0; i < 2000; ++i)
 	{
-		ERROR_LOG("cccccccccccccccccccccccccccccccccccccccccccccc %d", CRandom::Random(0, 1));
+		ERROR_LOG("cccccccccccccccccccccccccccccccccccccccccccccc %f", CRandom::Random0_1());
 	}
 
-	for (int i = 0; i < 5000; ++i)
+	for (int i = 0; i < 10000; ++i)
 	{
-		INFO_LOG("cccccccccccccccccccccccccccccccccccccccccccccc %d", CRandom::Random(0, 1));
+		INFO_LOG("cccccccccccccccccccccccccccccccccccccccccccccc %u", CRandom::UIntRandom(0, 100));
+	}
+
+	for (int i = 0; i < 300; ++i)
+	{
+		INFO_LOG("xxxxxxxxxxxxxxxxxxxxxxxxxxxxx %f", CRandom::DoubleRandom(0.5, 10.0));
 	}
 }
 
@@ -527,6 +561,13 @@ void TestIni()
 	ini.Save();
 }
 
+void WaitEnd()
+{
+	cout<<"Please enter any to exit!"<<endl;
+	int a;
+	cin >> a;
+}
+
 int main(int argc, char** argv)
 {
 	CLog::GetInstance()->SetLogName("test");
@@ -535,7 +576,7 @@ int main(int argc, char** argv)
 	CLog::GetInstance()->SetLogLevel(CLog::LOG_DEBUG);
 	//CLog::GetInstance()->SetLogPath("./");
 	//TestStringFunc();
-	TestRandom();
+	//TestRandom();
 	//HandleSign();
 	//TestGetHostByAddr();
 	//TestGetHostByName();
@@ -546,7 +587,9 @@ int main(int argc, char** argv)
 	//TestShareMem(S2I(argv[1]));
 	//TestIni();
 	//TestUnitThread();
-	int a;
-	cin >> a;
+	TestTime();
+
+	WaitEnd();
+
 	return 0;
 }

@@ -397,7 +397,6 @@ namespace ctm
 		m_winer = json["winer"].asInt();	
 	}
 
-
 	const Json::Value& CGameOverOpt::ToJson()
 	{
 		CGameMsg::ToJson();

@@ -12,7 +12,7 @@
 
 namespace ctm
 {
-	typedef enum msg_type
+	enum msg_type
 	{
 		MSG_BASE = 0,
 		MSG_GAME = 1,
@@ -37,7 +37,7 @@ namespace ctm
 
 		MSG_SYSTEM_NET = 1000,
 	
-	} MSG_TYPE;
+	};
 	
 	class CMsg
 	{
@@ -140,17 +140,17 @@ namespace ctm
 		Json::Value m_root;
 	};
 
-	typedef CMsg* (*CreateMsgFunc)();
-	extern std::map<int, CreateMsgFunc> gMapMsg;
+	typedef CMsg* (*CreateMessageFunction)();
+	extern std::map<int, CreateMessageFunction> global_message_Map;
 	
-	
-	#define REG_MSG(type, name) \
-	inline CMsg* CreateMsg##name() { return new name(); } \
-	class CRegMsg##name{ \
+	#define REG_MSG(msg_type, class_name)\
+	static inline CMsg* function_##class_name() { return new class_name(); }\
+	class reg_msg_##class_name\
+	{\
 	public:\
-		CRegMsg##name(int iType) { gMapMsg[type] = CreateMsg##name; }\
+		reg_msg_##class_name() { global_message_Map[msg_type] = function_##class_name; }\
 	};\
-	CRegMsg##name regmsg##name(type)
+	static reg_msg_##class_name tmp_##class_name()
 	
 	CMsg* CreateMsg(int type);
 

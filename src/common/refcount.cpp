@@ -6,11 +6,7 @@ namespace ctm
 	{
 		if(m_pCount != other.m_pCount)
 		{
-			if(--*m_pCount == 0)
-			{
-				delete m_pCount;
-				m_pCount = 0;
-			}
+			Clear();
 			m_pCount = other.m_pCount;
 			++*m_pCount;
 		}
@@ -18,5 +14,13 @@ namespace ctm
 		return *this;
 	}
 
+	void CRefCount::Clear()
+	{
+		if (--*m_pCount == 0) 
+		{
+			delete m_pCount;
+			m_pCount = NULL;
+		}
+	}
 }
 

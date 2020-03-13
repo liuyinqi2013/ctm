@@ -42,7 +42,7 @@ namespace ctm
 		CRandom::SetSeed();
 		for (int i = 53; i > 0; --i)
 		{
-			n = CRandom::Random(0, i);
+			n = CRandom::UIntRandom(0, i);
 			p = m_cards[i];
 			m_cards[i] = m_cards[n];
 			m_cards[n] = p;
@@ -88,7 +88,7 @@ namespace ctm
 		CRandom::SetSeed();
 		for (int i = vecCards.size() - 1; i > 0; --i)
 		{
-			n = CRandom::Random(0, i);
+			n = CRandom::UIntRandom(0, i);
 			p = vecCards[i];
 			vecCards[i] = vecCards[n];
 			vecCards[n] = p;
@@ -192,7 +192,8 @@ namespace ctm
 			{
 				return CARDS_TYPE_FLY_TWO;
 			}
-		}
+		
+}
 
 		return CARDS_TYPE_UNKNOWN;
 	}
@@ -404,29 +405,29 @@ namespace ctm
 		switch(type)
 		{
 		case CARDS_TYPE_SINGLE:
-			return std::string("µ¥ÅÆ");
+			return std::string("ï¿½ï¿½ï¿½ï¿½");
 		case CARDS_TYPE_PAIR:
-			return std::string("¶Ô×Ó");
+			return std::string("ï¿½ï¿½ï¿½ï¿½");
 		case CARDS_TYPE_THREE:
-			return std::string("ÈýÕÅ");
+			return std::string("ï¿½ï¿½ï¿½ï¿½");
 		case CARDS_TYPE_THREE_ONE:
-			return std::string("Èý´øÒ»");
+			return std::string("ï¿½ï¿½ï¿½ï¿½Ò»");
 		case CARDS_TYPE_THREE_TWO:
-			return std::string("Èý´ø¶þ");
+			return std::string("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½");
 		case CARDS_TYPE_FOUR_TWO:
-			return std::string("ËÄ´ø¶þ");
+			return std::string("ï¿½Ä´ï¿½ï¿½ï¿½");
 		case CARDS_TYPE_FLY:
-			return std::string("·É»ú");
+			return std::string("ï¿½É»ï¿½");
 		case CARDS_TYPE_FLY_TWO:
-			return std::string("·É»ú2");
+			return std::string("ï¿½É»ï¿½2");
 		case CARDS_TYPE_SHUN:
-			return std::string("Ë³×Ó");
+			return std::string("Ë³ï¿½ï¿½");
 		case CARDS_TYPE_SHUN_PAIR:
-			return std::string("Á¬¶Ô");
+			return std::string("ï¿½ï¿½ï¿½ï¿½");
 		case CARDS_TYPE_BOMB:
-			return std::string("Õ¨µ¯");
+			return std::string("Õ¨ï¿½ï¿½");
 		case CARDS_TYPE_KING_BOMB:
-			return std::string("ÍõÕ¨");
+			return std::string("ï¿½ï¿½Õ¨");
 		default :
 			return std::string("Î´Öª");
 		}
@@ -485,5 +486,6 @@ namespace ctm
 		DEBUG_LOG("card type : %s", CardsTypeToStr(CardsType(vec)).c_str());	
 	}
 
-}
+
+}
 

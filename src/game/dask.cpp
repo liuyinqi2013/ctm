@@ -96,7 +96,7 @@ namespace ctm
 		m_game->ToDeal(m_handCardsArray, m_daskCards);
 
 		CRandom::SetSeed();
-		m_currOptPos = CRandom::Random(0, m_game->m_playerNum - 1);
+		m_currOptPos = CRandom::UIntRandom(0, m_game->m_playerNum - 1);
 		
 		CGameBeginS2C gameBeginS2C;
 		gameBeginS2C.m_callPos =  m_currOptPos;
