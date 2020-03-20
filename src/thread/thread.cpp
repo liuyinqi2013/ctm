@@ -37,7 +37,7 @@ namespace ctm
 
 	int CThread::Join()
 	{
-		if(!m_bDetach)
+		if(!m_bDetach && m_iStatus == T_RUN)
 		{
 			bool bRet = thread_join(m_thread);
 			if(!bRet) {

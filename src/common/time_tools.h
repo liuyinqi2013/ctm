@@ -27,10 +27,10 @@ namespace ctm
 
 	enum DateFmt
 	{
-		TDATE_FMT_0 = 0,   // yyyy-MM-dd
-		TDATE_FMT_1 = 1,   // yyyy/MM/dd
-		TDATE_FMT_2 = 2,   // yyyyMMdd
-		TDATE_FMT_3 = 3,   // yy-MM-dd
+		TDATE_FMT_0 = 0,  // yyyy-MM-dd
+		TDATE_FMT_1 = 1,  // yyyy/MM/dd
+		TDATE_FMT_2 = 2,  // yyyyMMdd
+		TDATE_FMT_3 = 3,  // yy-MM-dd
 		TDATE_FMT_4 = 4,  // yy/MM/dd
 		TDATE_FMT_5 = 5,  // yyMMdd
 	};
@@ -80,7 +80,6 @@ namespace ctm
 	// 毫秒时间戳转换为日期时间
 	string MilliTimestamp2DateTime(unsigned long long time);
 	
-
 	// 计时器
 	class CClock
 	{

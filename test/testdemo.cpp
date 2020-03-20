@@ -12,6 +12,7 @@
 #include "ipc/mmap.h"
 #include "ipc/semaphore.h"
 #include "ipc/sharememory.h"
+#include "module/timer.h"
 
 #include <string.h>
 #include <signal.h>
@@ -414,7 +415,6 @@ void TestMmap(int flag = 1)
 	{
 		ERROR_LOG("map.Open failed");
 	}
-
 }
 
 void TestShareMem(int flag = 1)
@@ -508,23 +508,168 @@ void TestRandom()
 	}
 }
 
+struct list_node
+{
+	list_node(int _data, list_node* _next = NULL) :
+	 data(_data), next(_next)
+	{
+
+	}
+	int data;
+	list_node* next;
+};
+
+void ShowList(list_node* head)
+{
+	while(head)
+	{
+		cout << head->data <<",";
+		head = head->next;
+	}
+	cout<<endl;
+}
+
+list_node* ListReverse(list_node* head)
+{
+	list_node* p = head;
+	list_node* q = NULL;
+	list_node* tmp;
+	while(p)
+	{
+		tmp = p->next;
+		p->next = q;
+		q = p;
+		p = tmp;
+	}
+
+	head = q;
+
+	return q;
+}
+
+void TestListReverse()
+{
+	list_node node10(10, NULL);
+	list_node node9(9, &node10);
+	list_node node8(8, &node9);
+	list_node node7(7, &node8);
+	list_node node6(6, &node7);
+	list_node node5(5, &node6);
+	list_node node4(4, &node5);
+	list_node node3(3, &node4);
+	list_node node2(2, &node3);
+	list_node node1(1, &node2);
+
+	list_node* head = &node1;
+	
+	ShowList(head);
+	head = ListReverse(head);
+	ShowList(head);
+}
+
+#pragma pack(2)
+struct TestA
+{
+	int value;
+	char type;
+	short sShot;
+	char bit;
+};
+
+class Foo
+{
+public:
+	//virtual int func1() { return 1;}
+	int  func2() { return 2;}
+	int data1;
+	static int data2;
+};
+ 
+int Foo::data2 = 1000;
+
+int bitCount(int n)
+{
+	int count = 0;
+	while(n)
+	{
+		++count;
+		n = n & (n-1); 
+	}
+	return count;
+}
+
+int bitCount2(int n)
+{
+	static int index[16] = {0,1,1,2,1,2,2,3,1,2,2,3,2,3,3,4};
+	int count = index[n & 0x000000FF] + index[(n>>4)& 0x000000FF] 
+	+ index[(n>>8)& 0x000000FF] + index[(n>>12)& 0x000000FF];
+	return count;
+}
+
+#define Show(expr) { cout << #expr << "=" << expr <<endl; }
+
+void TestTencent()
+{
+	
+	TestA* p = (TestA*)0x100000;
+	cout << "sizeof(long long) = " << sizeof(long long) << endl; 
+	cout << "sizeof(char) = " << sizeof(char) << endl; 
+	cout << "sizeof(long) = " << sizeof(long) << endl; 
+	cout << "sizeof(bool) = " << sizeof(bool) << endl; 
+	cout << "sizeof(int) = " << sizeof(int) << endl; 
+	cout << "sizeof(short) = " << sizeof(short) << endl; 
+	cout<< "sizeof(TestA) = " <<sizeof(TestA) << endl;
+	cout<< "sizeof(p) = " <<sizeof(p) << endl;
+
+	long a = (long)((void*)p + 10);
+	printf("a=%x\n", a);
+
+	int n[] = {1, 2, 3, 4, 5};
+	int* ptr = (int*)(&n+1);
+	cout<< "*(n+1) = " <<*(n+1) << endl;
+	cout<< "*(ptr - 1) = " <<*(ptr - 1) << endl;
+	cout<< "sizeof(n) = " <<sizeof(n) << endl;
+
+	Foo* foo = (Foo*)malloc(sizeof(Foo));
+	Foo foo2;
+	cout<< "sizeof(Foo) = " << sizeof(Foo)<< endl;
+	cout<< "foo->func2() = " <<foo->func2() << endl;
+	cout<< "foo->data1 = " <<foo->data1 << endl;
+	cout<< "foo->data2 = " <<foo->data2 << endl;
+	//cout<< "foo->func1() = " <<foo->func1() << endl;
+
+	cout<< "foo2.func2() = " <<foo2.func2() << endl;
+	cout<< "foo2.data1 = " <<foo2.data1 << endl;
+	cout<< "foo2.data2 = " <<foo2.data2 << endl;
+	//cout<< "foo2.func1() = " <<foo2.func1() << endl;
+
+	cout<< "&foo2.data2" << (long)&foo2.data2<< endl;
+	cout<< "&foo1->data2" << (long)&(foo->data2)<< endl;
+	cout<< "&foo2.data1" << (long)&foo2.data1<< endl;
+	cout<< "&foo1->data1" << (long)&(foo->data1)<< endl;
+
+	Show(bitCount2(0));
+	Show(bitCount2(1));
+	Show(bitCount2(2));
+	Show(bitCount2(3));
+	Show(bitCount2(4));
+	Show(bitCount2(5));
+	Show(bitCount2(6));
+	Show(bitCount2(7));
+	Show(bitCount2(8));
+	Show(bitCount2(9));
+	Show(bitCount2(10));
+	Show(bitCount2(11));
+	Show(bitCount2(12));
+	Show(bitCount2(13));
+	Show(bitCount2(14));
+	Show(bitCount2(15));
+}
+
 void TestIni()
 {
 	CIniFile ini("conf.ini");
 	ini.Load();
-	//cout << "laod = " << ini["laod"].AsInt() << endl;
-	//cout << "laoer = " << ini["laoer"].AsInt() << endl;
-	//cout << "laosi = " << ini["laosi"].AsInt() << endl;
-	//cout << "mysql.host = " << ini["mysql"]["host"].AsString() << endl;
-	//cout << "redis.port = " << ini["redis"]["port"].AsString() << endl;
-
-	//ini.Set("set_str", "bbb");
-	//ini.Set("set_int", 20);
-	//ini.Set("set_float", 0.30);
-
-	//ini.Set("set", "set_str", "aaa");
-	//ini.Set("set", "set_int", 30);
-	//ini.Set("set", "set_float", 0.40);
 
 	string a;
 	int b;
@@ -561,6 +706,20 @@ void TestIni()
 	ini.Save();
 }
 
+void TestTimer()
+{
+	CTimer timer;
+	timer.Start();
+	int timerId =  timer.AddTimer(100, 10, NULL, NULL, NULL);
+	int timerId1 = timer.AddTimer(500, 10, NULL, NULL, NULL);
+	int timerId2 = timer.AddTimer(1000, 10, NULL, NULL, NULL);
+	DEBUG_LOG("timerId = %d, timerId1 = %d, timerId2 = %d,", timerId, timerId1, timerId2);
+	sleep(10);
+	timer.StopTimer(timerId1);
+	timerId1 = timer.AddTimer(2000, 10, NULL, NULL, NULL);
+	timer.StopAllTimer();
+}
+
 void WaitEnd()
 {
 	cout<<"Please enter any to exit!"<<endl;
@@ -570,8 +729,8 @@ void WaitEnd()
 
 int main(int argc, char** argv)
 {
-	CLog::GetInstance()->SetLogName("test");
-	CLog::GetInstance()->SetLogPath("logs/debug");
+	//CLog::GetInstance()->SetLogName("test");
+	//CLog::GetInstance()->SetLogPath("logs/debug");
 	CLog::GetInstance()->SetFileMaxSize(2);
 	CLog::GetInstance()->SetLogLevel(CLog::LOG_DEBUG);
 	//CLog::GetInstance()->SetLogPath("./");
@@ -587,9 +746,12 @@ int main(int argc, char** argv)
 	//TestShareMem(S2I(argv[1]));
 	//TestIni();
 	//TestUnitThread();
-	TestTime();
+	//TestTime();
+	//TestTimer();
+	TestTencent();
+	//TestListReverse();
 
-	WaitEnd();
+	//WaitEnd();
 
 	return 0;
 }

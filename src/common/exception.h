@@ -14,7 +14,7 @@ namespace ctm
 		CException& operator= (const CException& rhs) throw();
 		
 		virtual ~CException() throw();
-		virtual int errno() throw();
+		virtual int Errno() throw();
 		virtual const char* what() const throw();
 	private:
 		int m_errno;

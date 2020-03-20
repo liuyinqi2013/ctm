@@ -19,7 +19,20 @@ namespace ctm
 			msg = NULL;
 		}
 	}
-	
+
+	CMsg& CMsg::operator=(const CMsg &other)
+	{
+		if (this != &other)
+		{
+			m_strId = other.m_strId;
+			m_iType = other.m_iType;
+			m_strName = other.m_strName;
+			m_unixTime = other.m_unixTime;
+		}
+
+		return *this;
+	}
+
 	bool CMsg::Serialization(std::string& outBuf)
 	{
 		Json::Value root;

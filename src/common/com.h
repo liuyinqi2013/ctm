@@ -58,6 +58,16 @@ namespace ctm
 		return AnyToString<double>(val);
 	}
 
+	inline std::string Bool2String(bool val)
+	{
+		return val ? std::string("True") : std::string("False");
+	}
+
+	inline bool String2Bool(const std::string& val)
+	{
+		return val == "True" ? true : false;
+	}
+
 	#define S2I(x) Str2Int((x))
 	#define I2S(x) Int2Str((x))
 	#define S2L(x) Str2Long((x))

@@ -19,15 +19,16 @@ namespace ctm
 	public:
 		CLockOwner(CLock& lock) : m_lock(lock)
 		{
-			m_lock.Lock();
+			m_success = m_lock.Lock();
 		}
 		
 		~CLockOwner()
 		{
-			m_lock.UnLock();
+			if (m_success) m_lock.UnLock();
 		}
 		
 	private:
+		bool m_success;
 		CLock& m_lock;
 	};
 	

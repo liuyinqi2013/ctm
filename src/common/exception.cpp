@@ -32,7 +32,7 @@ namespace ctm
 	{
 	}
 	
-	int CException::errno() throw()
+	int CException::Errno() throw()
 	{
 		return m_errno;
 	}

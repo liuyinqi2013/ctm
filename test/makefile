@@ -1,7 +1,7 @@
 RM=rm -rf
 CP=cp -rf
 CC=g++
-CFLAGS= -c -Wall -g
+CFLAGS= -c -Wall -g -std=c++11
 
 TARGET0=testdemo
 TARGET1=serverdemo
@@ -40,7 +40,9 @@ COM_OBJ=../src/common/string_tools.o ../src/common/time_tools.o \
 	../src/thread/thread.o \
 	../src/net/netmsg.o \
 	../src/common/inifile.o \
-	../src/common/random.o
+	../src/common/random.o \
+	../src/common/message.o \
+	../src/module/timer.o
 	
 CPP_OBJ=$(patsubst %.cpp, %.o, $(CPP_SRC)) $(COM_OBJ)
 	
