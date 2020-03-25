@@ -25,6 +25,98 @@ static NetBoot netBoot;
 
 namespace ctm
 {
+	SOCKET_T Accept(SOCKET_T sockfd, string& outIp, int& outPort)
+	{
+		struct sockaddr_in m_sockAddrIn = {0};
+		SOCKETLEN_T len = sizeof(m_sockAddrIn);
+		SOCKET_T s;
+		while(1)
+		{
+			s = ctm::Accept(sockfd, (struct sockaddr *)&m_sockAddrIn, &len);
+			if (SOCKET_INVALID == s)
+			{
+                if (errno = EINTR) continue;
+				return SOCKET_INVALID;
+			}
+			break;
+		}
+		outPort = ntohs(m_sockAddrIn.sin_port);
+		outIp = inet_ntoa(m_sockAddrIn.sin_addr);
+		return s;
+	}
+
+	int Bind(SOCKET_T sockfd, const string& ip, int port)
+	{
+		struct sockaddr_in addr = {0};
+		addr.sin_family = AF_INET;
+		addr.sin_port = htons(port);
+		addr.sin_addr.s_addr = inet_addr(ip.c_str());
+		if(SOCKET_ERR == Bind(sockfd, (struct sockaddr*)&addr, sizeof(addr)))
+		{
+			CloseSocket(sockfd);
+			return -1;
+		}
+
+		return 0;
+	}
+
+	int Connect(SOCKET_T sockfd, const string& ip, int port)
+	{
+		struct sockaddr_in m_sockAddrIn = {0};
+		m_sockAddrIn.sin_family = AF_INET;
+		m_sockAddrIn.sin_port = htons(port);
+		m_sockAddrIn.sin_addr.s_addr = inet_addr(ip.c_str());
+		if (SOCKET_ERR == ctm::Connect(sockfd, (struct sockaddr*)&m_sockAddrIn, sizeof(m_sockAddrIn)))
+		{
+			return -1;
+		}
+		
+		return 0;
+	}
+
+	int GetPeerName(SOCKET_T sockfd, string& outIp, int& outPort)
+	{
+		struct sockaddr_in m_sockAddrIn = {0};
+		int len = sizeof(m_sockAddrIn);
+		if (SOCKET_ERR == ctm::GetPeerName(sockfd, (struct sockaddr*)&m_sockAddrIn, (SOCKETLEN_T*)&len))
+		{
+			return -1;
+		}
+		outPort = ntohs(m_sockAddrIn.sin_port);
+		outIp = inet_ntoa(m_sockAddrIn.sin_addr);
+
+		return 0;
+	}
+
+	bool SetKeepAlive(SOCKET_T sockfd, int interval)
+	{
+		int val = 1;
+		if (!SetSockOpt(sockfd, SOL_SOCKET, SO_KEEPALIVE, (const char*)&val, sizeof(val)))
+		{
+			return false;
+		}
+
+		val = interval;
+		if (!SetSockOpt(sockfd, IPPROTO_TCP, TCP_KEEPIDLE, (const char*)&val, sizeof(val)))
+		{
+			return false;
+		}
+
+		val = interval/3;
+		if (val == 0) val = 1;
+		if (!SetSockOpt(sockfd, IPPROTO_TCP, TCP_KEEPINTVL, (const char*)&val, sizeof(val)))
+		{
+			return false;
+		}
+
+		val = 3;
+		if (!SetSockOpt(sockfd, IPPROTO_TCP, TCP_KEEPCNT, (const char*)&val, sizeof(val)))
+		{
+			return false;
+		}
+
+		return true;
+	}
 
 	SOCKET_T ListenSocket(const char* ip, const int port, const int num)
 	{
@@ -35,11 +127,12 @@ namespace ctm
 			return SOCKET_INVALID;
 		
 		int val = 1;
-		if (!SetSockOpt(fd, SOL_SOCKET, SO_REUSEADDR, (const char*)&val, sizeof(val)))
+		if (SetSockOpt(fd, SOL_SOCKET, SO_REUSEADDR, (const char*)&val, sizeof(val)) != 0)
 		{
+			ERROR_LOG("aaaaaa failed");
 			return SOCKET_INVALID;
 		}
-		
+
 		struct sockaddr_in addr = {0};
 		addr.sin_family = AF_INET;
 		addr.sin_port = htons(port);
@@ -55,8 +148,13 @@ namespace ctm
 			CloseSocket(fd);
 			return SOCKET_INVALID;
 		}
-		
+
 		return fd;
+	}
+
+	bool NotFatalError(int err)
+	{
+		return (err == EINTR || err == EAGAIN || err == EWOULDBLOCK);
 	}
 
 	int SetBlockMode(SOCKET_T sockfd, bool bBlock)
@@ -148,11 +246,7 @@ namespace ctm
 	{
 		if (!IsValid()) 
 			return false;
-		SetAddrZero();
-		m_sockAddrIn.sin_family = AF_INET;
-		m_sockAddrIn.sin_port = htons(port);
-		m_sockAddrIn.sin_addr.s_addr = inet_addr(ip);
-		if(SOCKET_ERR == ctm::Bind(m_sock, (struct sockaddr*)&m_sockAddrIn, sizeof(m_sockAddrIn)))
+		if(SOCKET_ERR == ctm::Bind(m_sock, ip, port))
 		{
 			GetSystemError();
 			return false;
@@ -183,16 +277,11 @@ namespace ctm
 	{
 		if (!IsValid()) 
 			return false;
-		
-		SetAddrZero();
-		int len = sizeof(m_sockAddrIn);
-		if (SOCKET_ERR == ctm::GetPeerName(m_sock, (struct sockaddr*)&m_sockAddrIn, (SOCKETLEN_T*)&len))
+		if (SOCKET_ERR == ctm::GetPeerName(m_sock, outIp, outPort))
 		{
 			GetSystemError();
 			return false;
 		}
-		outPort = ntohs(m_sockAddrIn.sin_port);
-		outIp = inet_ntoa(m_sockAddrIn.sin_addr);
 		return true;
 	}
 
@@ -212,33 +301,7 @@ namespace ctm
 
 	bool CSocket::SetKeepAlive(int interval)
 	{
-		int val = 1;
-		if (!SetSockOpt(SOL_SOCKET, SO_KEEPALIVE, (const char*)&val, sizeof(val)))
-		{
-			return false;
-		}
-
-		val = interval;
-		if (!SetSockOpt(IPPROTO_TCP, TCP_KEEPIDLE, (const char*)&val, sizeof(val)))
-		{
-			return false;
-		}
-
-		val = interval/3;
-		if (val == 0) val = 1;
-		if (!SetSockOpt(IPPROTO_TCP, TCP_KEEPINTVL, (const char*)&val, sizeof(val)))
-		{
-			return false;
-		}
-
-		val = 3;
-		if (!SetSockOpt(IPPROTO_TCP, TCP_KEEPCNT, (const char*)&val, sizeof(val)))
-		{
-			return false;
-		}
-
-		return true;
-		
+		return ctm::SetKeepAlive(m_sock, interval);
 	}
 
 	CSocket CSocket::Accept(std::string& outIp, int& outPort)
@@ -252,18 +315,8 @@ namespace ctm
 			m_errmsg = "Socket no listen mode";
 			return CSocket(SOCKET_INVALID, SOCK_TYPE_STREAM);
 		}
-
-		SetAddrZero();
-		SOCKETLEN_T len = sizeof(m_sockAddrIn);
-		SOCKET_T s = ctm::Accept(m_sock, (struct sockaddr*)&m_sockAddrIn, &len);
-		if (SOCKET_INVALID == s)
-		{
-			GetSystemError();
-		}
-		outPort = ntohs(m_sockAddrIn.sin_port);
-		outIp = inet_ntoa(m_sockAddrIn.sin_addr);
 			
-		return CSocket(s, SOCK_TYPE_STREAM);
+		return CSocket(ctm::Accept(m_sock, outIp, outPort), SOCK_TYPE_STREAM);
 	}
 
 	bool CSocket::SetBlockMode(bool bBlock)
@@ -298,17 +351,11 @@ namespace ctm
 	{
 		if (!IsValid()) 
 			return false;
-
-		SetAddrZero();
-		m_sockAddrIn.sin_family = AF_INET;
-		m_sockAddrIn.sin_port = htons(port);
-		m_sockAddrIn.sin_addr.s_addr = inet_addr(ip);
-		if (SOCKET_ERR == ctm::Connect(m_sock, (struct sockaddr*)&m_sockAddrIn, sizeof(m_sockAddrIn)))
+		if (SOCKET_ERR == ctm::Connect(m_sock, ip, port))
 		{
 			GetSystemError();
 			return false;
 		}
-
 		return true;
 	}
 

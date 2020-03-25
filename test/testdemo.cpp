@@ -6,6 +6,7 @@
 #include "common/log.h"
 #include "common/random.h"
 #include "common/inifile.h"
+#include "common/message.h"
 
 #include "net/socket.h"
 #include "net/select.h"
@@ -27,6 +28,8 @@
 
 using namespace ctm;
 using namespace std;
+
+CCommonQueue queue1;
 
 void ShowSign(int sign)
 {
@@ -55,12 +58,11 @@ protected:
 
 int TestThread::Run()
 {
-	cout << "----------xxxxxx----------" << endl;
-
 	while (1)
 	{
-		cout << "----------dddddddddd----------" << endl;
-		sleep(1);
+		char a;
+		cin >> a;
+		queue1.PutMessage(shared_ptr<CMessage>(CreateMessage(MSG_SYS_TIMER)));
 	}
 
 	return 0;
@@ -287,87 +289,6 @@ void TestGetAddrInfo()
 	freeaddrinfo(res);
 }
 
-void TestSelect()
-{
-	TcpClient client;
-
-	if (!client.Connect("127.0.0.1", 9999))
-	{
-		DEBUG_LOG("connect server failed : %d, %s!", client.GetErrCode(), client.GetErrMsg().c_str());
-		return;
-	}
-
-
-	CSelect s;
-
-	s.AddReadFd(client.GetSocket());
-	s.AddReadFd(fileno(stdin));
-	while (1)
-	{
-		struct timeval timeOut = { 5, 10 };
-
-		int iRet = s.WaitFds(NULL);
-		if (iRet > 0)
-		{
-			SOCKET_T fd;
-			while ((fd = s.NextReadFd()) != SOCKET_INVALID)
-			{
-				char buf[1024] = { 0 };
-				DEBUG_LOG("ready fd : %d", fd);
-				if (fd == client.GetSocket())
-				{
-					int len = client.Recv(buf, 1024);
-					if (len > 0) {
-						DEBUG_LOG("%s", buf);
-					}
-					else
-					{
-						ERROR_LOG("error code : %d", client.GetErrCode());
-						ERROR_LOG("error msg : %s", client.GetErrMsg().c_str());
-						s.DelReadFd(fd);
-						return;
-					}
-				}
-				else if (fd == fileno(stdin))
-				{
-					char buf[1024] = { 0 };
-					cin.getline(buf, 1024);
-					int size = cin.gcount();
-
-					if (size == 0)
-					{
-						ERROR_LOG("EOF");
-						s.DelReadFd(fd);
-						return;
-					}
-
-					int netsize = htonl(size);
-
-					DEBUG_LOG("len = %d, Content = %s", size, buf);
-					if (client.Send((char*)& netsize, sizeof(netsize)) <= 0)
-					{
-						DEBUG_LOG("errno : %d msg : %s", client.GetErrCode(), client.GetErrMsg().c_str());
-					}
-
-					if (client.Send(buf, size) <= 0)
-					{
-						DEBUG_LOG("errno : %d msg : %s", client.GetErrCode(), client.GetErrMsg().c_str());
-					}
-				}
-			}
-		}
-		else if (iRet == 0)
-		{
-			ERROR_LOG("time out");
-		}
-		else
-		{
-			ERROR_LOG("WaitReadFd error");
-			break;
-		}
-	}
-}
-
 void TestMsg()
 {
 	CMsg msg1("1", 1, "net");
@@ -384,6 +305,16 @@ void TestMsg()
 	}
 	msg1.TestPrint();
 	msg2.TestPrint();
+}
+
+void TestMessage()
+{
+	TestThread t;
+	t.Start();
+	while(1)
+	{
+		cout << queue1.GetAndPopMessage()->ToJsonString() << endl;
+	}
 }
 
 void TestMmap(int flag = 1)
@@ -664,6 +595,8 @@ void TestTencent()
 	Show(bitCount2(13));
 	Show(bitCount2(14));
 	Show(bitCount2(15));
+	int s = (1000<<2);
+	Show(s);
 }
 
 void TestIni()
@@ -749,6 +682,7 @@ int main(int argc, char** argv)
 	//TestTime();
 	//TestTimer();
 	TestTencent();
+	//TestMessage();
 	//TestListReverse();
 
 	//WaitEnd();

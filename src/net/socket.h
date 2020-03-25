@@ -78,7 +78,6 @@ inline std::string GetSockErrMsg(int errCode)
 	return strerror(errCode);
 }
 
-
 #endif
 
 namespace ctm
@@ -97,11 +96,13 @@ namespace ctm
 	{
 		return accept(sockfd, addr, addrlen);
 	}
+	SOCKET_T Accept(SOCKET_T sockfd, string& outIp, int& outPort);
 
 	inline int Bind(SOCKET_T sockfd, struct sockaddr* addr, SOCKETLEN_T addrlen)
 	{
 		return bind(sockfd, addr, addrlen);
 	}
+	int Bind(SOCKET_T sockfd, const string& ip, int port);
 
 	inline int Listen(SOCKET_T sockfd, int backlog)
 	{
@@ -117,6 +118,7 @@ namespace ctm
 	{
 		return getpeername(sockfd, addr, len);
 	}
+	int GetPeerName(SOCKET_T sockfd, string& outIp, int& outPort);
 
 	inline struct hostent* GetHostByName(const char *name)
 	{
@@ -127,6 +129,7 @@ namespace ctm
 	{
 		return connect(sockfd, addr, len);
 	}
+	int Connect(SOCKET_T sockfd, const string& ip, int port);
 
 	inline int Send(SOCKET_T sockfd, const SOCKETBUF_T* buf, size_t len, int flags)
 	{
@@ -150,6 +153,8 @@ namespace ctm
 		return recvfrom(sockfd, buf, len, flags, src_addr, addrlen);
 	}
 
+	bool SetKeepAlive(SOCKET_T sockfd, int interval);
+
 	SOCKET_T ListenSocket(const char* ip, const int port, const int num = SOMAXCONN);
 
 	int SetBlockMode(SOCKET_T sockfd, bool bBlock);
@@ -158,8 +163,9 @@ namespace ctm
 
 	inline int SetNonBlock(SOCKET_T sockfd) { return SetBlockMode(sockfd, false); }
 
-	class CSocket;
+	bool NotFatalError(int err);
 
+	class CSocket;
 	bool operator==(const CSocket& lhs, const CSocket& rhs);
 	
 	class CSocket

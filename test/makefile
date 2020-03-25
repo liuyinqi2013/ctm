@@ -42,13 +42,16 @@ COM_OBJ=../src/common/string_tools.o ../src/common/time_tools.o \
 	../src/common/inifile.o \
 	../src/common/random.o \
 	../src/common/message.o \
-	../src/module/timer.o
+	../src/module/timer.o \
+	../src/net/tcpserver.o \
+	../src/net/tcpclient.o \
+	../src/net/netpacket.o
 	
 CPP_OBJ=$(patsubst %.cpp, %.o, $(CPP_SRC)) $(COM_OBJ)
 	
 	
 OBJS0=$(COM_OBJ) testdemo.o
-OBJS1=$(COM_OBJ) serverdemo.o tcpserver.o
+OBJS1=$(COM_OBJ) serverdemo.o
 OBJS2=$(COM_OBJ) clientdemo.o
 
 VPATH=$(SUBDIRS) $(SRCDIRS)

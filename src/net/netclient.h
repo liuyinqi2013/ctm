@@ -33,7 +33,7 @@ namespace ctm
 		bool Init();
 
 		std::string GetNetPack()
-		{
+		{
 			return m_recvQueue.GetAndPop();
 		}
 

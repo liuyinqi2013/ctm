@@ -11,7 +11,7 @@ namespace ctm
     {
         DISABLE_COPY_ASSIGN(CModule);
     public:
-        CModule() : m_outMessageQueue(0) {}
+        CModule(CModule* parent = NULL) : m_parent(NULL), m_outMessageQueue(0) {}
         virtual ~CModule() {}
         virtual int Init() { return 0; }
         virtual int UnInit() { return 0; }
@@ -22,6 +22,7 @@ namespace ctm
             m_outMessageQueue = messageQueue;
         }
     protected:
+        CModule* m_parent;
         CMessgaeQueue* m_outMessageQueue;
     };
 };

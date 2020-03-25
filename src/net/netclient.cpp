@@ -5,14 +5,12 @@ namespace ctm
 {
 	bool CNetTcpClient::Init()
 	{
-
 		if(!m_Socket.IsValid())
 		{
 			ERROR_LOG("m_Socket INVALID!");
 			return false;
 		}
 
-		//设置空闲时间为30分钟
 		if (!m_Socket.SetKeepAlive(600))
 		{
 			ERROR_LOG("errcode = %d, errmsg = %s!", m_Socket.GetErrCode(), m_Socket.GetErrMsg().c_str());
@@ -28,8 +26,7 @@ namespace ctm
 		FD_ZERO(&m_readFds);
 		FD_SET(m_Socket.GetSock(), &m_readFds);
 
-		return true;
-		
+		return true;	
 	}
 
 	int CNetTcpClient::Run()
@@ -46,7 +43,8 @@ namespace ctm
 			{
 				len = m_Socket.Recv(buf, sizeof(buf) - 1);
 				if (len > 0)
-				{
+				{
+
 					buf[len] = '\0';
 					m_Context.GetCompletePack(m_Socket.GetSock(), std::string(buf, len), vecOutput);
 					for(int i = 0; i < vecOutput.size(); ++i)
@@ -84,9 +82,7 @@ namespace ctm
 
 	void CNetTcpClient::ShutDown()
 	{
-		//关闭监控线程
 		Stop();
-
 		m_Socket.Close();
 	}
 }

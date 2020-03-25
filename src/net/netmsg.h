@@ -12,6 +12,7 @@
 #include <stdlib.h>
 
 #define BUF_MAX_SIZE 16 * 1024
+
 namespace ctm
 {
 	class CNetMsg : public CMsg
@@ -99,9 +100,9 @@ namespace ctm
 		void GetCompletePack(SOCKET_T sock,  const std::string& buf, std::vector<std::string>& vecOut);
 		void Remove(SOCKET_T sock);
 	private:
-		std::string m_sep; //分隔符
+		std::string m_sep; 
 		CMutex m_mutex;
-		std::map<SOCKET_T, std::string> m_mapContext; //上下文
+		std::map<SOCKET_T, std::string> m_mapContext;
 	};
 
 	inline std::string PackNetData(const std::string& buf, const std::string& sep = "[---@end@---]")

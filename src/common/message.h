@@ -12,22 +12,23 @@
 namespace ctm
 {
     using namespace std;
-
     enum EMessageType
     {
         MSG_SYS_NULL = 0,
         MSG_SYS_COMMON = 1,
         MSG_SYS_TIMER = 2,
+        MSG_SYS_NET_DATA = 3,
+        MSG_SYS_NET_CONN = 4,
     };
 
     class CMessage
     {
     public:
-        CMessage() : m_id(GenerateId()), m_type(0), m_createTime(time(NULL)){
+        CMessage() : m_id(/*GenerateId()*/), m_type(0), m_createTime(time(NULL)){
         }
 
         CMessage(unsigned int type, unsigned long time = time(NULL)) 
-        : m_id(GenerateId()), m_type(type), m_createTime(time){   
+        : m_id(/*GenerateId()*/), m_type(type), m_createTime(time){   
         }
 
         CMessage(const CMessage& other) 
@@ -42,7 +43,12 @@ namespace ctm
         virtual int Serialization(char* buf, int& len);
         virtual int DeSerialization(const char* buf, int len);
         
-        string ToJsonString()
+        virtual string ToString()
+        {
+            return "";
+        }
+
+        virtual string ToJsonString()
         {
             return ToJsonObject().toStyledString();
         }
@@ -87,14 +93,14 @@ namespace ctm
     typedef unordered_map<unsigned int, MessageFunction> MessageFunctionMap;
     extern void RegisterMessage(unsigned int msgType, MessageFunction func);
     	
-    #define DECLARE_MSG(MsgType, ClassName) \
-	static inline CMessage* Function##ClassName() { return new ClassName(); } \
-	class Register##ClassName \
-	{ \
-	public: \
+    #define DECLARE_MSG(MsgType, ClassName)\
+	static inline CMessage* Function##ClassName() { return new ClassName(); }\
+	class Register##ClassName\
+	{\
+	public:\
 		Register##ClassName() { RegisterMessage(MsgType, Function##ClassName); }\
-	}; \
-	static Register##ClassName globalRegister##ClassName()
+	};\
+	static Register##ClassName *globalRegister##ClassName = new Register##ClassName()
 	
 	extern CMessage* CreateMessage(unsigned int msgType);
 
@@ -107,6 +113,7 @@ namespace ctm
         virtual shared_ptr<CMessage> GetAndPopMessage() = 0;
         virtual unsigned int Count() = 0;
         virtual unsigned int Capacity() = 0;
+        virtual void Clear() {}
     protected:
         static const unsigned int default_max_size = 10000;
     };
@@ -123,11 +130,14 @@ namespace ctm
 
         virtual bool PutMessage(const shared_ptr<CMessage>& message);
         virtual shared_ptr<CMessage> GetAndPopMessage();
+        shared_ptr<CMessage> NonblockGet();
         virtual unsigned int Count() { 
             return m_queue.size(); 
         }
         virtual unsigned int Capacity(){
             return m_maxSize;
+        }
+        virtual void Clear() {
         }
 
     private:

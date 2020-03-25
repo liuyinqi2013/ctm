@@ -12,4 +12,7 @@ protected:\
 	CLASS_NAME& operator= (const CLASS_NAME&);
 }
 
+#define DELETE(ptr) { if (ptr) { delete ptr; ptr = NULL; } }
+#define DELETE_ARRAY(ptr) { if (ptr) { delete[] ptr; ptr = NULL; } }
+
 #endif

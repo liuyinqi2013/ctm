@@ -24,6 +24,8 @@ namespace ctm
         return (*globalMessageFunctionMap)[msgType]();
     }
 
+    DECLARE_MSG(MSG_SYS_COMMON, CMessage);
+
     unsigned int  CMessage::GenerateId()
     {
         static CMutex mutex;
@@ -135,6 +137,19 @@ namespace ctm
         m_queue.pop();
         pthread_mutex_unlock(&m_mutex);
 
+        return message;
+    }
+
+    shared_ptr<CMessage> CCommonQueue::NonblockGet()
+    {
+        shared_ptr<CMessage> message;
+        pthread_mutex_lock(&m_mutex);
+        if (m_queue.size() != 0)
+        {
+            message = m_queue.front();
+            m_queue.pop();
+        }
+        pthread_mutex_unlock(&m_mutex);
         return message;
     }
 };

@@ -17,24 +17,22 @@
 #include <string.h>
 #include <signal.h>
 
-
 #include <iostream>
 #include <ctype.h>
 #include <iostream>
 
+#include "net/tcpclient.h"
+
 using namespace ctm;
 using namespace std;
 
-int main(int argc, char **argv)
+void Test(int argc, char **argv)
 {
-	CLog::GetInstance()->SetLogName("test");
-	CLog::GetInstance()->SetLogPath("/opt/test/ctm/log");
-
 	CNetTcpClient client("127.0.0.1", 9999);
 
 	client.SetEndFlag("[---@end@---]");
 	if (!client.Init())
-		return -1;
+		return ;
 
 	client.Start();
 	FILE* fin = NULL;
@@ -70,7 +68,76 @@ int main(int argc, char **argv)
 			DEBUG_LOG("SendNetPack errno");
 		}
 	}
-	
+}
+
+void TestTcpClient(int argc, char **argv)
+{
+	CCommonQueue recv;
+	CTcpClient client("127.0.0.1", 9999);
+	client.SetOutMessageQueue(&recv);
+	if (client.Init() == -1)
+	{
+		DEBUG_LOG("Init faild");
+		return ;
+	}
+
+	char buf[1024] = {0};
+	int len = 0;
+	FILE* fin = fopen(argv[1], "rb+");
+	FILE* fout = fopen("server_echo", "wb");
+	client.OnRunning();
+	bool send = false;
+	CClock clock;
+	while(1)
+	{
+		shared_ptr<CMessage> message = recv.NonblockGet();
+		if(message.get() != NULL)
+		{
+			if (message->m_type == MSG_SYS_NET_DATA)
+			{
+				shared_ptr<CNetDataMessage> netdata = dynamic_pointer_cast<CNetDataMessage>(message);
+				DEBUG_LOG("Recv Data len = %d" , netdata->m_buf->len);
+				if (strncmp("&&END", netdata->m_buf->data, 5) == 0)
+				{
+					fclose(fout);
+					DEBUG_LOG("End!");
+					break;
+				}
+				fwrite(netdata->m_buf->data, 1, netdata->m_buf->len, fout);
+			}
+			else if (message->m_type == MSG_SYS_NET_CONN)
+			{
+				shared_ptr<CNetConnMessage> netconn = dynamic_pointer_cast<CNetConnMessage>(message);
+				DEBUG_LOG("Conn ip : %s, port : %d, opt : %d", netconn->m_conn.ip.c_str(),
+						  netconn->m_conn.port,
+						  netconn->m_opt);
+				if (netconn->m_opt != CNetConnMessage::CONNECT_OK)
+					break;
+			}
+		}
+
+		len = fread(buf, 1, 1024, fin);
+		if (len > 0)
+		{
+			client.SendData(buf, len);
+		}
+		if (!send && feof(fin))
+		{
+			client.SendData("&&END", 5);
+			send = true;
+		}
+	}
+
+	client.UnInit();
+	DEBUG_LOG("%s", clock.RunInfo().c_str());
+}
+
+int main(int argc, char **argv)
+{
+	TestTcpClient(argc, argv);
+	//CLog::GetInstance()->SetLogName("testclient");
+	//CLog::GetInstance()->SetLogPath("./log/");
+
 	/*
 	TcpClient client;
 
