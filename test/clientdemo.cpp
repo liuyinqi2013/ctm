@@ -72,7 +72,7 @@ void Test(int argc, char **argv)
 
 void TestTcpClient(int argc, char **argv)
 {
-	CCommonQueue recv;
+	CSingleWriteReadQueue recv;
 	CTcpClient client("127.0.0.1", 9999);
 	client.SetOutMessageQueue(&recv);
 	if (client.Init() == -1)
@@ -81,25 +81,27 @@ void TestTcpClient(int argc, char **argv)
 		return ;
 	}
 
-	char buf[1024] = {0};
+	char buf[4096] = {0};
 	int len = 0;
 	FILE* fin = fopen(argv[1], "rb+");
 	FILE* fout = fopen("server_echo", "wb");
 	client.OnRunning();
+	bool isConn = false;
 	bool send = false;
 	CClock clock;
 	while(1)
 	{
-		shared_ptr<CMessage> message = recv.NonblockGet();
+		shared_ptr<CMessage> message = recv.NonBlockGetFront();
 		if(message.get() != NULL)
 		{
 			if (message->m_type == MSG_SYS_NET_DATA)
 			{
 				shared_ptr<CNetDataMessage> netdata = dynamic_pointer_cast<CNetDataMessage>(message);
-				DEBUG_LOG("Recv Data len = %d" , netdata->m_buf->len);
+				//DEBUG_LOG("Recv Data len = %d" , netdata->m_buf->len);
 				if (strncmp("&&END", netdata->m_buf->data, 5) == 0)
 				{
 					fclose(fout);
+					recv.PopFront();
 					DEBUG_LOG("End!");
 					break;
 				}
@@ -111,20 +113,35 @@ void TestTcpClient(int argc, char **argv)
 				DEBUG_LOG("Conn ip : %s, port : %d, opt : %d", netconn->m_conn.ip.c_str(),
 						  netconn->m_conn.port,
 						  netconn->m_opt);
-				if (netconn->m_opt != CNetConnMessage::CONNECT_OK)
+				if (netconn->m_opt == CNetConnMessage::CONNECT_OK)
+				{
+					isConn = true;
+				}
+				else
+				{
 					break;
+				}
+			}
+			recv.PopFront();
+		}
+		
+		if (!send && isConn)
+		{
+			len = fread(buf, 1, 4096, fin);
+			if (len > 0)
+			{
+				client.SyncSendData(buf, len);
+			}
+			if (!send && feof(fin))
+			{
+				client.SyncSendData("&&END", 5);
+				DEBUG_LOG("Send End!");
+				send = true;
 			}
 		}
-
-		len = fread(buf, 1, 1024, fin);
-		if (len > 0)
+		else
 		{
-			client.SendData(buf, len);
-		}
-		if (!send && feof(fin))
-		{
-			client.SendData("&&END", 5);
-			send = true;
+			usleep(1);
 		}
 	}
 

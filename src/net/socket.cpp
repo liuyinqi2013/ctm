@@ -129,7 +129,7 @@ namespace ctm
 		int val = 1;
 		if (SetSockOpt(fd, SOL_SOCKET, SO_REUSEADDR, (const char*)&val, sizeof(val)) != 0)
 		{
-			ERROR_LOG("aaaaaa failed");
+			//ERROR_LOG("aaaaaa failed");
 			return SOCKET_INVALID;
 		}
 
@@ -155,6 +155,18 @@ namespace ctm
 	bool NotFatalError(int err)
 	{
 		return (err == EINTR || err == EAGAIN || err == EWOULDBLOCK);
+	}
+
+	int ClearSockError(SOCKET_T sockfd)
+	{
+		int error = 0;
+		SOCKETLEN_T len = sizeof(error);
+		if (GetSockOpt(sockfd, SOL_SOCKET, SO_ERROR, (char*)&error, &len) != 0)
+		{
+			//ERROR_LOG("aaaaaa failed");
+			return SOCKET_INVALID;
+		}
+		return error;
 	}
 
 	int SetBlockMode(SOCKET_T sockfd, bool bBlock)

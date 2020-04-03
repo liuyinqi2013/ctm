@@ -114,6 +114,11 @@ namespace ctm
 		return setsockopt(sockfd, level, optname, optval, optlen);
 	}
 
+	inline int GetSockOpt(SOCKET_T sockfd, int level, int optname, char* optval, SOCKETLEN_T *optlen)
+	{
+		return getsockopt(sockfd, level, optname, optval, optlen);
+	}
+
 	inline int GetPeerName(SOCKET_T sockfd, struct sockaddr* addr, SOCKETLEN_T* len)
 	{
 		return getpeername(sockfd, addr, len);
@@ -164,6 +169,7 @@ namespace ctm
 	inline int SetNonBlock(SOCKET_T sockfd) { return SetBlockMode(sockfd, false); }
 
 	bool NotFatalError(int err);
+	int ClearSockError(SOCKET_T sockfd);
 
 	class CSocket;
 	bool operator==(const CSocket& lhs, const CSocket& rhs);

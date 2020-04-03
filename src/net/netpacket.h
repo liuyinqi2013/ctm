@@ -7,6 +7,7 @@
 #include "common/macro.h"
 #include "common/message.h"
 
+#define NET_PACKET_MIN_SIZE (1)
 #define NET_PACKET_MAX_SIZE (32 * 1024 * 1024)
 
 namespace ctm
@@ -17,11 +18,18 @@ namespace ctm
     {
         Conn() : fd(-1), port(0) {}
         Conn(SOCKET_T sockfd, unsigned int cliPort, const string &cliIp) : fd(sockfd), port(cliPort), ip(cliIp) {}
+        Conn(const Conn& rhs) : fd(rhs.fd), port(rhs.port), ip(rhs.ip) {}
+        Conn& operator= (const Conn& rhs) { fd = rhs.fd; port = rhs.port; ip = rhs.ip; return *this; }
 
         SOCKET_T fd;
         unsigned int port;
         string ip;
     };
+
+    inline bool operator == (const Conn& lhs, const Conn& rhs)
+    {
+        return bool(lhs.fd == rhs.fd && lhs.port == rhs.port && lhs.ip == rhs.ip);
+    }
 
     /*接收网络数据的buf*/
     struct RecvBuf
@@ -57,11 +65,15 @@ namespace ctm
 
     RecvBuf *CreateRecvBuf(unsigned int len);
     void DestroyRecvBuf(RecvBuf *&buf);
-    int ReadPacketSize(SOCKET_T fd);
+    int ReadPacketSize(SOCKET_T fd, unsigned long millisec = -1);
     int ReadPacketData(SOCKET_T fd, RecvBuf& buf);
-    int SendPacketSize(SOCKET_T fd, int size);
+    int SendPacketSize(SOCKET_T fd, int size, unsigned long millisec = -1);
     int SendPacketData(SOCKET_T fd, RecvBuf& buf);
+    int SendPacketData(SOCKET_T fd, const char* data, int len);
     inline bool IsCompletePack(RecvBuf& buf) { return buf.len == buf.offset; }
+    inline bool IsValidNetLen(unsigned int len) { return (NET_PACKET_MIN_SIZE <= len && len <= NET_PACKET_MAX_SIZE); }
+    int WaitReadable(SOCKET_T fd, unsigned long millisec = -1);
+    int WaitWritable(SOCKET_T fd, unsigned long millisec = -1);
 
     class CNetDataMessage : public CMessage
     {

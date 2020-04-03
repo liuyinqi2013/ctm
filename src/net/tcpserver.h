@@ -7,10 +7,13 @@
 
 namespace ctm
 {
+    class CMutex;
+    class CTcpServer;
+
     class CTcpSend : public CModule, protected CThread
     {
     public:
-        CTcpSend();
+        CTcpSend(CTcpServer* tcpserver = NULL);
         ~CTcpSend();
 
         virtual int Init();
@@ -19,14 +22,16 @@ namespace ctm
 
         void SendData(shared_ptr<CNetDataMessage>& netMessage) 
         {
-            m_queue.PutMessage(netMessage);
+            m_queue.PushBack(netMessage);
         }
 
     protected:
         virtual int Run();
 
     private:
+        int m_epollFd;
         CCommonQueue m_queue;
+        CTcpServer* m_tcpServr;
     };
 
     class CTcpServer : public CModule, protected CThread
@@ -40,6 +45,7 @@ namespace ctm
         virtual int OnRunning();
 
         void SendData(const Conn& conn, char* data, int len);
+        bool IsValidConn(const Conn& conn);
 
     protected:
         virtual int Run();
@@ -61,6 +67,7 @@ namespace ctm
         CContextCache m_contextCache;
         ConnMap m_connMap;
         CTcpSend* m_sendModule;
+        CMutex* m_mutex;
     };
 }
 

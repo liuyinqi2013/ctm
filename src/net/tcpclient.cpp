@@ -12,6 +12,7 @@ namespace ctm
         m_serverPort(port),
         m_connFd(-1),
         m_connStatus(UnConnect),
+        m_sendQueue(NULL),
         m_autoReconnect(false),
         m_tryReconnectCount(default_try_reconnect_count),
         m_connectCount(0)
@@ -26,6 +27,7 @@ namespace ctm
 
     int CTcpClient::Init()
     {
+        m_sendQueue = new CCommonQueue();
         return Connect();
     }
 
@@ -33,12 +35,15 @@ namespace ctm
     {
         Stop();
         Close();
+        DELETE(m_sendQueue);
+        return 0;
     }
 
     int CTcpClient::OnRunning()
     {
         Start();
         Detach();
+        return 0;
     }
 
     int CTcpClient::ReConnect()
@@ -47,14 +52,27 @@ namespace ctm
         return Connect();
     }
 
-    void CTcpClient::SendData(char* data, int len)
+    int CTcpClient::SendData(char* data, int len)
     {
-        if (len < 1) return;
+        if (!IsValidNetLen(len)) return -1;
         shared_ptr<CNetDataMessage> message = make_shared<CNetDataMessage>();
         message->m_conn = GetConn();
         message->m_buf = new RecvBuf(len);
         memcpy(message->m_buf->data, data, len);
-        m_sendQueue.PutMessage(message);
+        return m_sendQueue->PushBack(message);
+    }
+
+    int CTcpClient::SyncSendData(char* data, int len)
+    {
+        //DEBUG_LOG("SyncSendData size : %d", len);
+        if (!IsValidNetLen(len)) return -1;
+        int ret = SendPacketSize(m_connFd, len);
+        if (ret == -1)
+        {
+            ERROR_LOG("send size : %d", ret);
+            return -1;
+        }
+        return SendPacketData(m_connFd, data, len);
     }
 
     int CTcpClient::Connect()
@@ -66,6 +84,7 @@ namespace ctm
         }
 
         ++m_connectCount;
+        ClearSockError(m_connFd);
         SetNonBlock(m_connFd);
         int ret = ctm::Connect(m_connFd, m_serverIp, m_serverPort);
         if (ret < 0)
@@ -81,6 +100,7 @@ namespace ctm
         {
             m_connectCount = 0;
             m_connStatus = Connected;
+            SetKeepAlive(m_connFd, 10);
         }
 
         return 0;
@@ -95,7 +115,7 @@ namespace ctm
         message->m_opt = opt;
         if (m_outMessageQueue)
         {
-            m_outMessageQueue->PutMessage(message);
+            m_outMessageQueue->PushBack(message);
         }
     }
 
@@ -111,10 +131,10 @@ namespace ctm
         while(1)
         {
             FD_ZERO(&rdset);
+            FD_ZERO(&wrset);
             FD_SET(m_connFd, &rdset);
-            if (m_connStatus == Connecting || m_sendQueue.Count() > 0)
+            if (m_connStatus == Connecting || m_sendQueue->Count() > 0)
             {
-                FD_ZERO(&wrset);
                 FD_SET(m_connFd, &wrset);
             }
 
@@ -149,6 +169,7 @@ namespace ctm
                         return -1;
                     }
 
+                    SetKeepAlive(m_connFd, 10);
                     ConnOptNotify(CNetConnMessage::CONNECT_OK);
                     m_connStatus = Connected;
                     m_connectCount = 0;
@@ -193,7 +214,7 @@ namespace ctm
         if (buf == NULL)
         {
             int ret = ReadPacketSize(fd);
-            if (ret == -1 || ret > NET_PACKET_MAX_SIZE) 
+            if (ret == -1 || (unsigned int)ret > NET_PACKET_MAX_SIZE) 
             {
                 return -1;
             }
@@ -210,7 +231,7 @@ namespace ctm
                 shared_ptr<CNetDataMessage> message = make_shared<CNetDataMessage>();
                 message->m_conn = GetConn();
                 message->m_buf = buf;
-                if (m_outMessageQueue) m_outMessageQueue->PutMessage(message);
+                if (m_outMessageQueue) m_outMessageQueue->PushBack(message);
             }
             else
             {
@@ -231,7 +252,7 @@ namespace ctm
                 shared_ptr<CNetDataMessage> message = make_shared<CNetDataMessage>();
                 message->m_conn = GetConn();
                 message->m_buf = buf;
-                if (m_outMessageQueue) m_outMessageQueue->PutMessage(message);
+                if (m_outMessageQueue) m_outMessageQueue->PushBack(message);
             }
         }
 
@@ -240,7 +261,7 @@ namespace ctm
 
     int CTcpClient::Write()
     {
-        shared_ptr<CNetDataMessage> message = dynamic_pointer_cast<CNetDataMessage>(m_sendQueue.NonblockGet());
+        shared_ptr<CNetDataMessage> message = dynamic_pointer_cast<CNetDataMessage>(m_sendQueue->NonBlockGetFront());
         if(message.get() == NULL)
         {
             return 0;
@@ -248,20 +269,30 @@ namespace ctm
 
         if (message->m_buf->offset == 0)
         {
-            if (SendPacketSize(message->m_conn.fd, message->m_buf->len) != 0)
+            int ret = SendPacketSize(message->m_conn.fd, message->m_buf->len);
+            if (ret != 0)
+            {
+                ERROR_LOG("send size : %d", ret);
+                m_sendQueue->PopFront();
                 return -1;
+            }
         }
 
         if (SendPacketData(message->m_conn.fd, *message->m_buf) != 0)
         {
+            m_sendQueue->PopFront();
             return -1;
         }
 
-        if (!IsCompletePack(*message->m_buf))
+        if (IsCompletePack(*message->m_buf))
         {
-            m_sendQueue.PutMessage(message);
+            m_sendQueue->PopFront();
         }
-
+        else
+        {
+            DEBUG_LOG("len=%d, offset=%d", message->m_buf->len, message->m_buf->offset);
+        }
+        
         return 0;
     }
 

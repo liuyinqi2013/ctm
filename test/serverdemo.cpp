@@ -20,6 +20,7 @@
 #include <iostream>
 #include <ctype.h>
 #include <iostream>
+#include <map>
 
 #include "tcpserver.h"
 
@@ -29,7 +30,7 @@ using namespace std;
 int main(int argc, char **argv)
 {
 	CCommonQueue recv;
-	CTcpServer server("127.0.0.1", 9999);
+	CTcpServer server("0.0.0.0", 9999);
 	server.SetOutMessageQueue(&recv);
 	if (server.Init() == -1)
 	{
@@ -37,21 +38,31 @@ int main(int argc, char **argv)
 		return 0;
 	}
 
-	FILE* fout = fopen("client_up", "wb");
+	FILE* fout = NULL;
 	server.OnRunning();
+	map<int, FILE*> connMap;
+	string file("client_up");
 	while(1)
 	{
-		shared_ptr<CMessage> message = recv.GetAndPopMessage();
+		shared_ptr<CMessage> message = recv.GetFront(10);
+		if (message.get() == NULL)
+		{
+			usleep(1);
+			continue;
+		}
 
 		if (message->m_type == MSG_SYS_NET_DATA)
 		{
 			shared_ptr<CNetDataMessage> netdata = dynamic_pointer_cast<CNetDataMessage>(message);
-			DEBUG_LOG("Recv Data len = %d" , netdata->m_buf->len);
+			//DEBUG_LOG("Recv Data len = %d" , netdata->m_buf->len);
+			fout = connMap[netdata->m_conn.fd];
 			if (strncmp("&&END", netdata->m_buf->data, 5) == 0)
 			{
-				DEBUG_LOG("Recv End!");
+				DEBUG_LOG("%d, Recv End!", netdata->m_conn.fd);
 				fclose(fout);
 				server.SendData(netdata->m_conn, netdata->m_buf->data, netdata->m_buf->len);
+				recv.PopFront();
+				connMap.erase(netdata->m_conn.fd);
 				continue;
 			}
 
@@ -66,9 +77,13 @@ int main(int argc, char **argv)
 					  netconn->m_opt);
 			if (netconn->m_opt == CNetConnMessage::CONNECT_OK)
 			{
-				fout = fopen("client_up", "wb");
+				string fullFileName = file + I2S(netconn->m_conn.fd);
+				fout = fopen(fullFileName.c_str(), "wb");
+				connMap[netconn->m_conn.fd] = fout;
 			}
 		}
+
+		recv.PopFront();
 	}
 	server.UnInit();
 

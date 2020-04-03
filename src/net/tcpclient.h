@@ -27,7 +27,8 @@ namespace ctm
         virtual int UnInit();
         virtual int OnRunning();
 
-        void SendData(char* data, int len);
+        int SendData(char* data, int len);
+        int SyncSendData(char* data, int len);
         int Connect();
         int ReConnect();
         void SetAutoReConnect(bool flag) { m_autoReconnect = flag; }
@@ -46,7 +47,7 @@ namespace ctm
         unsigned int m_serverPort;
         SOCKET_T m_connFd;
         int m_connStatus;
-        CCommonQueue m_sendQueue;
+        CMessgaeQueue *m_sendQueue;
         CContextCache m_readCache;
         bool m_autoReconnect;
         int m_tryReconnectCount;

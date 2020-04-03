@@ -15,7 +15,9 @@
 #define CMD_LEN 4
 #define MAX_TIMER_COUNT 100000
 
-#define DELETE(ptr) if ((ptr)) { delete (ptr); ptr = NULL; }
+#ifndef DELETE
+    #define DELETE(ptr) if ((ptr)) { delete (ptr); ptr = NULL; }
+#endif
 
 namespace ctm
 {
@@ -215,7 +217,7 @@ namespace ctm
                 // 超时通知上层
                 if (m_outMessageQueue)
                 {
-                    m_outMessageQueue->PutMessage(it->second);
+                    m_outMessageQueue->PushBack(it->second);
                 }
                 else
                 {

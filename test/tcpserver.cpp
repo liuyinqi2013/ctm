@@ -106,14 +106,13 @@ void TcpServer::Run()
 				while(1)
 				{
 					char rbuf[1024 + 1] = {0};
-					DEBUG_LOG("-----------------------------------------------");
 					CSocket clientSock = m_sockClients[events[i].data.fd];
 					len = clientSock.Recv(rbuf, 64);
 					DEBUG_LOG("recv = %s, len = %d", rbuf, len);
 					if (len <= 0)
 					{	
 						DEBUG_LOG("errcode = %d, errmsg = %s!", clientSock.GetErrCode(), clientSock.GetErrMsg().c_str());
-						if ((clientSock.GetErrCode() == EWOULDBLOCK || clientSock.GetErrCode() == EAGAIN)) //需要等待资源 
+						if ((clientSock.GetErrCode() == EWOULDBLOCK || clientSock.GetErrCode() == EAGAIN)) //锟斤拷要锟饺达拷锟斤拷源 
 						{
 							DEBUG_LOG("need wait");
 						}

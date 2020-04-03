@@ -50,28 +50,51 @@ public:
 class TestThread : public CThread
 {
 public:
-	TestThread() {}
+	TestThread(int s = 1) : status(s) {}
 	~TestThread() {}
 protected:
+	int status;
 	virtual int Run();
 };
 
+static int gvalue = 0x01020304;
 int TestThread::Run()
 {
-	while (1)
+	int i = 0;
+	while (i < 100000)
 	{
-		char a;
-		cin >> a;
-		queue1.PutMessage(shared_ptr<CMessage>(CreateMessage(MSG_SYS_TIMER)));
+		if (status)
+		{
+			usleep(1);
+			if (i % 2 == 0)
+			{
+				gvalue = 0x04030201;
+			}
+			else
+			{
+				gvalue = 0x01020304;
+			}
+		}
+		else
+		{
+			usleep(1);
+			printf("a = %0x\n", gvalue);
+		}
+		
+		i++;
 	}
-
 	return 0;
 }
 
 void TestUnitThread()
 {
-	TestThread t;
+	TestThread t(1);
+	TestThread t1(0);
 	t.Start();
+	t1.Start();
+	t.Join();
+	t1.Join();
+	/*
 	if (t.Detach() != 0)
 	{
 		cout << "Detach failed" << endl;
@@ -81,6 +104,7 @@ void TestUnitThread()
 	sleep(10);
 	t.Stop();
 	cout << "Thread status " << t.GetStatus() << endl;
+	*/
 }
 
 void TestStringFunc()
@@ -313,7 +337,7 @@ void TestMessage()
 	t.Start();
 	while(1)
 	{
-		cout << queue1.GetAndPopMessage()->ToJsonString() << endl;
+		cout << queue1.GetFront()->ToJsonString() << endl;
 	}
 }
 
@@ -594,7 +618,7 @@ void TestTencent()
 	Show(bitCount2(12));
 	Show(bitCount2(13));
 	Show(bitCount2(14));
-	Show(bitCount2(15));
+	Show(sizeof(bool));
 	int s = (1000<<2);
 	Show(s);
 }
@@ -681,11 +705,12 @@ int main(int argc, char** argv)
 	//TestUnitThread();
 	//TestTime();
 	//TestTimer();
-	TestTencent();
+	//TestTencent();
 	//TestMessage();
 	//TestListReverse();
+	TestUnitThread();
 
-	//WaitEnd();
+	WaitEnd();
 
 	return 0;
 }

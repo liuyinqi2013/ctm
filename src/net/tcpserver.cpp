@@ -4,6 +4,8 @@
 #include <errno.h>
 #include <assert.h>
 #include "common/log.h"
+#include "common/lock.h"
+#include "thread/mutex.h"
 
 #define BUF_LEN          4096
 #define MAX_WAIT_EVENTS  100
@@ -11,7 +13,9 @@
 
 namespace ctm
 {
-    CTcpSend::CTcpSend()
+    CTcpSend::CTcpSend(CTcpServer* tcpserver) :
+        m_epollFd(-1),
+        m_tcpServr(tcpserver)
     {
 
     }
@@ -37,36 +41,55 @@ namespace ctm
     {
         Start();
         Detach();
+        return 0;
     }
 
     int CTcpSend::Run()
     {
         while(1)
         {
-            shared_ptr<CNetDataMessage> message = dynamic_pointer_cast<CNetDataMessage>(m_queue.GetAndPopMessage());
-            if (message->m_buf->offset == 0)
-            {
-                if (SendPacketSize(message->m_conn.fd, message->m_buf->len) != 0)
-                    continue;
-            }
-
-            if (SendPacketData(message->m_conn.fd, *message->m_buf) != 0)
+            shared_ptr<CNetDataMessage> message = dynamic_pointer_cast<CNetDataMessage>(m_queue.GetFront());
+            if (message.get() == NULL)
             {
                 continue;
             }
 
-            if (!IsCompletePack(*message->m_buf))
+            if (m_tcpServr && !m_tcpServr->IsValidConn(message->m_conn))
             {
-                m_queue.PutMessage(message);
+                m_queue.PopFront();
+                continue;
+            }
+
+            if (message->m_buf->offset == 0)
+            {
+                if (SendPacketSize(message->m_conn.fd, message->m_buf->len) != 0)
+                {
+                    m_queue.PopFront();
+                    continue;
+                }
+            }
+
+            if (SendPacketData(message->m_conn.fd, *message->m_buf) != 0)
+            {
+                m_queue.PopFront();
+                continue;
+            }
+
+            if (IsCompletePack(*message->m_buf))
+            {
+                m_queue.PopFront();
+
             }
         }
+        return 0;
     }
 
     CTcpServer::CTcpServer(const string &ip, unsigned int port) :
         m_ip(ip),
         m_port(port),
         m_epollFd(-1),
-        m_sendModule(NULL)
+        m_sendModule(NULL),
+        m_mutex(NULL)
     {
     }
 
@@ -104,8 +127,9 @@ namespace ctm
 			return -1;
 		}
 
-        m_sendModule = new CTcpSend();
+        m_sendModule = new CTcpSend(this);
         m_sendModule->Init();
+        m_mutex = new CMutex;
 
         return 0;
     }
@@ -117,8 +141,8 @@ namespace ctm
             m_sendModule->UnInit();
             DELETE(m_sendModule);
         }
-
         Stop();
+        return 0;
     }
 
     int CTcpServer::OnRunning()
@@ -126,16 +150,28 @@ namespace ctm
         m_sendModule->OnRunning();
         Start();
         Detach();
+        return 0;
     }
 
     void CTcpServer::SendData(const Conn& conn, char* data, int len)
     {
-        if (len < 1) return;
+        if (!IsValidNetLen(len)) return;
         shared_ptr<CNetDataMessage> message = make_shared<CNetDataMessage>();
         message->m_conn = conn;
         message->m_buf = new RecvBuf(len);
         memcpy(message->m_buf->data, data, len);
         m_sendModule->SendData(message);
+    }
+
+    bool CTcpServer::IsValidConn(const Conn& conn)
+    {
+        CLockOwner owner(*m_mutex);
+        ConnMap::iterator it = m_connMap.find(conn.fd);
+        if (it != m_connMap.end())
+        {
+            return bool(*it->second == conn);
+        }
+        return false;
     }
 
     int CTcpServer::Run()
@@ -199,6 +235,7 @@ namespace ctm
 
     bool CTcpServer::AddConn(Conn *conn)
     {
+        CLockOwner owner(*m_mutex);
         ConnMap::iterator it = m_connMap.find(conn->fd);
         if (it != m_connMap.end())
         {
@@ -225,6 +262,7 @@ namespace ctm
 
     void CTcpServer::DeleteClinetConn(SOCKET_T fd)
     {
+        m_contextCache.Remove(fd);
         close(fd);
         DelEpollEvent(fd);
         DelConn(fd);
@@ -237,12 +275,14 @@ namespace ctm
         message->m_opt = opt;
         if (m_outMessageQueue)
         {
-            m_outMessageQueue->PutMessage(message);
+            DEBUG_LOG("Conn %s:%d opt=%d", conn.ip.c_str(), conn.port, opt);
+            m_outMessageQueue->PushBack(message);
         }
     }
 
     void CTcpServer::DelConn(SOCKET_T fd)
     {
+        CLockOwner owner(*m_mutex);
         ConnMap::iterator it = m_connMap.find(fd);
         if (it != m_connMap.end())
         {
@@ -268,8 +308,9 @@ namespace ctm
         if (buf == NULL)
         {
             int ret = ReadPacketSize(fd);
-            if (ret == -1 || ret > NET_PACKET_MAX_SIZE) 
+            if (ret == -1 || !IsValidNetLen(ret)) 
             {
+                //ERROR_LOG("Read size : %d", ret);
                 DeleteClinetConn(fd);
                 return -1;
             }
@@ -278,6 +319,7 @@ namespace ctm
             ret = ReadPacketData(fd, *buf);
             if (ret == -1) 
             {
+                DELETE(buf);
                 DeleteClinetConn(fd);
                 return -1;
             }
@@ -287,7 +329,7 @@ namespace ctm
                 shared_ptr<CNetDataMessage> message = make_shared<CNetDataMessage>();
                 message->m_conn = *m_connMap[fd];
                 message->m_buf = buf;
-                if (m_outMessageQueue) m_outMessageQueue->PutMessage(message);
+                if (m_outMessageQueue) m_outMessageQueue->PushBack(message);
             }
             else
             {
@@ -299,7 +341,6 @@ namespace ctm
             int ret = ReadPacketData(fd, *buf);
             if (ret == -1) 
             {
-                m_contextCache.Remove(fd);
                 DELETE(buf);
                 DeleteClinetConn(fd);
                 return -1;
@@ -311,7 +352,7 @@ namespace ctm
                 shared_ptr<CNetDataMessage> message = make_shared<CNetDataMessage>();
                 message->m_conn = *m_connMap[fd];
                 message->m_buf = buf;
-                if (m_outMessageQueue) m_outMessageQueue->PutMessage(message);
+                if (m_outMessageQueue) m_outMessageQueue->PushBack(message);
             }
         }
         return 0;

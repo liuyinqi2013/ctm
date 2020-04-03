@@ -33,7 +33,7 @@ namespace ctm
 		// 产生[0,1]随机小数
 		static inline double Random0_1()
 		{
-			DoubleRandom(0.0, 1.0);
+			return DoubleRandom(0.0, 1.0);
 		}
 
 	private:
