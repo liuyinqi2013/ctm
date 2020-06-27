@@ -11,17 +11,15 @@ namespace ctm
 		CShareMemory(const std::string& name);
 		~CShareMemory();
 
-		bool Create(int size);
-		
-		bool Open(int size, bool creat = false);
+		bool Open(int size);
 
-		int Size() const
+		int Size() const 
 		{
 			return m_Size;
 		}
 
-		char* Head() const
-		{
+		char* Head() const 
+		{ 
 			return m_shmHead;
 		}
 
@@ -31,11 +29,8 @@ namespace ctm
 		}
 
 		bool Destroy();
-	
+
 	private:
-
-		int KeyId(const std::string& name);
-
 		void GetSize();
 
 	private:

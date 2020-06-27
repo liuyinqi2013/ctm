@@ -173,28 +173,6 @@ void TestTime()
 	cout << clock.RunInfo() << endl;
 }
 
-void TestTcpClient()
-{
-	TcpClient client;
-	if (!client.Connect("127.0.0.1", 9999))
-	{
-		cout << "connect server failed!\n" << endl;
-		return;
-	}
-	char buf[1024] = { 0 };
-	int len = client.Recv(buf, 1024);
-	if (len == -1)
-	{
-		cout << "recv failed!\n" << endl;
-		return;
-	}
-	buf[len] = '\0';
-	cout << "Recv : " << buf << endl;
-	char* s = "hello server";
-	client.Send(s, strlen(s));
-
-}
-
 void PrintHost(struct hostent* hostinfo)
 {
 	DEBUG_LOG("official name of host : %s", hostinfo->h_name);
@@ -227,7 +205,6 @@ void PrintHost(struct hostent* hostinfo)
 	}
 
 	DEBUG_LOG("list of addresses  : %s", hostAddrs.c_str());
-
 }
 
 void TestGetHostByAddr()
@@ -374,11 +351,10 @@ void TestMmap(int flag = 1)
 
 void TestShareMem(int flag = 1)
 {
-	CShareMemory mem("panda.txt");
-
+	CShareMemory mem("panda");
 	if (flag == 1)
 	{
-		if (!mem.Create(100))
+		if (!mem.Open(100))
 		{
 			ERROR_LOG("mem.Create failed");
 			return;
@@ -406,13 +382,14 @@ void TestShareMem(int flag = 1)
 		int size = mem.Size();
 		DEBUG_LOG("size : %d", size);
 
-		while (1)
+		int i = 0;
+		while (i++ < 100)
 		{
 			sleep(1);
 			DEBUG_LOG("mem : %s", p);
 		}
+		mem.Destroy();
 	}
-
 }
 
 void TestSem(int flag = 1)
@@ -424,13 +401,13 @@ void TestSem(int flag = 1)
 		sem.SetVal(0);
 		while (1)
 		{
-			sem.V();
+			sem.Wait();
 			DEBUG_LOG("Recv a signal");
 		}
 	}
 	else
 	{
-		sem.P();
+		sem.Post();
 		DEBUG_LOG("Send a signal");
 	}
 }
@@ -565,7 +542,6 @@ int bitCount2(int n)
 
 void TestTencent()
 {
-	
 	TestA* p = (TestA*)0x100000;
 	cout << "sizeof(long long) = " << sizeof(long long) << endl; 
 	cout << "sizeof(char) = " << sizeof(char) << endl; 
@@ -677,6 +653,103 @@ void TestTimer()
 	timer.StopAllTimer();
 }
 
+int CompLen(const char* a, const char* b)
+{
+	int len = 0;
+	while(a && b && *a != '\0' && *b != '\0' && *a++ == *b++) len++;
+	return len;
+}
+
+int CompStr(const void *a, const void *b)
+{
+	return strcmp(*(const char**)a, *(const char**)b);
+}
+
+int TestMaxSubStr()
+{
+	char a[2048] = {0};
+	char* n[2048];
+	char ch;
+	int i = 0;
+	cin >> ch;
+	while(!cin.eof()) {
+		a[i] = ch;
+		n[i] = &a[i];
+		++i;
+		cin >> ch;
+	}
+
+	printf("i = %d, a=%s\n", i, a);
+
+	int maxlen = 0;
+	int tmp = 0;
+	int index = 0;
+	qsort(&n[0], i, sizeof(char*), CompStr);
+	for (int j = 0; j < i - 1; j++)
+	{
+		//printf("n[%d]=%s\n", j, n[j]);
+		tmp = CompLen(n[j], n[j+1]);
+		if (tmp > maxlen) {
+			maxlen = tmp;
+			index = j;
+		}
+	}
+
+	n[index][maxlen] = '\0';
+
+	printf("\nlen=%d,s=[%s]\n", maxlen, n[index]);
+
+	return 0;
+}
+
+class Panda
+{
+public:
+	Panda(int val) : b(val)
+	{
+
+	}
+
+	static void TestA()
+	{
+		printf("TestA\n");
+	} 
+
+	void TestB()
+	{
+		printf("TestB: %d\n", b);
+	}
+
+	static int a;
+	int b;
+	int c;
+};
+
+int Panda::a = 1;
+
+typedef void (Panda::*Func)();
+
+void TestObject()
+{
+	Panda b(10), c(15);
+	Panda* p = &b;
+	Func f = &Panda::TestB;
+	printf("Function A:%x\n", Panda::TestA);
+	printf("Function B:%x\n", b.TestA);
+	printf("Function B:%x\n", &Panda::TestB);
+	printf("Function f:%x\n", f);
+	printf("Function a:%x\n", Panda::a);
+	printf("Function b:%x\n", &Panda::b);
+	printf("Function c:%x\n", &Panda::c);
+	printf("Function c:%x\n", &c.c);
+	printf("Function c:%x\n", &b.c);
+
+	b.TestB();
+	(b.*f)();
+	(c.*f)();
+	c.TestA();
+}
+
 void WaitEnd()
 {
 	cout<<"Please enter any to exit!"<<endl;
@@ -708,9 +781,11 @@ int main(int argc, char** argv)
 	//TestTencent();
 	//TestMessage();
 	//TestListReverse();
-	TestUnitThread();
+	//TestUnitThread();
+	//TestMaxSubStr();
+	TestObject();
 
-	WaitEnd();
+	//WaitEnd();
 
 	return 0;
 }

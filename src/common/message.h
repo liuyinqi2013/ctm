@@ -6,6 +6,7 @@
 #include <array>
 #include <list>
 #include <deque>
+#include <atomic>
 #include <unordered_map>
 #include <time.h>
 #include "json/json.h"
@@ -78,9 +79,7 @@ namespace ctm
         }
 
         void SetId(unsigned int id) { m_id = id;}
-
         void SetType(unsigned int type) { m_type = type; }
-
         void SetCreateTime(unsigned long time) { m_createTime = time; }
 
     protected:
@@ -229,10 +228,10 @@ namespace ctm
 
         StdVector *m_array;
         unsigned int m_maxSize;
-        volatile unsigned int m_readOffset;
-        volatile unsigned int m_writeOffset;
-        volatile unsigned short m_status;
-        pthread_mutex_t m_mutex;
+        atomic<unsigned int> m_readOffset;
+        atomic<unsigned int> m_writeOffset;
+        atomic<unsigned short> m_status;
+        atomic<unsigned int> m_Count;
     };
 };
 

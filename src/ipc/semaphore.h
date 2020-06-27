@@ -12,20 +12,13 @@ namespace ctm
 		~CSemaphore();
 		
 		bool Open();
-
 		bool SetVal(int val);
-
 		bool Destroy();
-		
-		bool P();
-		bool V();
+		bool Post();
+		bool Wait();
 
 	private:
-
-		bool PV(int opt);
-
-		int KeyId(const std::string& name);
-
+		bool SemOpt(int opt);
 	private:
 		int m_iKey;
 		std::string m_strName;

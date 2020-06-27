@@ -98,17 +98,12 @@ void RegSignHandleFunc()
 	signal(SIGINT, Handle_INT);
 }
 
-
 int main(int argc, char **argv)
 {
 
 	//Daemon();
-
-
 	RegSignHandleFunc();
-
 	CIniFile iniFile("conf.ini");
-
 	if (!iniFile.Load())
 	{
 		DEBUG_LOG("load conf.ini error");

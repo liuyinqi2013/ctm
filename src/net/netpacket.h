@@ -4,6 +4,7 @@
 #include <string>
 #include <unordered_map>
 #include "socket.h"
+#include "common/com.h"
 #include "common/macro.h"
 #include "common/message.h"
 
@@ -16,19 +17,67 @@ namespace ctm
 
     struct Conn
     {
-        Conn() : fd(-1), port(0) {}
-        Conn(SOCKET_T sockfd, unsigned int cliPort, const string &cliIp) : fd(sockfd), port(cliPort), ip(cliIp) {}
-        Conn(const Conn& rhs) : fd(rhs.fd), port(rhs.port), ip(rhs.ip) {}
-        Conn& operator= (const Conn& rhs) { fd = rhs.fd; port = rhs.port; ip = rhs.ip; return *this; }
+        enum EConnStatus
+        {
+            ConnectCreate = 0,
+            Connecting = 1,
+            Connected = 2,
+            ConnectListen = 3,
+            ConnectReadClose = 5,
+            ConnectWriteClose = 6,
+            ConnectClose = 7,
+            ConnectError = 99,
+        };
+
+        Conn() : 
+            fd(-1),
+            port(0), 
+            ip(""), 
+            status(ConnectCreate) 
+        {
+        }
+
+        Conn(SOCKET_T sockfd, unsigned int cliPort, const string &cliIp, int istatus = ConnectCreate) :
+            fd(sockfd), 
+            port(cliPort), 
+            ip(cliIp), 
+            status(istatus) 
+        {
+        }
+
+        Conn(const Conn& rhs) : 
+            fd(rhs.fd), 
+            port(rhs.port), 
+            ip(rhs.ip), 
+            status(rhs.status) 
+        {
+        }
+
+        Conn& operator= (const Conn& rhs) 
+        { 
+            fd = rhs.fd; 
+            port = rhs.port; 
+            ip = rhs.ip; 
+            status = rhs.status;
+            return *this; 
+        }
+
+        string ToString() 
+        {
+            return "fd:" + I2S(fd) + ",port:" + I2S(port) + ",ip:" + ip + ",status:" + I2S(status);
+        }
 
         SOCKET_T fd;
         unsigned int port;
         string ip;
+        unsigned int m_localPort;
+        string m_localIp;
+        int status;
     };
 
     inline bool operator == (const Conn& lhs, const Conn& rhs)
     {
-        return bool(lhs.fd == rhs.fd && lhs.port == rhs.port && lhs.ip == rhs.ip);
+        return bool(lhs.fd == rhs.fd && lhs.port == rhs.port && lhs.ip == rhs.ip && lhs.status == rhs.status);
     }
 
     /*接收网络数据的buf*/
@@ -47,7 +96,6 @@ namespace ctm
     class CContextCache
     {
         DISABLE_COPY_ASSIGN(CContextCache);
-
     public:
         CContextCache() {}
         ~CContextCache() { Clear(); };
@@ -95,7 +143,7 @@ namespace ctm
             DISCONNECT = 2,
         };
         CNetConnMessage() : CMessage(MSG_SYS_NET_CONN), m_opt(CONNECT_OK) {}
-        ~CNetConnMessage() {  }
+        ~CNetConnMessage() {}
     public:
         Conn m_conn;
         int m_opt;

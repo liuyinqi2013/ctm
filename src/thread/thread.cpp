@@ -86,7 +86,6 @@ namespace ctm
 		return NULL;
 	}
 
-
 	int CThread::Run()
 	{
 		return T_OK;

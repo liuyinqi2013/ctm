@@ -44,8 +44,10 @@ namespace ctm
         virtual int UnInit();
         virtual int OnRunning();
 
-        void SendData(const Conn& conn, char* data, int len);
+        int SendData(const Conn& conn, char* data, int len);
+        int AsynSendData(const Conn& conn, char* data, int len);
         bool IsValidConn(const Conn& conn);
+        void CloseConn(const Conn& conn);
 
     protected:
         virtual int Run();

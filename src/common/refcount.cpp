@@ -10,7 +10,6 @@ namespace ctm
 			m_pCount = other.m_pCount;
 			++*m_pCount;
 		}
-
 		return *this;
 	}
 

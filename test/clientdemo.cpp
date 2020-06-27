@@ -72,8 +72,8 @@ void Test(int argc, char **argv)
 
 void TestTcpClient(int argc, char **argv)
 {
-	CSingleWriteReadQueue recv;
-	CTcpClient client("127.0.0.1", 9999);
+	CCommonQueue recv;
+	CTcpClient client("172.17.106.223", 9999);
 	client.SetOutMessageQueue(&recv);
 	if (client.Init() == -1)
 	{

@@ -3,7 +3,6 @@
 #include "common/time_tools.h"
 #include "thread/mutex.h"
 #include "common/log.h"
-#include <atomic>
 #include <unistd.h>
 
 #include <stdio.h>
@@ -205,7 +204,6 @@ namespace ctm
         pthread_mutex_lock(&m_mutex);
         if (m_queue.size() > m_maxSize)
         {
-            //ERROR_LOG("QUEUE FULL");
             do {
                 pthread_cond_wait(&m_cond, &m_mutex);
             } while (m_queue.size() > m_maxSize);
@@ -219,12 +217,8 @@ namespace ctm
             m_queue.push_front(message);
         else 
             m_queue.push_back(message);
-        
-
-        //m_queue.push(message);
 
         pthread_mutex_unlock(&m_mutex);
-        usleep(1);
 
         return 0;
     }
@@ -247,9 +241,6 @@ namespace ctm
         else 
             m_queue.push_back(message);
         
-
-        //m_queue.push(message);
-
         pthread_mutex_unlock(&m_mutex);
 
         return 0;
@@ -361,7 +352,6 @@ namespace ctm
             {
                 pthread_cond_signal(&m_cond);
             }
-
             
             if (pos == HEAD) m_queue.pop_front();
             else m_queue.pop_back();
@@ -376,16 +366,15 @@ namespace ctm
         m_maxSize(size),
         m_readOffset(0),
         m_writeOffset(0),
-        m_status(0)
+        m_status(0),
+        m_Count(0)
     {
         m_array =  new StdVector(m_maxSize);
-        pthread_mutex_init(&m_mutex, NULL);
     }
 
     CSingleWriteReadQueue::~CSingleWriteReadQueue()
     {
         delete m_array;
-        pthread_mutex_destroy(&m_mutex);
     }
 
     int CSingleWriteReadQueue::PushFront(const shared_ptr<CMessage>& message)
@@ -472,10 +461,12 @@ namespace ctm
         (*m_array)[writeInx] = message;
 
         writeInx = (writeInx + 1) % m_maxSize;
+        /*
         if (writeInx == readInx) m_status = EFULL;
         if (m_status == EEMPTY)  m_status = EOTHER;
-
+        */
         m_writeOffset = writeInx;
+        ++m_Count;
 
         return 0;
     }
@@ -498,11 +489,13 @@ namespace ctm
 
         message = (*m_array)[readInx];
         readInx = (readInx + 1) % m_maxSize;
-
+        /*
         if (readInx == writeInx) m_status = EEMPTY;
         if (m_status == EFULL)   m_status = EOTHER;
+        */
 
         m_readOffset = readInx;
+        --m_Count;
         return message;
     }
 
@@ -514,16 +507,18 @@ namespace ctm
         unsigned int readInx = m_readOffset;
 
         readInx = (readInx + 1) % m_maxSize;
-
+        /*
         if (readInx == writeInx) m_status = EEMPTY;
         if (m_status == EFULL)   m_status = EOTHER;
-
+        */
         m_readOffset = readInx;
+        --m_Count;
     }
 
     unsigned int CSingleWriteReadQueue::Count()
     {
-        return m_maxSize - FreeCount();
+        // return m_maxSize - FreeCount();
+        return m_Count;
     }
 
     unsigned int CSingleWriteReadQueue::Capacity()
@@ -536,22 +531,26 @@ namespace ctm
         m_readOffset = 0;
         m_writeOffset = 0;
         m_status = EEMPTY;
+        m_Count = 0;
     }
 
     bool CSingleWriteReadQueue::Full()
     {
-        return (m_status == EFULL);
+        //return (m_status == EFULL);
+        return (m_Count >= m_maxSize);
     }
 
     bool CSingleWriteReadQueue::Empty()
     {
-        return (m_status == EEMPTY);
+        //return (m_status == EEMPTY);
+        return (m_Count == 0);
     }
 
     unsigned int CSingleWriteReadQueue::FreeCount()
     {
+        /*
         unsigned int writeInx = m_writeOffset;
-        unsigned int readInx = m_readOffset;
+        unsigned int readInx  = m_readOffset;
         if (readInx > writeInx) return readInx - writeInx;
         else if (writeInx > readInx) return m_maxSize - (writeInx - readInx);
         
@@ -559,5 +558,7 @@ namespace ctm
         if (Empty()) return m_maxSize;
 
         return 0;
+        */
+       return m_maxSize - m_Count;
     }
 };

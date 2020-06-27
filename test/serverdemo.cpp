@@ -54,20 +54,19 @@ int main(int argc, char **argv)
 		if (message->m_type == MSG_SYS_NET_DATA)
 		{
 			shared_ptr<CNetDataMessage> netdata = dynamic_pointer_cast<CNetDataMessage>(message);
-			//DEBUG_LOG("Recv Data len = %d" , netdata->m_buf->len);
 			fout = connMap[netdata->m_conn.fd];
 			if (strncmp("&&END", netdata->m_buf->data, 5) == 0)
 			{
 				DEBUG_LOG("%d, Recv End!", netdata->m_conn.fd);
 				fclose(fout);
-				server.SendData(netdata->m_conn, netdata->m_buf->data, netdata->m_buf->len);
+				server.AsynSendData(netdata->m_conn, netdata->m_buf->data, netdata->m_buf->len);
 				recv.PopFront();
 				connMap.erase(netdata->m_conn.fd);
 				continue;
 			}
 
 			fwrite(netdata->m_buf->data, 1, netdata->m_buf->len, fout);
-			server.SendData(netdata->m_conn, netdata->m_buf->data, netdata->m_buf->len);
+			server.AsynSendData(netdata->m_conn, netdata->m_buf->data, netdata->m_buf->len);
 		}
 		else if (message->m_type == MSG_SYS_NET_CONN)
 		{
@@ -82,7 +81,6 @@ int main(int argc, char **argv)
 				connMap[netconn->m_conn.fd] = fout;
 			}
 		}
-
 		recv.PopFront();
 	}
 	server.UnInit();

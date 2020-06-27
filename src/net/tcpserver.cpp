@@ -153,14 +153,20 @@ namespace ctm
         return 0;
     }
 
-    void CTcpServer::SendData(const Conn& conn, char* data, int len)
+    int CTcpServer::SendData(const Conn& conn, char* data, int len)
     {
-        if (!IsValidNetLen(len)) return;
+        return 0;
+    }
+
+    int CTcpServer::AsynSendData(const Conn& conn, char* data, int len)
+    {
+        if (!IsValidNetLen(len)) return -1;
         shared_ptr<CNetDataMessage> message = make_shared<CNetDataMessage>();
         message->m_conn = conn;
         message->m_buf = new RecvBuf(len);
         memcpy(message->m_buf->data, data, len);
         m_sendModule->SendData(message);
+        return 0;
     }
 
     bool CTcpServer::IsValidConn(const Conn& conn)
@@ -173,6 +179,12 @@ namespace ctm
         }
         return false;
     }
+
+     void CTcpServer::CloseConn(const Conn& conn)
+     {
+        CLockOwner owner(*m_mutex);
+        DeleteClinetConn(conn.fd);
+     }
 
     int CTcpServer::Run()
     {
@@ -263,9 +275,9 @@ namespace ctm
     void CTcpServer::DeleteClinetConn(SOCKET_T fd)
     {
         m_contextCache.Remove(fd);
-        close(fd);
         DelEpollEvent(fd);
         DelConn(fd);
+        close(fd);
     }
 
     void CTcpServer::ConnOptNotify(const Conn& conn, int opt)
@@ -310,7 +322,6 @@ namespace ctm
             int ret = ReadPacketSize(fd);
             if (ret == -1 || !IsValidNetLen(ret)) 
             {
-                //ERROR_LOG("Read size : %d", ret);
                 DeleteClinetConn(fd);
                 return -1;
             }

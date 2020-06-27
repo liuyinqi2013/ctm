@@ -96,12 +96,14 @@ namespace ctm
 	{
 		return accept(sockfd, addr, addrlen);
 	}
+
 	SOCKET_T Accept(SOCKET_T sockfd, string& outIp, int& outPort);
 
 	inline int Bind(SOCKET_T sockfd, struct sockaddr* addr, SOCKETLEN_T addrlen)
 	{
 		return bind(sockfd, addr, addrlen);
 	}
+
 	int Bind(SOCKET_T sockfd, const string& ip, int port);
 
 	inline int Listen(SOCKET_T sockfd, int backlog)
@@ -123,7 +125,9 @@ namespace ctm
 	{
 		return getpeername(sockfd, addr, len);
 	}
+
 	int GetPeerName(SOCKET_T sockfd, string& outIp, int& outPort);
+	int GetSockName(SOCKET_T sockfd, string& outIp, int& outPort);
 
 	inline struct hostent* GetHostByName(const char *name)
 	{
@@ -162,11 +166,11 @@ namespace ctm
 
 	SOCKET_T ListenSocket(const char* ip, const int port, const int num = SOMAXCONN);
 
-	int SetBlockMode(SOCKET_T sockfd, bool bBlock);
+	int SetSockMode(SOCKET_T sockfd, bool bBlock);
 
-	inline int SetBlock(SOCKET_T sockfd) { return SetBlockMode(sockfd, true); }
+	inline int SetBlock(SOCKET_T sockfd) { return SetSockMode(sockfd, true); }
 
-	inline int SetNonBlock(SOCKET_T sockfd) { return SetBlockMode(sockfd, false); }
+	inline int SetNonBlock(SOCKET_T sockfd) { return SetSockMode(sockfd, false); }
 
 	bool NotFatalError(int err);
 	int ClearSockError(SOCKET_T sockfd);
@@ -226,16 +230,16 @@ namespace ctm
 
 		CSocket Accept(std::string& outIp, int& outPort);
 
-		bool SetBlockMode(bool bBlock);
+		bool SetSockMode(bool bBlock);
 
 		bool SetNonBlock()
 		{
-			return SetBlockMode(false);
+			return SetSockMode(false);
 		}
 
 		bool SetBlock()
 		{
-			return SetBlockMode(true);
+			return SetSockMode(true);
 		}
 
 		bool ShutDown(int how);
@@ -365,43 +369,6 @@ namespace ctm
 	}
 
 	bool IsValidIp(const std::string& strIp);
-
-	class TcpClient
-	{
-	public:
-		TcpClient();
-		virtual ~TcpClient();
-		bool Connect(const std::string& serverIp, int serverPort);
-		int Recv(char* buf, size_t len);
-		int Recv(std::string& strBuf);
-		int Send(const char* buf, size_t len);
-		int Send(const std::string& strBuf);
-
-		SOCKET_T GetSocket() const
-		{
-			return m_tcpSock.GetSock();
-		}
-
-		int GetErrCode() const
-		{
-			return m_tcpSock.GetErrCode();;
-		}
-				
-		std::string GetErrMsg() const
-		{
-			return m_tcpSock.GetErrMsg();
-		}
-
-		bool SetNonBlock()
-		{
-			return m_tcpSock.SetNonBlock();
-		}
-		
-	public:
-		CSocket m_tcpSock;
-		std::string m_serverIp;
-		int m_serverPort;
-	};
 }
 
 #endif

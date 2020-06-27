@@ -78,7 +78,21 @@ namespace ctm
 	{
 		struct sockaddr_in m_sockAddrIn = {0};
 		int len = sizeof(m_sockAddrIn);
-		if (SOCKET_ERR == ctm::GetPeerName(sockfd, (struct sockaddr*)&m_sockAddrIn, (SOCKETLEN_T*)&len))
+		if (SOCKET_ERR == getpeername(sockfd, (struct sockaddr*)&m_sockAddrIn, (SOCKETLEN_T*)&len))
+		{
+			return -1;
+		}
+		outPort = ntohs(m_sockAddrIn.sin_port);
+		outIp = inet_ntoa(m_sockAddrIn.sin_addr);
+
+		return 0;
+	}
+
+	int GetSockeName(SOCKET_T sockfd, string& outIp, int& outPort)
+	{
+		struct sockaddr_in m_sockAddrIn = {0};
+		int len = sizeof(m_sockAddrIn);
+		if (SOCKET_ERR == getsockname(sockfd, (struct sockaddr*)&m_sockAddrIn, (SOCKETLEN_T*)&len))
 		{
 			return -1;
 		}
@@ -95,20 +109,17 @@ namespace ctm
 		{
 			return false;
 		}
-
 		val = interval;
 		if (!SetSockOpt(sockfd, IPPROTO_TCP, TCP_KEEPIDLE, (const char*)&val, sizeof(val)))
 		{
 			return false;
 		}
-
 		val = interval/3;
 		if (val == 0) val = 1;
 		if (!SetSockOpt(sockfd, IPPROTO_TCP, TCP_KEEPINTVL, (const char*)&val, sizeof(val)))
 		{
 			return false;
 		}
-
 		val = 3;
 		if (!SetSockOpt(sockfd, IPPROTO_TCP, TCP_KEEPCNT, (const char*)&val, sizeof(val)))
 		{
@@ -129,7 +140,6 @@ namespace ctm
 		int val = 1;
 		if (SetSockOpt(fd, SOL_SOCKET, SO_REUSEADDR, (const char*)&val, sizeof(val)) != 0)
 		{
-			//ERROR_LOG("aaaaaa failed");
 			return SOCKET_INVALID;
 		}
 
@@ -163,13 +173,12 @@ namespace ctm
 		SOCKETLEN_T len = sizeof(error);
 		if (GetSockOpt(sockfd, SOL_SOCKET, SO_ERROR, (char*)&error, &len) != 0)
 		{
-			//ERROR_LOG("aaaaaa failed");
 			return SOCKET_INVALID;
 		}
 		return error;
 	}
 
-	int SetBlockMode(SOCKET_T sockfd, bool bBlock)
+	int SetSockMode(SOCKET_T sockfd, bool bBlock)
 	{
 #ifndef WIN32
 		int flags;
@@ -331,12 +340,12 @@ namespace ctm
 		return CSocket(ctm::Accept(m_sock, outIp, outPort), SOCK_TYPE_STREAM);
 	}
 
-	bool CSocket::SetBlockMode(bool bBlock)
+	bool CSocket::SetSockMode(bool bBlock)
 	{
 		if (!IsValid()) 
 			return false;
 		
-		if (SOCKET_ERR == ctm::SetBlockMode(m_sock, bBlock))
+		if (SOCKET_ERR == ctm::SetSockMode(m_sock, bBlock))
 		{
 			GetSystemError();
 			return false;
@@ -561,40 +570,6 @@ namespace ctm
 			return false;
 
 		return true;
-	}
-
-	TcpClient::TcpClient() :
-		m_serverIp("127.0.0.1"),
-		m_serverPort(0)
-	{
-		
-	}
-
-	TcpClient::~TcpClient()
-	{
-	}
-
-	bool TcpClient::Connect(const std::string& serverIp, int serverPort)
-	{
-		return m_tcpSock.Connect(serverIp, serverPort);
-	}
-
-	int TcpClient::Recv(char* buf, size_t len)
-	{
-		if(!buf)
-		{
-			return -1;
-		}
-		return m_tcpSock.Recv(buf, len);
-	}
-
-	int TcpClient::Send(const char* buf, size_t len)
-	{
-		if(!buf)
-		{
-			return -1;
-		}
-		return m_tcpSock.Send(buf, len);
 	}
 }
 

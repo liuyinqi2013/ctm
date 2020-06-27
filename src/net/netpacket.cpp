@@ -251,7 +251,7 @@ namespace ctm
         struct timeval* p = NULL;
         if ((long int)millisec > 0)
         {
-            val.tv_sec = millisec / 1000;
+            val.tv_sec  = millisec / 1000;
             val.tv_usec = (millisec % 1000) * 1000;
             p = &val;
         }

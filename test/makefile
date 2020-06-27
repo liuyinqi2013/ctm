@@ -34,6 +34,7 @@ COM_OBJ=../src/common/string_tools.o ../src/common/time_tools.o \
 	../src/ipc/mmap.o \
 	../src/thread/sem.o \
 	../src/ipc/semaphore.o \
+	../src/ipc/ipc_common.o \
 	../src/ipc/sharememory.o \
 	../src/jsoncpp/jsoncpp.o \
 	../src/net/netclient.o \

@@ -64,9 +64,9 @@ namespace ctm
 			thread_close(m_thread);
 		}
 		
-		int Start();
+		virtual int Start();
 		
-		int Stop();
+		virtual int Stop();
 
 		int Join();
 
@@ -94,11 +94,9 @@ namespace ctm
 #else
 		static void* ThreadEnterFun(void* arg);
 #endif
-		
 		virtual int Run();
 	private:
 		thread_t m_thread;
-		
 		int  m_iStatus;
 		bool m_bDetach;
 		std::string m_strName;

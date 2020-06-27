@@ -295,7 +295,8 @@ namespace ctm
 	std::string DecodeBase64(const std::string& strIn)
 	{
 		int step = strIn.size() / 4;
-		std::string strDst;
+		std::string strDst;
+
 		char tmp[4] = {0};
 		for(int i = 0; i < step; ++i)
 		{
