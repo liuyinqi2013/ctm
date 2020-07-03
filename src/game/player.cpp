@@ -138,12 +138,12 @@ namespace ctm
 				gameinfo.m_players.push_back(m_dask->m_playerArray[i]->ToPlayerItem());
 		}
 
-		for (int i = 0; i < m_dask->m_handCardsArray[m_daskPos].size(); i++)
+		for (size_t i = 0; i < m_dask->m_handCardsArray[m_daskPos].size(); i++)
 		{
 			gameinfo.m_handCards.push_back(*m_dask->m_handCardsArray[m_daskPos][i]);
 		}
 
-		for (int i = 0; i < m_dask->m_lastOutCards.size(); i++)
+		for (size_t i = 0; i < m_dask->m_lastOutCards.size(); i++)
 		{
 			gameinfo.m_lastOutCards.push_back(m_dask->m_lastOutCards[i]);
 		}

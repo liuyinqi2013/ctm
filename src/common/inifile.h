@@ -52,7 +52,7 @@ namespace ctm
 			EOtherType = 102,
 		};
 
-		CIniValue(CIniValue* parent = NULL) : m_type(ENodeType), m_parent(parent) {};
+		CIniValue(CIniValue* parent = NULL) : m_type(ENodeType), m_parent(parent) {}
 		CIniValue(int val, CIniValue* parent = NULL) : m_type(EIntType), m_value(I2S(val)), m_parent(parent) {}
 		CIniValue(double val, CIniValue* parent = NULL) : m_type(EDoubleType), m_value(D2S(val)), m_parent(parent) {}
 		CIniValue(const string& key, const string& val, CIniValue* parent = NULL) : m_type(EStringType), m_key(key), m_value(val), m_parent(parent) {}

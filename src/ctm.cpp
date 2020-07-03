@@ -30,7 +30,6 @@
 using namespace ctm;
 using namespace std;
 
-static int num = 0;
 CMutex mutex;
 
 #define MAXFD 64
@@ -103,23 +102,28 @@ int main(int argc, char **argv)
 
 	//Daemon();
 	RegSignHandleFunc();
+	/*
 	CIniFile iniFile("conf.ini");
 	if (!iniFile.Load())
 	{
 		DEBUG_LOG("load conf.ini error");
 		return -1;
 	}
+	*/
 
 	//DEBUG_LOG("centont :\n%s", iniFile.ToString().c_str());
 	
-	CLog::GetInstance()->SetLogName(iniFile["logfile"].AsString());
-	CLog::GetInstance()->SetLogPath(iniFile["logpath"].AsString());
+	//CLog::GetInstance()->SetLogName(iniFile["logfile"].AsString());
+	//CLog::GetInstance()->SetLogPath(iniFile["logpath"].AsString());
 
 	//CLog::GetInstance()->SetOnlyBack(true);
+	
+	string serverIp = "0.0.0.0";
+	int port = 1111;
 
 	CGameCenter center;
 
-	if (!center.Init(iniFile["serverip"].AsString(), iniFile["serverport"].AsInt()))
+	if (!center.Init(serverIp, port))
 	{
 		return -1;
 	}

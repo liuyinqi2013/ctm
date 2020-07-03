@@ -1,7 +1,7 @@
 RM=rm -rf
 CP=cp -rf
 CC=g++
-CFLAGS= -c -Wall -g -fpermissive -std=c++11
+CFLAGS= -c -Wall -g -std=c++11
 
 TARGET=ctm
 BIN_PATH=../bin

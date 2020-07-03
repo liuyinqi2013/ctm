@@ -108,7 +108,7 @@ namespace ctm
 
     bool CTcpMod::IsValidConn(const Conn* conn)
     {
-
+	return true;
     }
 
     void CTcpMod::SetInterface(CTcpInterface* tcpInterface)
@@ -131,11 +131,11 @@ namespace ctm
         shutdown(conn->fd, 0);
         if (conn->status == Conn::ConnectWriteClose)
         {
-            conn->status == Conn::ConnectClose;
+            conn->status = Conn::ConnectClose;
         }
         else
         {
-            conn->status == Conn::ConnectReadClose;
+            conn->status = Conn::ConnectReadClose;
         }
         ConnOptNotify(conn, CTcpInterface::CONNECT_READ_CLOSE);
     }
@@ -146,11 +146,11 @@ namespace ctm
         shutdown(conn->fd, 1);
         if (conn->status == Conn::ConnectReadClose)
         {
-            conn->status == Conn::ConnectClose;
+            conn->status = Conn::ConnectClose;
         }
         else
         {
-            conn->status == Conn::ConnectWriteClose;
+            conn->status = Conn::ConnectWriteClose;
         }
         ConnOptNotify(conn, CTcpInterface::CONNECT_WRITE_CLOSE);
     }

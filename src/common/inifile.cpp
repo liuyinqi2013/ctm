@@ -8,7 +8,7 @@ namespace ctm
 {
 	CIniValue::~CIniValue()
 	{
-		for (int i = 0; i < m_vecChild.size(); ++i)
+		for (size_t i = 0; i < m_vecChild.size(); ++i)
 		{
 			delete m_vecChild[i];
 		}
@@ -59,7 +59,7 @@ namespace ctm
 			break;
 		}
 
-		for (int i = 0; i < m_vecChild.size(); ++i)
+		for (size_t i = 0; i < m_vecChild.size(); ++i)
 		{
 			centont += "\n" + m_vecChild[i]->ToString();
 		}
@@ -133,7 +133,7 @@ namespace ctm
 			else if (*pHead == '[') // 解析局域
 			{
 				strBuf = pHead;
-				int pos = strBuf.find("]", 2);
+				size_t pos = strBuf.find("]", 2);
 				assert(pos != string::npos);
 				key = strBuf.substr(1, pos - 1);
 				key = Trimmed(key);
@@ -144,7 +144,7 @@ namespace ctm
 			else // 解析key=value
 			{
 				strBuf = pHead;
-				int pos = strBuf.find("=");
+				size_t pos = strBuf.find("=");
 				assert(pos != string::npos);
 
 				key = strBuf.substr(0, pos);
@@ -176,11 +176,12 @@ namespace ctm
 
 		ofstream out(fileName.c_str());
 		out << ToString();
+		return true;
 	}
 	
 	void CIniFile::Clear()
 	{
-		for (int i = 0; i < m_vecIniValue.size(); ++i)
+		for (size_t i = 0; i < m_vecIniValue.size(); ++i)
 		{
 			delete m_vecIniValue[i];
 		}
@@ -194,7 +195,7 @@ namespace ctm
 		string centont;
 		if (m_vecIniValue.size())
 		{
-			for (int i = 0; i < m_vecIniValue.size(); ++i)
+			for (size_t i = 0; i < m_vecIniValue.size(); ++i)
 			{	
 				if (m_vecIniValue[i]->m_parent == NULL && m_vecIniValue[i]->m_type != CIniValue::ESectionType) {
 					

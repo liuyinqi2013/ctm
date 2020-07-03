@@ -290,6 +290,17 @@ void TestGetAddrInfo()
 	freeaddrinfo(res);
 }
 
+void TestLocalHostIps()
+{
+	printf("hostname:%s\n", LocalHostName().c_str());
+	std::vector<std::string> vecIps;
+	GetHostIps("www.baidu.com", vecIps);
+	for(int i = 0; i < vecIps.size(); ++i)
+	{
+		printf("ip%d:%s\n", i + 1, vecIps[i].c_str());
+	}
+}
+
 void TestMsg()
 {
 	CMsg msg1("1", 1, "net");
@@ -764,9 +775,9 @@ int main(int argc, char** argv)
 	CLog::GetInstance()->SetFileMaxSize(2);
 	CLog::GetInstance()->SetLogLevel(CLog::LOG_DEBUG);
 	//CLog::GetInstance()->SetLogPath("./");
+	//HandleSign();
 	//TestStringFunc();
 	//TestRandom();
-	//HandleSign();
 	//TestGetHostByAddr();
 	//TestGetHostByName();
 	//TestSelect();
@@ -783,7 +794,8 @@ int main(int argc, char** argv)
 	//TestListReverse();
 	//TestUnitThread();
 	//TestMaxSubStr();
-	TestObject();
+	//TestObject();
+	TestLocalHostIps();
 
 	//WaitEnd();
 

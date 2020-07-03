@@ -125,7 +125,7 @@ namespace ctm
 						pGameMsg->TestPrint();
 						if (pGameMsg->m_openId == "")
 						{
-							CSocket socket(p->sock, CSocket::SOCK_TYPE_STREAM);
+							CSocket socket(p->sock, SOCK_STREAM);
 							pGameMsg->m_errCode = 1;
 							pGameMsg->m_errMsg  = "openid is null";
 							socket.Send(PackNetData(pGameMsg->ToString()));
@@ -140,7 +140,7 @@ namespace ctm
 				}
 				else
 				{
-					CSocket socket(p->sock, CSocket::SOCK_TYPE_STREAM);
+					CSocket socket(p->sock, SOCK_STREAM);
 					socket.Send(PackNetData("Message format error!"));
 				}	
 			}
@@ -209,7 +209,7 @@ namespace ctm
 			pPlayer = new CPlayer;
 		}
 
-		pPlayer->m_sock = CSocket(pMsg->m_sock, CSocket::SOCK_TYPE_STREAM);
+		pPlayer->m_sock = CSocket(pMsg->m_sock, SOCK_STREAM);
 		pPlayer->m_openId = pMsg->m_openId;
 		pPlayer->m_playerName = pMsg->m_userName;
 		pPlayer->m_headerImageUrl = pMsg->m_headerImageUrl;

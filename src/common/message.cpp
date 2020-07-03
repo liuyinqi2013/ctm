@@ -36,7 +36,7 @@ namespace ctm
         static unsigned int index = 0;
 
         CLockOwner Owner(mutex);
-        if (++index == -1) index = 0;
+        if (++index == (unsigned int)-1) index = 0;
 
         return index;
     }
@@ -253,7 +253,6 @@ namespace ctm
 		clock_gettime(CLOCK_REALTIME, &val);
         val.tv_sec += millisec / 1000;
         val.tv_nsec += (millisec % 1000) * 1000000;
-        int ret = 0;
 
         if (m_queue.size() == 0)
         {

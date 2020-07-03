@@ -204,7 +204,7 @@ namespace ctm
 	class COptS2C : public CGameMsg
 	{
 	public:
-		typedef enum opt_type
+		enum opt_type
 		{
 			OPT_CALL_DIZHU = 1
 		};

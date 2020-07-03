@@ -143,7 +143,7 @@ namespace ctm
             if (n < 0)
             {
                 int err = errno;
-                if (err = EINTR) continue;
+                if (err == EINTR) continue;
                 fprintf(stderr, "%s:%d select error %d:%s\n", __FILE__, __LINE__, err, strerror(err));
                 return -1;
             }

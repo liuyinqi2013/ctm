@@ -45,7 +45,7 @@ namespace ctm
 		void HandleGameOverOptMSG(CGameOverOpt * pMsg);
 		
 	public:
-		typedef enum GAME_STATUS
+		enum GAME_STATUS
 		{
 			CAME_WAIT = 0,
 			GAME_CALL = 1,

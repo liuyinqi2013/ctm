@@ -217,7 +217,7 @@ namespace ctm
 		
 		~CTinyMemPool()
 		{
-			for (int i = 0; i < m_vecMem.size(); ++i) delete [] m_vecMem[i];
+			for (size_t i = 0; i < m_vecMem.size(); ++i) delete [] m_vecMem[i];
 		}
 		
 		T* Get()

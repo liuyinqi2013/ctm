@@ -175,7 +175,7 @@ namespace ctm
 	
 	void Shuffle(std::vector<CCard *> & vecCards);
 
-	typedef enum cards_type
+	enum cards_type
 	{
 		CARDS_TYPE_UNKNOWN = 0,
 		CARDS_TYPE_SINGLE,

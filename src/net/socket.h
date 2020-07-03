@@ -5,8 +5,8 @@
 #include <errno.h>
 #include <string.h>
 #include <map>
+#include <vector>
 
-#include "common/refcount.h"
 #include "common/macro.h"
 
 #ifdef WIN32
@@ -82,85 +82,25 @@ inline std::string GetSockErrMsg(int errCode)
 
 namespace ctm
 {
-	inline SOCKET_T Socket(int domain, int type, int protocol)
-	{
-		return socket(domain, type, protocol);
-	}
-
-	inline int ShutDown(SOCKET_T& sockfd, int how)
-	{
-		return shutdown(sockfd, how);
-	}
-
-	inline SOCKET_T Accept(SOCKET_T sockfd, struct sockaddr* addr, SOCKETLEN_T* addrlen)
-	{
-		return accept(sockfd, addr, addrlen);
-	}
-
 	SOCKET_T Accept(SOCKET_T sockfd, string& outIp, int& outPort);
 
-	inline int Bind(SOCKET_T sockfd, struct sockaddr* addr, SOCKETLEN_T addrlen)
-	{
-		return bind(sockfd, addr, addrlen);
-	}
+	int Connect(SOCKET_T sockfd, const string& ip, int port);
 
 	int Bind(SOCKET_T sockfd, const string& ip, int port);
 
-	inline int Listen(SOCKET_T sockfd, int backlog)
-	{
-		return listen(sockfd, backlog);
-	}
-
-	inline int SetSockOpt(SOCKET_T sockfd, int level, int optname, const char* optval, int  optlen)
-	{
-		return setsockopt(sockfd, level, optname, optval, optlen);
-	}
-
-	inline int GetSockOpt(SOCKET_T sockfd, int level, int optname, char* optval, SOCKETLEN_T *optlen)
-	{
-		return getsockopt(sockfd, level, optname, optval, optlen);
-	}
-
-	inline int GetPeerName(SOCKET_T sockfd, struct sockaddr* addr, SOCKETLEN_T* len)
-	{
-		return getpeername(sockfd, addr, len);
-	}
-
 	int GetPeerName(SOCKET_T sockfd, string& outIp, int& outPort);
+
 	int GetSockName(SOCKET_T sockfd, string& outIp, int& outPort);
 
-	inline struct hostent* GetHostByName(const char *name)
-	{
-		return gethostbyname(name);
-	}
-	
-	inline int Connect(SOCKET_T sockfd, const struct sockaddr* addr, SOCKETLEN_T len)
-	{
-		return connect(sockfd, addr, len);
-	}
-	int Connect(SOCKET_T sockfd, const string& ip, int port);
+	int SetReuseAddr(SOCKET_T sockfd);
 
-	inline int Send(SOCKET_T sockfd, const SOCKETBUF_T* buf, size_t len, int flags)
-	{
-		return send(sockfd, buf, len, flags);
-	}
+	std::string LocalHostName();
 
-	inline int SendTo(SOCKET_T sockfd, const SOCKETBUF_T* buf, size_t len, int flags, 
-		const struct sockaddr* dest_addr, SOCKETLEN_T addrlen)
-	{
-		return sendto(sockfd, buf, len, flags, dest_addr, addrlen);
-	}
+	int Hostent2Ips(struct hostent* htent, std::vector<std::string>& vecIps);
 
-	inline int Recv(SOCKET_T sockfd, SOCKETBUF_T* buf, size_t len, int flags) 
-	{
-		return recv(sockfd, buf, len, flags);
-	}
+	int GetHostIps(char* hostName, std::vector<std::string>& vecIps);
 
-	inline int RecvFrom(SOCKET_T sockfd, SOCKETBUF_T* buf, size_t len, int flags,
-	                        struct sockaddr* src_addr, SOCKETLEN_T* addrlen)
-	{
-		return recvfrom(sockfd, buf, len, flags, src_addr, addrlen);
-	}
+	int LocalHostIps(std::vector<std::string>& vecIps);
 
 	bool SetKeepAlive(SOCKET_T sockfd, int interval);
 
@@ -173,49 +113,43 @@ namespace ctm
 	inline int SetNonBlock(SOCKET_T sockfd) { return SetSockMode(sockfd, false); }
 
 	bool NotFatalError(int err);
+
+	bool IsValidIp(const std::string& strIp);
+
 	int ClearSockError(SOCKET_T sockfd);
 
+	int Read(SOCKET_T sockfd, char* buf, int len);
+
+	int Write(SOCKET_T sockfd, char* buf, int len);
+
 	class CSocket;
+
 	bool operator==(const CSocket& lhs, const CSocket& rhs);
 	
 	class CSocket
 	{
 	public:
 		
-		typedef enum sock_type
+		enum SOCK_ERR_CODE
 		{
-			SOCK_TYPE_STREAM = 0, // TCP
-			SOCK_TYPE_DGRAM = 1	  // UDP
-		} SOCK_TYPE;
-
-		typedef enum sock_error
-		{
-			NO_ERR = 0, // No error
-			ERR_SOCK_INVALID = 1, //
-			ERR_IP_INVALID = 2, //
-			ERR_PROT_INVALID = 3, //
-			ERR_NO_LISTEN = 4   // No listen
-		} SOCK_ERR_CODE;
+			NO_ERR = 0,            // Ok
+			ERR_SOCK_INVALID = 1,  // Invalid Sock
+			ERR_IP_INVALID = 2,    // Invalid Ip
+			ERR_PROT_INVALID = 3,  // Invalid Port
+			ERR_NO_LISTEN = 4      // No listen
+		};
 				
-		CSocket(SOCK_TYPE sockType = SOCK_TYPE_STREAM);
-		CSocket(SOCKET_T sockfd, SOCK_TYPE sockType);
+		CSocket(int sockType = SOCK_STREAM);
+		CSocket(SOCKET_T sockfd, int sockType);
 		CSocket(const CSocket& other);
 		
-		virtual ~CSocket() 
-		{
-			/*
-			if (m_refCount.Only()) 
-			{
-				Close();
-			}
-			*/
-		}
+		virtual ~CSocket() {}
 
 		CSocket& operator=(const CSocket& other);
 
-		bool Bind(const char* ip, const int& port);
+		bool Bind(const char* ip, int port);
 		
-		bool Bind(const std::string& ip, const int& port)
+		bool Bind(const std::string& ip, int port)
 		{
 			return this->Bind(ip.c_str(), port);
 		}
@@ -244,39 +178,29 @@ namespace ctm
 
 		bool ShutDown(int how);
 		
-		bool Connect(const char* ip, const int& port);
-		bool Connect(const std::string& ip, const int& port)
+		bool Connect(const char* ip, int port);
+
+		bool Connect(const std::string& ip, int port)
 		{
 			return this->Connect(ip.c_str(), port);
 		}
-		
-		int Send(const char* buf, size_t len, int flags = 0);
-		
-		int Send(const std::string& strBuf, int flags = 0)
-		{
-			return this->Send(strBuf.data(), strBuf.size(), flags);
-		}
 
+		int Send(const char* buf, size_t len);
+
+		int Send(const std::string& strOut)
+		{
+			return this->Send(strOut.c_str(), strOut.size());
+		}
+		
 		int SendEx(const char* buf, size_t len, struct timeval* timeOut);
 
-		int SendEx(const std::string& strBuf, struct timeval* timeOut)
-		{
-			return this->SendEx(strBuf.data(), strBuf.size(), timeOut);
-		}
-		
-		int SendTo(const char* buf, size_t len, const std::string& dstIp, const int& dstPort, int flags = 0);
-		int SendTo(const std::string& strBuf, const std::string& dstIp, const int& dstPort, int flags = 0)
-		{
-			return this->SendTo(strBuf.data(), strBuf.size(), dstIp, dstPort, flags);
-		}
+		int SendTo(const char* buf, size_t len, const std::string& dstIp, int dstPort);
 
-		int Recv(char* buf, size_t len, int flags = 0);
-		int Recv(std::string& strOut, int flags = 0);
+		int Recv(char* buf, size_t len);
 
 		int RecvEx(char* buf, size_t len, struct timeval* timeOut);
 		
-		int RecvFrom(char* buf, size_t len, std::string& srcIp, int& srcPort, int flags = 0);
-		int RecvFrom(std::string& strOut, std::string& srcIp, int& srcPort, int flags = 0);
+		int RecvFrom(char* buf, size_t len, std::string& srcIp, int& srcPort);
 		
 		void Close()
 		{
@@ -360,15 +284,12 @@ namespace ctm
 		int m_errno;
 		std::string m_errmsg;
 		struct sockaddr_in m_sockAddrIn;
-		CRefCount m_refCount;
 	};
 
 	inline bool operator==(const CSocket& lhs, const CSocket& rhs)
 	{
 		return (lhs.m_sock == rhs.m_sock);
 	}
-
-	bool IsValidIp(const std::string& strIp);
 }
 
 #endif

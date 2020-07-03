@@ -96,7 +96,7 @@ namespace ctm
 	bool StartsWith(const std::string& strIn, const std::string& substr, bool bCase)
 	{
 		bool bRet = true;
-		int i = 0;
+		size_t i = 0;
 		if(bCase)
 		{
 			for(;i < strIn.size() && i < substr.size() && toupper(strIn[i]) == toupper(substr[i]); i++);
@@ -391,7 +391,7 @@ namespace ctm
 	#else
 		char sep = '/';
 	#endif
-		int pos = strPathFileName.rfind(sep);
+		size_t pos = strPathFileName.rfind(sep);
 		if (pos != strPathFileName.npos)
 		{
 			return strPathFileName.substr(pos + 1);
@@ -407,7 +407,7 @@ namespace ctm
 	#else
 		char sep = '/';
 	#endif
-		int pos = strPathFileName.rfind(sep);
+		size_t pos = strPathFileName.rfind(sep);
 		if (pos != strPathFileName.npos)
 		{
 			return strPathFileName.substr(0, pos + 1);
