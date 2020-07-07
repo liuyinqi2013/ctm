@@ -63,8 +63,8 @@ namespace ctm
 
 	private:
 		int m_type;
-		string m_value;
 		string m_key;
+		string m_value;
 		CIniValue* m_parent;
 		map<string, CIniValue*> m_mapChild;
 		vector<CIniValue*> m_vecChild;

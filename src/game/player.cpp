@@ -6,8 +6,8 @@
 namespace ctm
 {
 	CPlayer::CPlayer() :
-		m_daskPos(-1),
 		m_dask(NULL),
+		m_daskPos(-1),
 		m_status(0),
 		m_daskId(-1),
 		m_manager(false)

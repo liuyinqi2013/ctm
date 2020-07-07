@@ -2,13 +2,13 @@
 
 namespace ctm
 {
-
 	const Json::Value& CGameMsg::ToJson()
 	{
 		CMsg::ToJson();
 		m_root["openId"]  = m_openId;
 		m_root["errCode"] = m_errCode;
 		m_root["errMsg"]  = m_errMsg;
+		return m_root;
 	}
 
 	void CGameMsg::FromJson(const Json::Value& json)
@@ -58,9 +58,9 @@ namespace ctm
 		CGameMsg::ToJson();
 
 		Json::Value array;
-		for (int i = 0; i < m_playerArray.size(); ++i)
+		for (size_t i = 0; i < m_playerArray.size(); ++i)
 		{
-			array.append(m_playerArray[i].ToJson());
+			array.append(m_playerArray[(int)i].ToJson());
 		}
 		
 		m_root["playerArray"] = array;
@@ -73,9 +73,9 @@ namespace ctm
 		CGameMsg::FromJson(json);
 		m_playerArray.clear();
 		CPlayerItem player;
-		for (int i = 0; i < json["playerArray"].size(); ++i)
+		for (size_t i = 0; i < json["playerArray"].size(); ++i)
 		{
-			player.FromJson(json["playerArray"][i]);
+			player.FromJson(json["playerArray"][(int)i]);
 			m_playerArray.push_back(player);
 		}
 	}
@@ -184,9 +184,9 @@ namespace ctm
 		m_root["callPos"] = m_callPos;
 		
 		Json::Value handCards;
-		for (int i = 0; i < m_handVec.size(); ++i)
+		for (size_t i = 0; i < m_handVec.size(); ++i)
 		{
-			handCards.append(m_handVec[i].ToJson());
+			handCards.append(m_handVec[(int)i].ToJson());
 		}
 		m_root["handCards"] = handCards;
 
@@ -201,9 +201,9 @@ namespace ctm
 
 		m_handVec.clear();
 		CCard card;
-		for (int i = 0; i < json["handCards"].size(); ++i)
+		for (size_t i = 0; i < json["handCards"].size(); ++i)
 		{
-			card.FromJson(json["handCards"][i]);
+			card.FromJson(json["handCards"][(int)i]);
 			m_handVec.push_back(card);
 		}
 	}
@@ -236,9 +236,9 @@ namespace ctm
 		m_root["nextCallPos"] = m_nextCallPos;
 
 		Json::Value daskCards;
-		for (int i = 0; i < m_daskCardVec.size(); ++i)
+		for (size_t i = 0; i < m_daskCardVec.size(); ++i)
 		{
-			daskCards.append(m_daskCardVec[i].ToJson());
+			daskCards.append(m_daskCardVec[(int)i].ToJson());
 		}
 		m_root["daskCards"] = daskCards;
 		return m_root;
@@ -256,9 +256,9 @@ namespace ctm
 		
 		m_daskCardVec.clear();
 		CCard card;
-		for (int i = 0; i < json["daskCards"].size(); ++i)
+		for (size_t i = 0; i < json["daskCards"].size(); ++i)
 		{
-			card.FromJson(json["daskCards"][i]);
+			card.FromJson(json["daskCards"][(int)i]);
 			m_daskCardVec.push_back(card);
 		}
 			
@@ -288,9 +288,9 @@ namespace ctm
 
 		m_root["outPos"] = m_outPos;
 		Json::Value daskCards;
-		for (int i = 0; i < m_outCardVec.size(); ++i)
+		for (size_t i = 0; i < m_outCardVec.size(); ++i)
 		{
-			daskCards.append(m_outCardVec[i].ToJson());
+			daskCards.append(m_outCardVec[(int)i].ToJson());
 		}
 		m_root["outCards"] = daskCards;
 		return m_root;
@@ -304,9 +304,9 @@ namespace ctm
 		
 		m_outCardVec.clear();
 		CCard card;
-		for (int i = 0; i < json["outCards"].size(); ++i)
+		for (size_t i = 0; i < json["outCards"].size(); ++i)
 		{
-			card.FromJson(json["outCards"][i]);
+			card.FromJson(json["outCards"][(int)i]);
 			m_outCardVec.push_back(card);
 		}
 			
@@ -320,25 +320,25 @@ namespace ctm
 		m_root["outOpenId"] = m_outOpenId;
 		m_root["nextOutPos"] = m_nextOutPos;
 		Json::Value daskCards;
-		for (int i = 0; i < m_outCardVec.size(); ++i)
+		for (size_t i = 0; i < m_outCardVec.size(); ++i)
 		{
-			daskCards.append(m_outCardVec[i].ToJson());
+			daskCards.append(m_outCardVec[(int)i].ToJson());
 		}
 		m_root["outCards"] = daskCards;
 		
 		Json::Value lastCards;
-		for (int i = 0; i < m_lastOutCardVec.size(); ++i)
+		for (size_t i = 0; i < m_lastOutCardVec.size(); ++i)
 		{
-			lastCards.append(m_lastOutCardVec[i].ToJson());
+			lastCards.append(m_lastOutCardVec[(int)i].ToJson());
 		}
 		m_root["lastOutCards"] = lastCards;
 
 		m_root["lastOutCardType"] = m_lastOutCardType;
 
 		Json::Value handCards;
-		for (int i = 0; i < m_handVec.size(); ++i)
+		for (size_t i = 0; i < m_handVec.size(); ++i)
 		{
-			handCards.append(m_handVec[i].ToJson());
+			handCards.append(m_handVec[(int)i].ToJson());
 		}
 		m_root["handCards"] = handCards;
 		
@@ -355,23 +355,23 @@ namespace ctm
 		m_outCardVec.clear();
 		m_lastOutCardVec.clear();
 		CCard card;
-		for (int i = 0; i < json["outCards"].size(); ++i)
+		for (size_t i = 0; i < json["outCards"].size(); ++i)
 		{
-			card.FromJson(json["outCards"][i]);
+			card.FromJson(json["outCards"][(int)i]);
 			m_outCardVec.push_back(card);
 		}
-		for (int i = 0; i < json["lastOutCards"].size(); ++i)
+		for (size_t i = 0; i < json["lastOutCards"].size(); ++i)
 		{
-			card.FromJson(json["lastOutCards"][i]);
+			card.FromJson(json["lastOutCards"][(int)i]);
 			m_lastOutCardVec.push_back(card);
 		}
 
 		m_lastOutCardType = json["lastOutCardType"].asInt();
 
 		m_handVec.clear();
-		for (int i = 0; i < json["handCards"].size(); ++i)
+		for (size_t i = 0; i < json["handCards"].size(); ++i)
 		{
-			card.FromJson(json["handCards"][i]);
+			card.FromJson(json["handCards"][(int)i]);
 			m_handVec.push_back(card);
 		}
 		
@@ -427,23 +427,23 @@ namespace ctm
 		m_root["m_maxScore"] = m_maxScore;
 		
 		Json::Value array;
-		for (int i = 0; i < m_players.size(); ++i)
+		for (size_t i = 0; i < m_players.size(); ++i)
 		{
-			array.append(m_players[i].ToJson());
+			array.append(m_players[(int)i].ToJson());
 		}
 		m_root["players"] = array;
 
 		Json::Value handCards;
-		for (int i = 0; i < m_handCards.size(); ++i)
+		for (size_t i = 0; i < m_handCards.size(); ++i)
 		{
-			handCards.append(m_handCards[i].ToJson());
+			handCards.append(m_handCards[(int)i].ToJson());
 		}
 		m_root["handCards"] = handCards;
 
 		Json::Value lastOutCards;
-		for (int i = 0; i < m_lastOutCards.size(); ++i)
+		for (size_t i = 0; i < m_lastOutCards.size(); ++i)
 		{
-			lastOutCards.append(m_lastOutCards[i].ToJson());
+			lastOutCards.append(m_lastOutCards[(int)i].ToJson());
 		}
 		m_root["lastOutCards"] = lastOutCards;
 
@@ -465,25 +465,24 @@ namespace ctm
 		m_lastOutCards.clear();
 		
 		CCard card;
-		for (int i = 0; i < json["handCards"].size(); ++i)
+		for (size_t i = 0; i < json["handCards"].size(); ++i)
 		{
-			card.FromJson(json["handCards"][i]);
+			card.FromJson(json["handCards"][(int)i]);
 			m_handCards.push_back(card);
 		}
 		
-		for (int i = 0; i < json["lastOutCards"].size(); ++i)
+		for (size_t i = 0; i < json["lastOutCards"].size(); ++i)
 		{
-			card.FromJson(json["lastOutCards"][i]);
+			card.FromJson(json["lastOutCards"][(int)i]);
 			m_lastOutCards.push_back(card);
 		}
 		
 		CPlayerItem player;
-		for (int i = 0; i < json["players"].size(); ++i)
+		for (size_t i = 0; i < json["players"].size(); ++i)
 		{
-			player.FromJson(json["players"][i]);
+			player.FromJson(json["players"][(int)i]);
 			m_players.push_back(player);
 		}
-		
 	}
 
 	REG_MSG(MSG_GAME_LOGIN_C2S, CLoginMsgC2S);

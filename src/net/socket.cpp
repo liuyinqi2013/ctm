@@ -261,8 +261,8 @@ namespace ctm
 		if (strIp.size() < 7 || strIp.size() > 15) 
 			return false;
 
-		int begin = 0;
-		int end = 0;
+		size_t begin = 0;
+		size_t end = 0;
 		int cnt = 0;
 		int num = 0;
 		while((end = strIp.find(".", begin)) != strIp.npos)
@@ -299,6 +299,7 @@ namespace ctm
 				if (errno == EINTR) continue;
 				return -1;
 			}
+
 			break;
 		}
 
@@ -310,12 +311,13 @@ namespace ctm
 		int retlen = 0;
 		while(1)
 		{
-			retlen =  Write(sockfd, buf, len);
+			retlen =  write(sockfd, buf, len);
 			if (-1 == retlen)
 			{
 				if (errno == EINTR) continue;
 				return -1;
 			}
+
 			break;
 		}
 
@@ -606,7 +608,6 @@ namespace ctm
 		}
 		
 		return length;
-		
 	}
 
 	bool CSocket::Renew()

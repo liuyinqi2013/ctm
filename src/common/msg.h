@@ -212,7 +212,7 @@ namespace ctm
 		{
 			m_array = new T[m_size];
 			m_vecMem.push_back(m_array);
-			for (int i = 0; i < m_size; ++i) m_listFree.push_back(m_array + i);
+			for (size_t i = 0; i < m_size; ++i) m_listFree.push_back(m_array + i);
 		}
 		
 		~CTinyMemPool()

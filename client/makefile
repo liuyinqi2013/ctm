@@ -13,7 +13,7 @@ SRCDIRS=$(shell find ../src -type d)
 INC_SUBDIRS=$(shell find . -type d | awk -F' ' '{print "-I"$$0}')
 INC_SRCDIS=$(shell find ../src -type d | awk -F' ' '{print "-I"$$0}')
 INC_PATH=$(INC_SUBDIRS) $(INC_SRCDIS)
-LIB_PATH=/usr/lib64/mysql/libmysqlclient.a
+LIB_PATH=
 LIB= -lpthread -ldl -lz
 
 C_SRC=$(shell find . -type f | grep "\.c$$" | grep -v grep)

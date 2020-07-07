@@ -13,7 +13,7 @@ namespace ctm
 		if (access(filePathName.c_str(), F_OK) == -1)
 		{
 			FILE* fp = fopen(filePathName.c_str(), "wb");
-			if (!fp){
+			if (!fp) {
 				return -1;
 			}
 			fclose(fp);

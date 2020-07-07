@@ -31,19 +31,19 @@ namespace ctm
 	{
 		DISABLE_COPY_ASSIGN(CThread)		
 	public:
-		typedef enum
+		enum tstatus
 		{
 			T_STOP = 0,
 			T_RUN  = 1,
 			T_PAUSE = 2,
 			T_SUSPEND = 3
-		} tstatus;
+		};
 
-		typedef enum
+		enum terrno
 		{
 			T_OK = 0,
 			T_ERR = 1
-		} terrno;
+		};
 		
 		CThread() : 
 			m_iStatus(T_STOP), 

@@ -236,7 +236,7 @@ namespace ctm
                 }
             }
 
-            if (timeLeft > 0 && timeLeft < sleepTime)
+            if (timeLeft > 0 && (unsigned long)timeLeft < sleepTime)
             {
                 sleepTime = timeLeft;
             }
@@ -272,7 +272,7 @@ namespace ctm
 
     unsigned int CTimer::GenerateId()
     {
-        if (++m_generateId == -1) m_generateId = 1;
+        if (++m_generateId == (unsigned long)-1) m_generateId = 1;
         return m_generateId;
     }
 

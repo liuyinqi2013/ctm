@@ -9,23 +9,24 @@
 namespace ctm
 {
 
-	CDask::CDask() :
-		m_daskId(0),
-		m_capacity(DASK_MAX_PLAYERS),
-		m_game(NULL),
-		m_playerCount(0),
-		m_zhuangPos(0),
-		m_currOptPos(0),
-		m_lastOptPos(-1),
-		m_gameStatus(CAME_WAIT),
-		m_callCount(0),
-		m_callMaxScore(0),
-		m_callMaxScorePos(0),
-		m_tatolOutBombCount(0),
-		m_readyCount(0),
-		m_quitCount(0),
-		m_gameCenter(NULL)
+	CDask::CDask()
 	{
+		m_daskId = 0;
+		m_capacity = DASK_MAX_PLAYERS;
+		m_game = NULL;
+		m_playerCount = 0;
+		m_zhuangPos = 0;
+		m_currOptPos = 0;
+		m_lastOptPos = -1;
+		m_gameStatus = CAME_WAIT;
+		m_callCount = 0;
+		m_callMaxScore = 0;
+		m_callMaxScorePos = 0;
+		m_tatolOutBombCount = 0;
+		m_readyCount = 0;
+		m_quitCount = 0;
+		m_gameCenter = NULL;
+
 		for(int i = 0; i < DASK_MAX_PLAYERS; i++)
 		{
 			m_playerArray[i] = NULL;
@@ -35,7 +36,7 @@ namespace ctm
 
 		m_game = new CGame;
 
-		DEBUG_LOG("bomb count :%d", m_tatolOutBombCount);
+		// DEBUG_LOG("bomb count :%d", m_tatolOutBombCount);
 	}
 	
 	CDask::~CDask()
@@ -106,7 +107,7 @@ namespace ctm
 			Sort1(m_handCardsArray[i]);
 
 			gameBeginS2C.m_handVec.clear();
-			for (int n = 0; n < m_handCardsArray[i].size(); ++n)
+			for (size_t n = 0; n < m_handCardsArray[i].size(); ++n)
 			{
 				gameBeginS2C.m_handVec.push_back(*m_handCardsArray[i][n]);
 			}
@@ -124,7 +125,7 @@ namespace ctm
 	{
 		FUNC_BEG();
 		
-		for(int i = 0; i < DASK_MAX_PLAYERS; i++)
+		for(size_t i = 0; i < DASK_MAX_PLAYERS; i++)
 		{
 			m_playerGameOverOpt[i]   = 0;
 			m_playerOutHandleCount[i] = 0;
@@ -178,7 +179,7 @@ namespace ctm
 			if (m_playerArray[i] != NULL)
 			{
 				if (i == pMsg->m_outPos) {
-					for (int k = 0; k < m_handCardsArray[i].size(); ++k)
+					for (size_t k = 0; k < m_handCardsArray[i].size(); ++k)
 						pMsg->m_handVec.push_back(*m_handCardsArray[i][k]);
 				}
 				m_playerArray[i]->SendMSG(pMsg);
@@ -235,7 +236,7 @@ namespace ctm
 			m_currOptPos = pMsg->m_callPos;
 			callDizhuS2C.m_zhuangPos = pMsg->m_callPos;
 			callDizhuS2C.m_nextCallPos = pMsg->m_callPos;
-			for (int i = 0; i < m_daskCards.size(); ++i)
+			for (size_t i = 0; i < m_daskCards.size(); ++i)
 			{
 				callDizhuS2C.m_daskCardVec.push_back(*m_daskCards[i]);
 				m_handCardsArray[m_zhuangPos].push_back(m_daskCards[i]);
@@ -250,7 +251,7 @@ namespace ctm
 			m_currOptPos = m_callMaxScorePos;
 			callDizhuS2C.m_zhuangPos = m_callMaxScorePos;
 			callDizhuS2C.m_nextCallPos = m_callMaxScorePos;
-			for (int i = 0; i < m_daskCards.size(); ++i)
+			for (size_t i = 0; i < m_daskCards.size(); ++i)
 			{
 				callDizhuS2C.m_daskCardVec.push_back(*m_daskCards[i]);
 				m_handCardsArray[m_zhuangPos].push_back(m_daskCards[i]);

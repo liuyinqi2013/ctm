@@ -184,16 +184,15 @@ namespace ctm
 			{
 				return CARDS_TYPE_SHUN_PAIR;
 			}
-			else if (IsFly(vecCards))
+			else if (IsFly(vecCards)) 
 			{
 				return CARDS_TYPE_FLY;
 			}
-			else if (IsFlyTwo(vecCards))
+			else if (IsFlyTwo(vecCards)) 
 			{
 				return CARDS_TYPE_FLY_TWO;
 			}
-		
-}
+		}
 
 		return CARDS_TYPE_UNKNOWN;
 	}
@@ -203,7 +202,7 @@ namespace ctm
 	{
 		if (vecCards.size() < 5) return false;
 		
-		for (int i = 1; i < vecCards.size(); ++i)
+		for (size_t i = 1; i < vecCards.size(); ++i)
 		{
 			if (vecCards[i].m_number - vecCards[i - 1].m_number != 1)
 			{
@@ -218,7 +217,7 @@ namespace ctm
 	{
 		if (vecCards.size() < 6) return false;
 		
-		for (int i = 2; i < vecCards.size(); i += 2)
+		for (size_t i = 2; i < vecCards.size(); i += 2)
 		{
 			if (vecCards[i].m_number - vecCards[i - 2].m_number != 1 || 
 				vecCards[i - 1].m_number != vecCards[i - 2].m_number || 
@@ -238,9 +237,8 @@ namespace ctm
 		int array[15] = {0};
 		CardsToArray(vecCards, array);
 		
-		int count = 0;
-		int maxcount = 0;
-		int paircount = 0;
+		size_t count = 0;
+		size_t maxcount = 0;
 		int i = 1;
 		int j = 0;
 		for (; i < 15; ++i, ++j)
@@ -270,9 +268,9 @@ namespace ctm
 		int array[15] = {0};
 		CardsToArray(vecCards, array);
 
-		int count = 0;
-		int maxcount = 0;
-		int paircount = 0;
+		size_t count = 0;
+		size_t maxcount = 0;
+		size_t paircount = 0;
 		int i = 1;
 		int j = 0;
 
@@ -332,7 +330,7 @@ namespace ctm
 			{
 				CCard card1;
 				CCard card2;
-				for (int i = 0; i < vecCards1.size() - 2; ++i)
+				for (size_t i = 0; i < vecCards1.size() - 2; ++i)
 				{
 					if (Compare1(vecCards1[i], vecCards1[i + 2]) == 0)
 					{
@@ -341,7 +339,7 @@ namespace ctm
 					}
 				}
 
-				for (int i = 0; i < vecCards2.size() - 2; ++i)
+				for (size_t i = 0; i < vecCards2.size() - 2; ++i)
 				{
 					if (Compare1(vecCards2[i], vecCards2[i + 2]) == 0)
 					{
@@ -359,11 +357,10 @@ namespace ctm
 
 	void ShowCards(const std::vector<CCard> & vecCards)
 	{
-		for (int i = 0; i < vecCards.size(); ++i)
+		for (size_t i = 0; i < vecCards.size(); ++i)
 		{
 			std::cout<<i<<":"<<vecCards[i].ToString()<<std::endl;
 		}
-		
 	}
 
 	std::string CardsTypeToStr(int type)
@@ -435,7 +432,7 @@ namespace ctm
 
 	void CardsToArray(const std::vector<CCard> & vecCards, int array[15])
 	{
-		for (int i = 0; i < vecCards.size(); ++i)
+		for (size_t i = 0; i < vecCards.size(); ++i)
 		{
 			if (vecCards[i].m_number >= 0 && vecCards[i].m_number < 15)
 				array[vecCards[i].m_number] += 1; 
@@ -444,7 +441,7 @@ namespace ctm
 
 	void CardsToArray(const std::vector<CCard*> & vecCards, int array[15])
 	{
-		for (int i = 0; i < vecCards.size(); ++i)
+		for (size_t i = 0; i < vecCards.size(); ++i)
 		{
 			if (vecCards[i]->m_number >= 0 && vecCards[i]->m_number < 15)
 				array[vecCards[i]->m_number] += 1; 

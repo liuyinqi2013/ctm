@@ -178,7 +178,6 @@ namespace ctm
 		CMutex m_mutexLock;
 
 		int m_epollFd;
-
 		int m_sendThreadNum;
 		int m_recvThreadNum;
 		CNetSendThread* m_pSendThread;

@@ -4,7 +4,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-
 namespace ctm
 {
 	CMmap::CMmap(size_t len) :
@@ -37,29 +36,25 @@ namespace ctm
 				if (stat(m_strName.c_str(), &buf) == -1)
 				{
 					fd = open(m_strName.c_str(), O_CREAT | O_RDWR, 00777);
-					if (fd == -1) 
-					{
-						ERROR_LOG("open %s failed", m_strName.c_str());
+					if (fd == -1) {
+						fprintf(stderr, "open %s failed", m_strName.c_str());
 						return NULL;
 					}
 					
-					if (lseek(fd, m_nLen, SEEK_SET) == -1)
-					{
-						ERROR_LOG("lseek failed");
+					if (lseek(fd, m_nLen, SEEK_SET) == -1) {
+						fprintf(stderr, "lseek failed");
 					}
 
-					if (write(fd, " ", 1) == -1)
-					{
-						ERROR_LOG("write failed");
+					if (write(fd, " ", 1) == -1) {
+						fprintf(stderr, "write failed");
 					}
 				}
 				else
 				{
 					m_nLen = buf.st_size;
 					fd = open(m_strName.c_str(), O_RDWR, 00777);
-					if (fd == -1) 
-					{
-						ERROR_LOG("open %s failed", m_strName.c_str());
+					if (fd == -1) {
+						fprintf(stderr, "open %s failed", m_strName.c_str());
 						return NULL;
 					}
 				}
@@ -73,7 +68,7 @@ namespace ctm
 			m_ptr = mmap(NULL, m_nLen, PROT_READ | PROT_WRITE, flags, fd, 0);
 			if (!m_ptr)
 			{
-				ERROR_LOG("call mmap failed");
+				fprintf(stderr, "call mmap failed");
 			}
 			
 			if (fd > 0) close(fd);	
@@ -89,8 +84,7 @@ namespace ctm
 	
 	void CMmap::Close()
 	{
-		if (m_ptr)
-		{
+		if (m_ptr) {
 			munmap(m_ptr,  m_nLen);
 			m_ptr = NULL;
 		}

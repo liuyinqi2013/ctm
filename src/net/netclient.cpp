@@ -47,7 +47,7 @@ namespace ctm
 
 					buf[len] = '\0';
 					m_Context.GetCompletePack(m_Socket.GetSock(), std::string(buf, len), vecOutput);
-					for(int i = 0; i < vecOutput.size(); ++i)
+					for(size_t i = 0; i < vecOutput.size(); ++i)
 					{
 						m_recvQueue.Push(vecOutput[i]);
 					}

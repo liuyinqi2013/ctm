@@ -22,7 +22,7 @@ namespace ctm
 		{
 		}
 		
-		CNetTcpClient(const std::string& ip, int port) : m_strServerIp(ip), m_iPort(port),m_bNeedReConn(true)
+		CNetTcpClient(const std::string& ip, int port) : m_iPort(port), m_strServerIp(ip), m_bNeedReConn(true)
 		{
 		}
 		

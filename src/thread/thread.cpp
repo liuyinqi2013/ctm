@@ -5,7 +5,6 @@
 
 namespace ctm
 {
-
 	int CThread::Start()
 	{
 		if (m_iStatus == T_STOP)
@@ -90,7 +89,6 @@ namespace ctm
 	{
 		return T_OK;
 	}
-
 }
 
 

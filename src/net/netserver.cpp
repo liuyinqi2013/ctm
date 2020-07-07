@@ -44,13 +44,12 @@ namespace ctm
 		m_strIp(ip),
 		m_iPort(port),
 		m_epollFd(-1),
-		m_endFlag("\r\n"),
-		m_netPackPool(128),
 		m_sendThreadNum(1),
 		m_recvThreadNum(1),
 		m_pSendThread(NULL),
-		m_pRecvThread(NULL)
-		
+		m_pRecvThread(NULL),
+		m_endFlag("\r\n"),
+		m_netPackPool(128)
 	{
 	
 	}
@@ -75,7 +74,6 @@ namespace ctm
 			return false;
 		}
 
-		//设置空闲时间为30分钟
 		if (!m_sockFd.SetKeepAlive(600))
 		{
 			ERROR_LOG("errcode = %d, errmsg = %s!", m_sockFd.GetErrCode(), m_sockFd.GetErrMsg().c_str());
@@ -105,7 +103,6 @@ namespace ctm
 			return false;
 		}
 
-		//创建发送线程组
 		m_pSendThread = new CNetSendThread[m_sendThreadNum];
 		if (!m_pSendThread)
 		{
@@ -141,10 +138,8 @@ namespace ctm
 		
 		CLockOwner owner(m_mutexLock);
 
-		//关闭监控线程
 		Stop();
 
-		//关闭接受线程
 		if (m_pRecvThread)
 		{
 			for (int i = 0; i < m_recvThreadNum; ++i)
@@ -155,7 +150,6 @@ namespace ctm
 			delete [] m_pRecvThread;
 		}
 
-		//关闭发送线程
 		if (m_pSendThread)
 		{
 			for (int i = 0; i < m_sendThreadNum; ++i)
@@ -187,7 +181,6 @@ namespace ctm
 
 	void CTcpNetServer::StartUp()
 	{
-		//启动接受线程
 		if (m_pRecvThread)
 		{
 			for (int i = 0; i < m_recvThreadNum; ++i)
@@ -196,7 +189,6 @@ namespace ctm
 			}
 		}
 
-		//启动发送线程
 		if (m_pSendThread)
 		{
 			for (int i = 0; i < m_sendThreadNum; ++i)
@@ -205,7 +197,6 @@ namespace ctm
 			}
 		}
 
-		//启动监控线程
 		Start();
 	}
 	
@@ -272,7 +263,7 @@ namespace ctm
 						DelClientConnect(events[i].data.fd);
 					*/
 					m_mapConns[events[i].data.fd]->m_iStatus = 1;
-					m_readableConnQueue.Push(m_mapConns[events[i].data.fd]); //放入可读队列
+					m_readableConnQueue.Push(m_mapConns[events[i].data.fd]);
 				}
 				else if (events[i].events & EPOLLERR)
 				{
@@ -289,7 +280,7 @@ namespace ctm
 						DelClientConnect(events[i].data.fd);
 					*/
 					m_mapConns[events[i].data.fd]->m_iStatus = 0;
-					m_readableConnQueue.Push(m_mapConns[events[i].data.fd]); //放入可读队列
+					m_readableConnQueue.Push(m_mapConns[events[i].data.fd]);
 					
 				}
 
@@ -350,7 +341,6 @@ namespace ctm
 		
 		CLockOwner owner(m_mutexLock);
 
-		//删除上下文
 		/*
 		CNetPack* pNetPack = GetContext(sock); 
 		if (pNetPack)
@@ -380,7 +370,6 @@ namespace ctm
 				ERROR_LOG("epoll_ctl del failed fd : %d errno = %d, errmsg = %s", conn->m_ConnSock.GetSock(), errCode, errMsg.c_str());
 			}
 
-			//通知上层应用网络断开
 			CSystemNetMsg systemNetMsg(conn->m_iConnPort, conn->m_strConnIp, conn->m_ConnSock.GetSock(), 2);
 			CNetPack* pNetPack = m_netPackPool.Get();
 			if (pNetPack)
@@ -449,8 +438,7 @@ namespace ctm
 		std::string strOut;
 		char buf[BUF_LEN + 32] = {0};
 		int buflen = BUF_LEN;
-		int offset = 0;
-		int   len  = 0;
+		int len  = 0;
 		int errCode = 0;
 		std::string errMsg;
 		std::vector<std::string> vecOutput;
@@ -464,12 +452,12 @@ namespace ctm
 			{
 				errCode = GetSockErrCode();
 				errMsg  = GetSockErrMsg(errCode);
-				if (errCode == EINTR) //被一个捕获的信号中断
+				if (errCode == EINTR)
 				{
 					continue;
 				}
 				
-				if ((errCode == EWOULDBLOCK || errCode == EAGAIN)) //需要等待资源 
+				if ((errCode == EWOULDBLOCK || errCode == EAGAIN))
 				{
 					ret = 1;
 				}
@@ -487,7 +475,7 @@ namespace ctm
 
 				m_Context.GetCompletePack(conn->m_ConnSock.GetSock(), std::string(buf, len), vecOutput);
 				
-				for (int i = 0; i < vecOutput.size(); ++i)
+				for (size_t i = 0; i < vecOutput.size(); ++i)
 				{
 					CNetPack* pNetPack = m_netPackPool.Get();
 						
@@ -510,20 +498,17 @@ namespace ctm
 	int CTcpNetServer::ReadOnePacket(ClientConnect* conn)
 	{
 		DEBUG_LOG("BEGIN");
-		//先读取一个长度
 		int dataLen = 0;
 
-		
 		if (Readn(conn, (char*)&dataLen, sizeof(dataLen)) < 0)
 		{
 			DEBUG_LOG("ip = %s, port = %d read 4 bit data failed", conn->m_strConnIp.c_str(), conn->m_iConnPort);
 			return -1;
 		}
 		
-		
 		/*
 		int len = conn->m_ConnSock.Recv((char*)&dataLen, sizeof(dataLen));
-		if (len < sizeof(dataLen)) //4个字节都读不了
+		if (len < sizeof(dataLen)) 
 		{
 			DEBUG_LOG("ip = %s, port = %d, len = %d read 4 bit data failed", conn->m_strConnIp.c_str(), conn->m_iConnPort, len);
 			DelClientConnect(conn);
@@ -534,7 +519,6 @@ namespace ctm
 		dataLen = ntohl(dataLen);
 		DEBUG_LOG("Content dataLen = %d\n", dataLen);
 
-		//再根据长度读取内容
 		char *buf = new char[dataLen + 1];
 		if (!buf)
 		{
@@ -544,13 +528,8 @@ namespace ctm
 
 		memset(buf, 0, dataLen + 1);
 
-		
 		std::string strContent;
-		int offset  = 0;
-		int errCode = 0;
 		std::string errMsg;
-		
-
 		
 		if (Readn(conn, buf, dataLen) < 0)
 		{
@@ -558,7 +537,6 @@ namespace ctm
 			delete[] buf;
 			return -1;
 		}
-		
 		
 		/*
 		while (offset < dataLen)
@@ -569,11 +547,11 @@ namespace ctm
 				errCode = GetSockErrCode();
 				errMsg  = GetSockErrMsg(errCode);
 				//DEBUG_LOG("errcode = %d, errmsg = %s!", errCode, errMsg.c_str());
-				if (errCode == EINTR) //被一个捕获的信号中断
+				if (errCode == EINTR) 
 				{
 					continue;
 				}
-				else if (errCode == EWOULDBLOCK || errCode == EAGAIN)//需要等待资源 
+				else if (errCode == EWOULDBLOCK || errCode == EAGAIN)
 				{
 					//DEBUG_LOG("ip = %s, port = %d, len = %d need wait data", conn->m_strConnIp.c_str(), conn->m_iConnPort, len);
 					usleep(1000);
@@ -636,18 +614,17 @@ namespace ctm
 		while (offset < len)
 		{
 			length = conn->m_ConnSock.Recv(buf + offset, len - offset);
-			DEBUG_LOG("************** len = %d, length = %d, offset = %d", len, length, offset);
+			DEBUG_LOG("len = %d, length = %d, offset = %d", len, length, offset);
 			if (length <= 0)
 			{
 				errCode = GetSockErrCode();
 				errMsg  = GetSockErrMsg(errCode);
 				DEBUG_LOG("errcode = %d, errmsg = %s!", errCode, errMsg.c_str());
-				if (errCode == EINTR) //被一个捕获的信号中断
+				if (errCode == EINTR)
 				{
-					DEBUG_LOG("被一个捕获的信号中断");
 					continue;
 				}
-				else if (errCode == EWOULDBLOCK || errCode == EAGAIN)//需要等待资源 
+				else if (errCode == EWOULDBLOCK || errCode == EAGAIN)
 				{
 					DEBUG_LOG("ip = %s, port = %d, len = %d need wait data", conn->m_strConnIp.c_str(), conn->m_iConnPort, len);
 					usleep(1000);

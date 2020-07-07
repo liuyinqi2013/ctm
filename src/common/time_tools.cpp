@@ -123,7 +123,7 @@ namespace ctm
 	string MilliTimestamp2DateTime(unsigned long long time)
 	{
 		char buf[64] = {0};
-		snprintf(buf, sizeof(buf), "%s.%03d", Timestamp2FormatDateTime(time / 1000).c_str(), time % 1000);
+		snprintf(buf, sizeof(buf), "%s.%03d", Timestamp2FormatDateTime(time / 1000).c_str(), (int)time % 1000);
 		return string(buf);
 	}
 

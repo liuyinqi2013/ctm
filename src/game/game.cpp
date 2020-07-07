@@ -30,7 +30,7 @@ namespace ctm
 
 	void CGame::DeleteOutCards(std::vector<CCard*> & handCards, const std::vector<CCard> & outCards)
 	{
-		for (int i = 0 ; i < outCards.size(); ++i)
+		for (size_t i = 0 ; i < outCards.size(); ++i)
 		{
 			std::vector<CCard*>::iterator it = handCards.begin();
 			for (; it != handCards.end(); ++it)
@@ -48,7 +48,7 @@ namespace ctm
 	{
 		std::vector<CCard*> tmpCards = handCards;
 		
-		for (int i = 0 ; i < outCards.size(); ++i)
+		for (size_t i = 0 ; i < outCards.size(); ++i)
 		{
 			std::vector<CCard*>::iterator it = tmpCards.begin();
 			for (; it != tmpCards.end(); ++it)
@@ -70,7 +70,7 @@ namespace ctm
 	{
 		std::vector<CCard> tmpCards;
 
-		int type = CardsType(outCards);
+		// int type = CardsType(outCards);
 
 		return tmpCards;
 	}
