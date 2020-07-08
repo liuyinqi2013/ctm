@@ -3,11 +3,7 @@
 default: all
 
 .DEFAULT:
-	make -C src
-	make -C test
-	make -C client
-install:
-	cd src && $(MAKE) $@
-
-.PHONY: install
+	make -C src $@
+	make -C test $@
+	make -C client $@
 

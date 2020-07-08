@@ -2,7 +2,6 @@
 #define CTM_TEST_TCPSERVER_H__
 
 #include "net/socket.h"
-#include "net/select.h"
 #include <map>
 
 using namespace ctm;

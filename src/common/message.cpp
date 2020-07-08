@@ -455,7 +455,7 @@ namespace ctm
         }
 
         unsigned int writeInx = m_writeOffset;
-        unsigned int readInx = m_readOffset;
+        // unsigned int readInx = m_readOffset;
 
         (*m_array)[writeInx] = message;
 
@@ -483,7 +483,7 @@ namespace ctm
         shared_ptr<CMessage> message;
         if (Empty()) return message;
 
-        unsigned int writeInx = m_writeOffset;
+        //unsigned int writeInx = m_writeOffset;
         unsigned int readInx = m_readOffset;
 
         message = (*m_array)[readInx];
@@ -502,7 +502,7 @@ namespace ctm
     {
         if (Empty()) return;
 
-        unsigned int writeInx = m_writeOffset;
+        //unsigned int writeInx = m_writeOffset;
         unsigned int readInx = m_readOffset;
 
         readInx = (readInx + 1) % m_maxSize;

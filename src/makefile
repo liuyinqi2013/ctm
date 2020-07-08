@@ -9,9 +9,11 @@ INSTALL=
 
 SUBDIRS=$(shell find ./* -type d)
 INC_SUBDIRS=$(shell find ./* -type d | awk -F' ' '{print "-I"$$0}')
-INC_PATH=$(INC_SUBDIRS) -I./
-LIB_PATH=
-LIB= -lpthread -ldl
+INC_PATH=$(INC_SUBDIRS) -I./ -I../third_party/include
+LIB_PATH=-L../third_party/lib/
+STATIC_LIB=../third_party/lib/libjsoncpp.a
+DYNAMIC_LIB=-lpthread -ldl
+LIB=$(DYNAMIC_LIB) $(STATIC_LIB)
 
 C_SRC=$(shell find . -type f | grep "\.c$$" | grep -v grep)
 #C_SRC=$(notdir $(C_SRC_NAME)) 
@@ -30,13 +32,13 @@ all:$(TARGET)
 	
 $(TARGET):$(OBJS)
 	$(CC) -o $@ $(OBJS) $(LIB_PATH) $(LIB)
-	$(CP) $@ $(BIN_PATH)
 $(CPP_OBJ):%.o:%.cpp
 	$(CC) $(CFLAGS) $(INC_PATH) $< -o $@
 $(C_OBJ):%.o:%.c
 	$(CC) $(CFLAGS) $(INC_PATH) $< -o $@
 
 install:
+	$(CP) $@ $(BIN_PATH)
 	
 clean:
 	$(RM) $(TARGET) $(OBJS)

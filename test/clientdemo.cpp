@@ -7,7 +7,6 @@
 #include "common/random.h"
 
 #include "net/socket.h"
-#include "net/select.h"
 #include "net/netclient.h"
 
 #include "ipc/mmap.h"

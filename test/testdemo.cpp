@@ -9,7 +9,6 @@
 #include "common/message.h"
 
 #include "net/socket.h"
-#include "net/select.h"
 #include "ipc/mmap.h"
 #include "ipc/semaphore.h"
 #include "ipc/sharememory.h"

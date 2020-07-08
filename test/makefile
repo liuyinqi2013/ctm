@@ -14,9 +14,11 @@ SUBDIRS=$(shell find ./* -type d)
 SRCDIRS=$(shell find ../src -type d)
 INC_SUBDIRS=$(shell find ./* -type d | awk -F' ' '{print "-I"$$0}')
 INC_SRCDIS=$(shell find ../src -type d | awk -F' ' '{print "-I"$$0}')
-INC_PATH=$(INC_SUBDIRS) $(INC_SRCDIS) -I./
-LIB_PATH=
-LIB= -lpthread
+INC_PATH=$(INC_SUBDIRS) $(INC_SRCDIS) -I./ -I../third_party/include
+LIB_PATH=-L../third_party/lib/
+STATIC_LIB=../third_party/lib/libjsoncpp.a
+DYNAMIC_LIB=-lpthread -ldl
+LIB=$(DYNAMIC_LIB) $(STATIC_LIB)
 
 C_SRC=$(shell find . -type f | grep "\.c$$" | grep -v grep)
 #C_SRC=$(notdir $(C_SRC_NAME)) 
@@ -26,7 +28,6 @@ CPP_SRC=$(shell find . -type f | grep "\.cpp$$" | grep -v grep)
 
 COM_OBJ=../src/common/string_tools.o ../src/common/time_tools.o \
 	../src/net/socket.o \
-	../src/net/select.o \
 	../src/common/refcount.o \
 	../src/common/msg.o \
 	../src/common/log.o \
@@ -36,7 +37,6 @@ COM_OBJ=../src/common/string_tools.o ../src/common/time_tools.o \
 	../src/ipc/semaphore.o \
 	../src/ipc/ipc_common.o \
 	../src/ipc/sharememory.o \
-	../src/jsoncpp/jsoncpp.o \
 	../src/net/netclient.o \
 	../src/thread/thread.o \
 	../src/net/netmsg.o \
