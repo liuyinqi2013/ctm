@@ -77,7 +77,7 @@ namespace ctm
 
     inline bool operator == (const Conn& lhs, const Conn& rhs)
     {
-        return bool(lhs.fd == rhs.fd && lhs.port == rhs.port && lhs.ip == rhs.ip && lhs.status == rhs.status);
+        return bool(lhs.fd == rhs.fd && lhs.port == rhs.port && lhs.ip == rhs.ip);
     }
 
     /*接收网络数据的buf*/

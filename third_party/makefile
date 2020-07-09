@@ -5,3 +5,4 @@ default: all
 .DEFAULT:
 	make -C sqlite3 $@
 	make -C jsoncpp $@
+	make -C md5 $@

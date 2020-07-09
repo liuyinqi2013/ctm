@@ -204,6 +204,16 @@ namespace ctm
 		return strHex;
 	}
 
+	std::string EncodeHex(const char* buf, size_t len, bool bUp, bool bPrefix)
+	{
+		std::string strHex;
+		for(size_t i = 0; i < len; ++i)
+		{
+			strHex += Bin2Hex(buf[i], bUp, bPrefix);
+		}
+		return strHex;
+	}
+
 	std::string EncodeHex(const std::string& strIn,  bool bUp, bool bPrefix)
 	{
 		std::string strHex;
@@ -212,6 +222,12 @@ namespace ctm
 			strHex += Bin2Hex(strIn[i], bUp, bPrefix);
 		}
 		return strHex;
+	}
+
+	std::string DecodeHex(const char* buf, size_t len)
+	{
+		std::string tmp(buf, buf + len);
+		return DecodeHex(tmp);
 	}
 
 	std::string DecodeHex(const std::string& strIn)

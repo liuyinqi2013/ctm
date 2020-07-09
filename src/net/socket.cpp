@@ -160,26 +160,26 @@ namespace ctm
 	bool SetKeepAlive(SOCKET_T sockfd, int interval)
 	{
 		int val = 1;
-		if (!setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, (const char*)&val, sizeof(val)))
+		if (setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, (const char*)&val, sizeof(val)) == -1)
 		{
 			return false;
 		}
 
 		val = interval;
-		if (!setsockopt(sockfd, IPPROTO_TCP, TCP_KEEPIDLE, (const char*)&val, sizeof(val)))
+		if (setsockopt(sockfd, IPPROTO_TCP, TCP_KEEPIDLE, (const char*)&val, sizeof(val)) == -1)
 		{
 			return false;
 		}
 
 		val = interval/3;
 		if (val == 0) val = 1;
-		if (!setsockopt(sockfd, IPPROTO_TCP, TCP_KEEPINTVL, (const char*)&val, sizeof(val)))
+		if (setsockopt(sockfd, IPPROTO_TCP, TCP_KEEPINTVL, (const char*)&val, sizeof(val)) == -1)
 		{
 			return false;
 		}
 		
 		val = 3;
-		if (!setsockopt(sockfd, IPPROTO_TCP, TCP_KEEPCNT, (const char*)&val, sizeof(val)))
+		if (setsockopt(sockfd, IPPROTO_TCP, TCP_KEEPCNT, (const char*)&val, sizeof(val)) == -1)
 		{
 			return false;
 		}

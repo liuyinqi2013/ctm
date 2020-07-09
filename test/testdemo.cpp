@@ -1,32 +1,4 @@
-#include "common/singleton.h"
-#include "common/string_tools.h"
-#include "common/time_tools.h"
-#include "common/msg.h"
-#include "common/com.h"
-#include "common/log.h"
-#include "common/random.h"
-#include "common/inifile.h"
-#include "common/message.h"
-
-#include "net/socket.h"
-#include "ipc/mmap.h"
-#include "ipc/semaphore.h"
-#include "ipc/sharememory.h"
-#include "module/timer.h"
-
-#include <string.h>
-#include <signal.h>
-
-
-#include <iostream>
-#include <ctype.h>
-#include <iostream>
-
-#include "thread/thread.h"
-
-
-using namespace ctm;
-using namespace std;
+#include "testdef.h"
 
 CCommonQueue queue1;
 
@@ -85,7 +57,7 @@ int TestThread::Run()
 	return 0;
 }
 
-void TestUnitThread()
+DECLARE_FUNC(thread)
 {
 	TestThread t(1);
 	TestThread t1(0);
@@ -104,9 +76,10 @@ void TestUnitThread()
 	t.Stop();
 	cout << "Thread status " << t.GetStatus() << endl;
 	*/
+	return 0;
 }
 
-void TestStringFunc()
+DECLARE_FUNC(strtool)
 {
 	string a("@@\r\n**}&\n@[@end@]");
 	cout << a << endl;
@@ -134,9 +107,10 @@ void TestStringFunc()
 	cout << PathName("laod\\wuda\\laod.txt") << endl;
 	cout << PathName("laod/wuda/") << endl;
 	cout << PathName("wuda.txt") << endl;
+	return 0;
 }
 
-void TestTime()
+DECLARE_FUNC(timetool)
 {
 	CClock clock;
 	cout << Timestamp() << endl;
@@ -170,92 +144,10 @@ void TestTime()
 	cout << WeekOfYear() << endl;
 
 	cout << clock.RunInfo() << endl;
+	return 0;
 }
 
-void PrintHost(struct hostent* hostinfo)
-{
-	DEBUG_LOG("official name of host : %s", hostinfo->h_name);
-	string hostAliases;
-	char** head = hostinfo->h_aliases;
-	for (; *head; ++head)
-	{
-		hostAliases += string(" ") + *head;
-	}
-	DEBUG_LOG("alias list : %s", hostAliases.c_str());
-
-	if (hostinfo->h_addrtype == AF_INET)
-	{
-		DEBUG_LOG("host address type : AF_INET");
-	}
-	else
-	{
-		DEBUG_LOG("host address type : AF_INET6");
-	}
-
-	DEBUG_LOG("length of address : %d", hostinfo->h_length);
-
-	char buf[128] = { 0 };
-	string hostAddrs;
-	head = hostinfo->h_addr_list;
-	for (; *head; ++head)
-	{
-		inet_ntop(hostinfo->h_addrtype, *head, buf, sizeof(buf));
-		hostAddrs += string(" ") + buf;
-	}
-
-	DEBUG_LOG("list of addresses  : %s", hostAddrs.c_str());
-}
-
-void TestGetHostByAddr()
-{
-	while (1)
-	{
-		DEBUG_LOG("Pealse input host ip:");
-		char buf[128] = { 0 };
-		cin.getline(buf, sizeof(buf));
-		int size = cin.gcount();
-		struct in_addr inaddr = { 0 };
-
-		int ret = inet_pton(AF_INET, buf, &inaddr);
-		if (ret <= 0)
-		{
-			DEBUG_LOG("Not in presentation format : %s", buf);
-			continue;
-		}
-
-		struct hostent* hostinfo = gethostbyaddr((const char*)& inaddr, sizeof(inaddr), AF_INET);
-		if (!hostinfo)
-		{
-			DEBUG_LOG("Couldn't resolve host ip : %s", buf);
-			continue;
-		}
-
-		PrintHost(hostinfo);
-	}
-
-}
-
-void TestGetHostByName()
-{
-	while (1)
-	{
-		DEBUG_LOG("Pealse input host name:");
-		char buf[128] = { 0 };
-		cin.getline(buf, sizeof(buf));
-		int size = cin.gcount();
-		struct hostent* hostinfo = gethostbyname(buf);
-		if (!hostinfo)
-		{
-			DEBUG_LOG("Couldn't resolve host name : %s", buf);
-			continue;
-		}
-
-		PrintHost(hostinfo);
-	}
-
-}
-
-void TestGetAddrInfo()
+DECLARE_FUNC(addrinfo)
 {
 	struct addrinfo addr = { 0 };
 	addr.ai_family = AF_UNSPEC;
@@ -287,9 +179,10 @@ void TestGetAddrInfo()
 		cout << "canonname : " << p->ai_canonname << endl;
 	}
 	freeaddrinfo(res);
+	return 0;
 }
 
-void TestLocalHostIps()
+DECLARE_FUNC(hostip)
 {
 	printf("hostname:%s\n", LocalHostName().c_str());
 	std::vector<std::string> vecIps;
@@ -298,9 +191,10 @@ void TestLocalHostIps()
 	{
 		printf("ip%d:%s\n", i + 1, vecIps[i].c_str());
 	}
+	return 0;
 }
 
-void TestMsg()
+DECLARE_FUNC(msg)
 {
 	CMsg msg1("1", 1, "net");
 	CMsg msg2("2", 2, "mod");
@@ -316,9 +210,10 @@ void TestMsg()
 	}
 	msg1.TestPrint();
 	msg2.TestPrint();
+	return 0;
 }
 
-void TestMessage()
+DECLARE_FUNC(message)
 {
 	TestThread t;
 	t.Start();
@@ -326,10 +221,12 @@ void TestMessage()
 	{
 		cout << queue1.GetFront()->ToJsonString() << endl;
 	}
+	return 0;
 }
 
-void TestMmap(int flag = 1)
+DECLARE_FUNC(mmap)
 {
+	int flag = atoi(argv[2]);
 	CMmap map("lao.txt", 10);
 	char* p = (char*)map.Open();
 	int size = map.Size();
@@ -357,17 +254,20 @@ void TestMmap(int flag = 1)
 	{
 		ERROR_LOG("map.Open failed");
 	}
+
+	return 0;
 }
 
-void TestShareMem(int flag = 1)
+DECLARE_FUNC(shamem)
 {
+	int flag = atoi(argv[2]);
 	CShareMemory mem("panda");
 	if (flag == 1)
 	{
 		if (!mem.Open(100))
 		{
 			ERROR_LOG("mem.Create failed");
-			return;
+			return 0;
 		}
 
 		char* p = mem.Head();
@@ -385,7 +285,7 @@ void TestShareMem(int flag = 1)
 		if (!mem.Open(100))
 		{
 			ERROR_LOG("mem.Create failed");
-			return;
+			return 0;
 		}
 
 		char* p = mem.Head();
@@ -400,10 +300,12 @@ void TestShareMem(int flag = 1)
 		}
 		mem.Destroy();
 	}
+	return 0;
 }
 
-void TestSem(int flag = 1)
+DECLARE_FUNC(sem)
 {
+	int flag = atoi(argv[2]);
 	CSemaphore sem(1024);
 	sem.Open();
 	if (flag == 1)
@@ -420,9 +322,10 @@ void TestSem(int flag = 1)
 		sem.Post();
 		DEBUG_LOG("Send a signal");
 	}
+	return 0;
 }
 
-void TestRandom()
+DECLARE_FUNC(random)
 {
 	for (int i = 0; i < 2000; ++i)
 	{
@@ -448,6 +351,7 @@ void TestRandom()
 	{
 		INFO_LOG("xxxxxxxxxxxxxxxxxxxxxxxxxxxxx %f", CRandom::DoubleRandom(0.5, 10.0));
 	}
+	return 0;
 }
 
 struct list_node
@@ -489,7 +393,7 @@ list_node* ListReverse(list_node* head)
 	return q;
 }
 
-void TestListReverse()
+DECLARE_FUNC(ListReverse)
 {
 	list_node node10(10, NULL);
 	list_node node9(9, &node10);
@@ -507,6 +411,7 @@ void TestListReverse()
 	ShowList(head);
 	head = ListReverse(head);
 	ShowList(head);
+	return 0;
 }
 
 #pragma pack(2)
@@ -550,7 +455,7 @@ int bitCount2(int n)
 
 #define Show(expr) { cout << #expr << "=" << expr <<endl; }
 
-void TestTencent()
+DECLARE_FUNC(tencent)
 {
 	TestA* p = (TestA*)0x100000;
 	cout << "sizeof(long long) = " << sizeof(long long) << endl; 
@@ -607,9 +512,10 @@ void TestTencent()
 	Show(sizeof(bool));
 	int s = (1000<<2);
 	Show(s);
+	return 0;
 }
 
-void TestIni()
+DECLARE_FUNC(ini)
 {
 	CIniFile ini("conf.ini");
 	ini.Load();
@@ -647,9 +553,10 @@ void TestIni()
 	//cout << ini.ToString()<<endl;
 
 	ini.Save();
+	return 0;
 }
 
-void TestTimer()
+DECLARE_FUNC(timer)
 {
 	CTimer timer;
 	timer.Start();
@@ -661,6 +568,7 @@ void TestTimer()
 	timer.StopTimer(timerId1);
 	timerId1 = timer.AddTimer(2000, 10, NULL, NULL, NULL);
 	timer.StopAllTimer();
+	return 0;
 }
 
 int CompLen(const char* a, const char* b)
@@ -675,7 +583,7 @@ int CompStr(const void *a, const void *b)
 	return strcmp(*(const char**)a, *(const char**)b);
 }
 
-int TestMaxSubStr()
+DECLARE_FUNC(MaxSubStr)
 {
 	char a[2048] = {0};
 	char* n[2048];
@@ -739,7 +647,7 @@ int Panda::a = 1;
 
 typedef void (Panda::*Func)();
 
-void TestObject()
+DECLARE_FUNC(object)
 {
 	Panda b(10), c(15);
 	Panda* p = &b;
@@ -758,45 +666,23 @@ void TestObject()
 	(b.*f)();
 	(c.*f)();
 	c.TestA();
+	return 0;
 }
 
-void WaitEnd()
+DECLARE_FUNC(md5)
 {
-	cout<<"Please enter any to exit!"<<endl;
-	int a;
-	cin >> a;
-}
+	const char* data = "laodapanda";
+	u_char buf[16] = {0};
+	md5_t ctx;
+	md5_init(&ctx);
+	md5_update(&ctx, data, strlen(data));
+	md5_final(buf, &ctx);
+	for(int i = 0; i < 16; ++i)
+	{
+		printf("%02x", buf[i]);
+	}
 
-int main(int argc, char** argv)
-{
-	//CLog::GetInstance()->SetLogName("test");
-	//CLog::GetInstance()->SetLogPath("logs/debug");
-	CLog::GetInstance()->SetFileMaxSize(2);
-	CLog::GetInstance()->SetLogLevel(CLog::LOG_DEBUG);
-	//CLog::GetInstance()->SetLogPath("./");
-	//HandleSign();
-	//TestStringFunc();
-	//TestRandom();
-	//TestGetHostByAddr();
-	//TestGetHostByName();
-	//TestSelect();
-	//TestMsg();
-	//TestMmap(S2I(argv[1]));
-	//TestSem(S2I(argv[1]));
-	//TestShareMem(S2I(argv[1]));
-	//TestIni();
-	//TestUnitThread();
-	//TestTime();
-	//TestTimer();
-	//TestTencent();
-	//TestMessage();
-	//TestListReverse();
-	//TestUnitThread();
-	//TestMaxSubStr();
-	//TestObject();
-	TestLocalHostIps();
-
-	//WaitEnd();
-
+	printf("\n");
+	printf("%s\n", EncodeHex((const char*)buf, 16).c_str());
 	return 0;
 }

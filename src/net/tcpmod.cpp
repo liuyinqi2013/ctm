@@ -108,7 +108,7 @@ namespace ctm
 
     bool CTcpMod::IsValidConn(const Conn* conn)
     {
-	return true;
+	    return true;
     }
 
     void CTcpMod::SetInterface(CTcpInterface* tcpInterface)
@@ -202,7 +202,7 @@ namespace ctm
 				}
 			}	
 		}
-
+        
 		return 0;
     }
 

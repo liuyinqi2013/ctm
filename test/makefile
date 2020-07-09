@@ -16,9 +16,9 @@ INC_SUBDIRS=$(shell find ./* -type d | awk -F' ' '{print "-I"$$0}')
 INC_SRCDIS=$(shell find ../src -type d | awk -F' ' '{print "-I"$$0}')
 INC_PATH=$(INC_SUBDIRS) $(INC_SRCDIS) -I./ -I../third_party/include
 LIB_PATH=-L../third_party/lib/
-STATIC_LIB=../third_party/lib/libjsoncpp.a
+STATIC_LIB=../third_party/lib/libjsoncpp.a ../third_party/lib/libmd5.a
 DYNAMIC_LIB=-lpthread -ldl
-LIB=$(DYNAMIC_LIB) $(STATIC_LIB)
+LIB=$(STATIC_LIB) $(DYNAMIC_LIB)
 
 C_SRC=$(shell find . -type f | grep "\.c$$" | grep -v grep)
 #C_SRC=$(notdir $(C_SRC_NAME)) 
@@ -51,7 +51,7 @@ COM_OBJ=../src/common/string_tools.o ../src/common/time_tools.o \
 CPP_OBJ=$(patsubst %.cpp, %.o, $(CPP_SRC)) $(COM_OBJ)
 	
 	
-OBJS0=$(COM_OBJ) testdemo.o
+OBJS0=$(COM_OBJ) testdemo.o testmain.o
 OBJS1=$(COM_OBJ) serverdemo.o
 OBJS2=$(COM_OBJ) clientdemo.o
 

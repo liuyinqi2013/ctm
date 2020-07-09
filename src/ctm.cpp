@@ -119,7 +119,7 @@ int main(int argc, char **argv)
 	//CLog::GetInstance()->SetOnlyBack(true);
 	
 	string serverIp = "0.0.0.0";
-	int port = 1111;
+	int port = 11111;
 
 	CGameCenter center;
 

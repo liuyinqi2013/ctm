@@ -40,7 +40,11 @@ namespace ctm
 		const std::string flagSet = BLANK_SET, 
 		bool bjumpSpace = true);
 
+	std::string EncodeHex(const char* buf, size_t len, bool bUp = false, bool bPrefix = false);
+
 	std::string EncodeHex(const std::string& strIn, bool bUp = false, bool bPrefix = false);
+
+	std::string DecodeHex(const char* buf, size_t len);
 
 	std::string DecodeHex(const std::string& strIn);
 
