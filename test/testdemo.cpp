@@ -89,7 +89,7 @@ DECLARE_FUNC(strtool)
 	std::vector<std::string> vecOutput;
 	CutString(a, vecOutput, "[@end@]", false);
 	cout << "item size = " << vecOutput.size() << endl;
-	for (int i = 0; i < vecOutput.size(); ++i)
+	for (size_t i = 0; i < vecOutput.size(); ++i)
 	{
 		cout << "item = " << vecOutput[i] << endl;
 	}
@@ -110,9 +110,9 @@ DECLARE_FUNC(strtool)
 	return 0;
 }
 
-DECLARE_FUNC(timetool)
+DECLARE_FUNC_EX(timetool)
 {
-	CClock clock;
+	// CClock clock;
 	cout << Timestamp() << endl;
 	cout << MilliTimestamp() << endl;
 
@@ -143,7 +143,7 @@ DECLARE_FUNC(timetool)
 	cout << DayOfWeek() << endl;
 	cout << WeekOfYear() << endl;
 
-	cout << clock.RunInfo() << endl;
+	// cout << clock.RunInfo() << endl;
 	return 0;
 }
 
@@ -226,7 +226,8 @@ DECLARE_FUNC(message)
 
 DECLARE_FUNC(mmap)
 {
-	int flag = atoi(argv[2]);
+	CHECK_PARAM(argc, 2, "shamem [0|1].");
+	int flag = atoi(argv[1]);
 	CMmap map("lao.txt", 10);
 	char* p = (char*)map.Open();
 	int size = map.Size();
@@ -260,7 +261,8 @@ DECLARE_FUNC(mmap)
 
 DECLARE_FUNC(shamem)
 {
-	int flag = atoi(argv[2]);
+	CHECK_PARAM(argc, 2, "shamem [0|1].");
+	int flag = atoi(argv[1]);
 	CShareMemory mem("panda");
 	if (flag == 1)
 	{
@@ -305,7 +307,8 @@ DECLARE_FUNC(shamem)
 
 DECLARE_FUNC(sem)
 {
-	int flag = atoi(argv[2]);
+	CHECK_PARAM(argc, 2, "shamem [0|1].");
+	int flag = atoi(argv[1]);
 	CSemaphore sem(1024);
 	sem.Open();
 	if (flag == 1)
@@ -583,7 +586,7 @@ int CompStr(const void *a, const void *b)
 	return strcmp(*(const char**)a, *(const char**)b);
 }
 
-DECLARE_FUNC(MaxSubStr)
+DECLARE_FUNC(maxsubstr)
 {
 	char a[2048] = {0};
 	char* n[2048];
@@ -684,5 +687,14 @@ DECLARE_FUNC(md5)
 
 	printf("\n");
 	printf("%s\n", EncodeHex((const char*)buf, 16).c_str());
+	return 0;
+}
+
+DECLARE_FUNC(realpath)
+{
+	CHECK_PARAM(argc, 2, "realpath [filename].");
+	char* realname = realpath(argv[1], NULL);
+	printf("realname:%s\n", realname);
+	free(realname);
 	return 0;
 }

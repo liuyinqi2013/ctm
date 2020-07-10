@@ -1,18 +1,3 @@
-#include "common/singleton.h"
-#include "common/string_tools.h"
-#include "common/time_tools.h"
-#include "common/msg.h"
-#include "common/com.h"
-#include "common/log.h"
-#include "common/random.h"
-
-#include "net/socket.h"
-#include "net/netclient.h"
-
-#include "ipc/mmap.h"
-#include "ipc/semaphore.h"
-#include "ipc/sharememory.h"
-
 #include <string.h>
 #include <signal.h>
 
@@ -20,7 +5,10 @@
 #include <ctype.h>
 #include <iostream>
 
+#include "testdef.h"
+#include "net/netclient.h"
 #include "net/tcpclient.h"
+#include "net/tcpserver.h"
 
 using namespace ctm;
 using namespace std;
@@ -40,7 +28,7 @@ void Test(int argc, char **argv)
 		fin = fopen(argv[1], "rb+");
 		string filePathName(argv[1]);
 		string fileName = filePathName;
-		int pos = filePathName.rfind("/");
+		size_t pos = filePathName.rfind("/");
 		if (pos != string::npos)
 		{
 			fileName = filePathName.substr(pos + 1);
@@ -72,7 +60,7 @@ void Test(int argc, char **argv)
 void TestTcpClient(int argc, char **argv)
 {
 	CCommonQueue recv;
-	CTcpClient client("172.17.106.223", 9999);
+	CTcpClient client(argv[1], atoi(argv[2]));
 	client.SetOutMessageQueue(&recv);
 	if (client.Init() == -1)
 	{
@@ -82,7 +70,7 @@ void TestTcpClient(int argc, char **argv)
 
 	char buf[4096] = {0};
 	int len = 0;
-	FILE* fin = fopen(argv[1], "rb+");
+	FILE* fin = fopen(argv[3], "rb+");
 	FILE* fout = fopen("server_echo", "wb");
 	client.OnRunning();
 	bool isConn = false;
@@ -148,8 +136,10 @@ void TestTcpClient(int argc, char **argv)
 	DEBUG_LOG("%s", clock.RunInfo().c_str());
 }
 
-int main(int argc, char **argv)
+DECLARE_FUNC_EX(client)
 {
+	CHECK_PARAM(argc, 4, "client [ip] [port] [filename].");
+
 	TestTcpClient(argc, argv);
 	//CLog::GetInstance()->SetLogName("testclient");
 	//CLog::GetInstance()->SetLogPath("./log/");

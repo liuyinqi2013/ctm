@@ -6,6 +6,7 @@
 
 #include <cassert>
 #include <termios.h>
+#include "testdef.h"
 
 using namespace std;
 
@@ -38,10 +39,8 @@ void Move(int x, int y)
 	printf("\e[%d;%dH", y, x);
 }
 
-int main()
+DECLARE_FUNC(tcdemo)
 {
-
-
 	struct termios told;
 	struct termios tnew;
 

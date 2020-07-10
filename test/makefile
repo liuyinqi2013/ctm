@@ -3,9 +3,7 @@ CP=cp -rf
 CC=g++
 CFLAGS= -c -Wall -g -std=c++11
 
-TARGET0=testdemo
-TARGET1=serverdemo
-TARGET2=clientdemo
+TARGET=tbin
 
 BIN_PATH=../bin
 INSTALL=
@@ -49,28 +47,16 @@ COM_OBJ=../src/common/string_tools.o ../src/common/time_tools.o \
 	../src/net/netpacket.o
 	
 CPP_OBJ=$(patsubst %.cpp, %.o, $(CPP_SRC)) $(COM_OBJ)
-	
-	
-OBJS0=$(COM_OBJ) testdemo.o testmain.o
-OBJS1=$(COM_OBJ) serverdemo.o
-OBJS2=$(COM_OBJ) clientdemo.o
 
 VPATH=$(SUBDIRS) $(SRCDIRS)
 #---------------------------------------------------------------------------------------------
 
 .PHONY:all
 	
-all:$(TARGET0) $(TARGET1) $(TARGET2)
+all:$(TARGET)
 	
-$(TARGET0):$(OBJS0)
-	$(CC) -o $@ $(OBJS0) $(LIB_PATH) $(LIB)
-
-$(TARGET1):$(OBJS1)
-	$(CC) -o $@ $(OBJS1) $(LIB_PATH) $(LIB)
-
-$(TARGET2):$(OBJS2)
-	$(CC) -o $@ $(OBJS2) $(LIB_PATH) $(LIB)
-	
+$(TARGET):$(CPP_OBJ)
+	$(CC) -o $@ $(CPP_OBJ) $(LIB_PATH) $(LIB)
 $(CPP_OBJ):%.o:%.cpp
 	$(CC) $(CFLAGS) $< -o $@ $(INC_PATH)
 $(C_OBJ):%.o:%.c
@@ -79,4 +65,4 @@ $(C_OBJ):%.o:%.c
 install:
 	
 clean:
-	$(RM) $(TARGET0) $(TARGET1) $(TARGET2) $(CPP_OBJ)
+	$(RM) $(TARGET) $(CPP_OBJ) *.o
