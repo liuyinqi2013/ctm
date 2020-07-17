@@ -23,29 +23,9 @@ C_SRC=$(shell find . -type f | grep "\.c$$" | grep -v grep)
 C_OBJ=$(patsubst %.c, %.o, $(C_SRC))
 CPP_SRC=$(shell find . -type f | grep "\.cpp$$" | grep -v grep)
 #CPP_SRC=$(notdir $(CPP_SRC_NAME))
+COM_SRC=$(shell find ../src -type f | grep "\.cpp$$" | grep -v ctm | grep -v grep)
+COM_OBJ=$(patsubst %.cpp, %.o, $(COM_SRC))
 
-COM_OBJ=../src/common/string_tools.o ../src/common/time_tools.o \
-	../src/net/socket.o \
-	../src/common/refcount.o \
-	../src/common/msg.o \
-	../src/common/log.o \
-	../src/common/platform.o \
-	../src/ipc/mmap.o \
-	../src/thread/sem.o \
-	../src/ipc/semaphore.o \
-	../src/ipc/ipc_common.o \
-	../src/ipc/sharememory.o \
-	../src/net/netclient.o \
-	../src/thread/thread.o \
-	../src/net/netmsg.o \
-	../src/common/inifile.o \
-	../src/common/random.o \
-	../src/common/message.o \
-	../src/module/timer.o \
-	../src/net/tcpserver.o \
-	../src/net/tcpclient.o \
-	../src/net/netpacket.o
-	
 CPP_OBJ=$(patsubst %.cpp, %.o, $(CPP_SRC)) $(COM_OBJ)
 
 VPATH=$(SUBDIRS) $(SRCDIRS)

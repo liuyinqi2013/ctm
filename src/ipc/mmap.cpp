@@ -37,16 +37,16 @@ namespace ctm
 				{
 					fd = open(m_strName.c_str(), O_CREAT | O_RDWR, 00777);
 					if (fd == -1) {
-						fprintf(stderr, "open %s failed", m_strName.c_str());
+						fprintf(stderr, "open %s failed\n", m_strName.c_str());
 						return NULL;
 					}
 					
 					if (lseek(fd, m_nLen, SEEK_SET) == -1) {
-						fprintf(stderr, "lseek failed");
+						fprintf(stderr, "lseek failed\n");
 					}
 
 					if (write(fd, " ", 1) == -1) {
-						fprintf(stderr, "write failed");
+						fprintf(stderr, "write failed\n");
 					}
 				}
 				else
@@ -54,7 +54,7 @@ namespace ctm
 					m_nLen = buf.st_size;
 					fd = open(m_strName.c_str(), O_RDWR, 00777);
 					if (fd == -1) {
-						fprintf(stderr, "open %s failed", m_strName.c_str());
+						fprintf(stderr, "open %s failed\n", m_strName.c_str());
 						return NULL;
 					}
 				}
@@ -68,7 +68,7 @@ namespace ctm
 			m_ptr = mmap(NULL, m_nLen, PROT_READ | PROT_WRITE, flags, fd, 0);
 			if (!m_ptr)
 			{
-				fprintf(stderr, "call mmap failed");
+				fprintf(stderr, "call mmap failed\n");
 			}
 			
 			if (fd > 0) close(fd);	

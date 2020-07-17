@@ -12,7 +12,7 @@ namespace ctm
 	inline time_t Timestamp() { return time(NULL); }
 	
 	// 获取当前时间戳（毫秒）
-	unsigned long long MilliTimestamp();
+	unsigned long MilliTimestamp();
 
 	// 获取当前时间的毫秒数
 	unsigned int MilliSeconds();
@@ -78,7 +78,7 @@ namespace ctm
 	int WeekOfYear(time_t time = time(NULL));
 
 	// 毫秒时间戳转换为日期时间
-	string MilliTimestamp2DateTime(unsigned long long time);
+	string MilliTimestamp2DateTime(unsigned long time);
 	
 	// 计时器
 	class CClock
@@ -99,7 +99,7 @@ namespace ctm
 			return MilliTimestamp() - m_begin;
 		}
 
-		unsigned long long BeginTime() const
+		unsigned long BeginTime() const
 		{
 			return m_begin;
 		}
@@ -108,7 +108,7 @@ namespace ctm
 		
 	private:
 		string m_tips;
-		unsigned long long m_begin;
+		unsigned long m_begin;
 	};
 };
 

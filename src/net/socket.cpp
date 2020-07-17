@@ -612,7 +612,7 @@ namespace ctm
 
 	bool CSocket::Renew()
 	{
-		// SOCKET_T sock;
+		Close();
 		
 		if (SOCK_STREAM == m_sockType)
 			m_sock = socket(AF_INET, SOCK_STREAM, 0);

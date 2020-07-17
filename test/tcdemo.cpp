@@ -7,6 +7,7 @@
 #include <cassert>
 #include <termios.h>
 #include "testdef.h"
+#include "common/chartable.h"
 
 using namespace std;
 
@@ -64,7 +65,6 @@ DECLARE_FUNC(tcdemo)
 	Move(30, 20);
 
 	fflush(stdout);
-	int c = 0;
 	int buf[2] = {0};
 	while (buf[0] != 'q')
 	{
@@ -104,5 +104,14 @@ DECLARE_FUNC(tcdemo)
 
 	tcsetattr(0, TCSANOW, &told);
 
+	return 0;
+}
+
+DECLARE_FUNC(chartable)
+{
+	CCharTable tab(4, 5);
+	tab.Print();
+	//cout << tab.TopLine() << endl;
+	//cout << StrNum('*', 10) << endl;
 	return 0;
 }

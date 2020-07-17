@@ -48,21 +48,21 @@ namespace ctm
 
 		if (m_iKey == -1)
 		{
-			fprintf(stderr, "key is -1");
+			fprintf(stderr, "key is -1\n");
 			return false;	
 		}
 		
 		m_shmId = shmget(m_iKey, size, IPC_CREAT | IPC_EXCL | 0644);
 		if (m_shmId == -1)
 		{
-			fprintf(stderr, "errcode = %d, errmsg = %s", errno, strerror(errno));
+			fprintf(stderr, "errcode = %d, errmsg = %s\n", errno, strerror(errno));
 			if (errno != EEXIST) {
 				return false;
 			} 
 
 			m_shmId = shmget(m_iKey, size, 0644);
 			if (m_shmId == -1) {
-				fprintf(stderr, "errcode = %d, errmsg = %s", errno, strerror(errno));
+				fprintf(stderr, "errcode = %d, errmsg = %s\n", errno, strerror(errno));
 				return false;
 			} 
 		}
@@ -70,7 +70,7 @@ namespace ctm
 		m_shmHead = (char*)shmat(m_shmId, NULL, 0);
 		if (m_shmHead == NULL)
 		{
-			fprintf(stderr, "errcode = %d, errmsg = %s", errno, strerror(errno));
+			fprintf(stderr, "errcode = %d, errmsg = %s\n", errno, strerror(errno));
 			return false;
 		}
 
@@ -89,7 +89,7 @@ namespace ctm
 
 		if (shmctl(m_shmId, IPC_RMID, NULL) == -1)
 		{
-			fprintf(stderr, "errcode = %d, errmsg = %s", errno, strerror(errno));
+			fprintf(stderr, "errcode = %d, errmsg = %s\n", errno, strerror(errno));
 			return false;
 		}
 
@@ -103,7 +103,7 @@ namespace ctm
 	 	struct shmid_ds buf = {0};
 		if (shmctl(m_shmId, IPC_STAT, &buf) == -1)
 		{
-			fprintf(stderr, "errcode = %d, errmsg = %s", errno, strerror(errno));
+			fprintf(stderr, "errcode = %d, errmsg = %s\n", errno, strerror(errno));
 			return ;
 		}
 		m_Size = buf.shm_segsz;

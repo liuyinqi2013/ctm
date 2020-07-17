@@ -187,7 +187,7 @@ DECLARE_FUNC(hostip)
 	printf("hostname:%s\n", LocalHostName().c_str());
 	std::vector<std::string> vecIps;
 	GetHostIps("www.baidu.com", vecIps);
-	for(int i = 0; i < vecIps.size(); ++i)
+	for(size_t i = 0; i < vecIps.size(); ++i)
 	{
 		printf("ip%d:%s\n", i + 1, vecIps[i].c_str());
 	}
@@ -430,7 +430,7 @@ class Foo
 {
 public:
 	//virtual int func1() { return 1;}
-	int  func2() { return 2;}
+	int func2() { return 2;}
 	int data1;
 	static int data2;
 };

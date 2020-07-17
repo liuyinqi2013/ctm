@@ -78,7 +78,6 @@ namespace ctm
             if (IsCompletePack(*message->m_buf))
             {
                 m_queue.PopFront();
-
             }
         }
         return 0;

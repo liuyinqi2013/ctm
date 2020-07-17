@@ -52,14 +52,14 @@ namespace ctm
 
 		if (m_iKey == -1)
 		{
-			fprintf(stderr, "key is -1");
+			fprintf(stderr, "key is -1\n");
 			return false;	
 		}
 
 		m_semHandle = semget(m_iKey, 1, IPC_CREAT | 0644);
 		if (m_semHandle == -1)
 		{
-			fprintf(stderr, "errcode = %d, errmsg = %s", errno, strerror(errno));
+			fprintf(stderr, "errcode = %d, errmsg = %s\n", errno, strerror(errno));
 			return false;
 		}
 	
@@ -78,7 +78,7 @@ namespace ctm
 		un.val = val;
 		if (semctl(m_semHandle, 0, SETVAL, un) == -1)
 		{
-			fprintf(stderr, "errcode = %d, errmsg = %s", errno, strerror(errno));
+			fprintf(stderr, "errcode = %d, errmsg = %s\n", errno, strerror(errno));
 			return false;
 		}
 		
@@ -97,7 +97,7 @@ namespace ctm
 
 		if (semctl(m_semHandle, 0, IPC_RMID) == -1)
 		{
-			fprintf(stderr, "errcode = %d, errmsg = %s", errno, strerror(errno));
+			fprintf(stderr, "errcode = %d, errmsg = %s\n", errno, strerror(errno));
 			return false;
 		}
 
@@ -120,7 +120,7 @@ namespace ctm
 	{
 		if (m_semHandle == -1)
 		{
-			fprintf(stderr, "sem_id is -1");
+			fprintf(stderr, "sem_id is -1\n");
 			return false;
 		}
 		
@@ -130,7 +130,7 @@ namespace ctm
     	buf.sem_flg = 0;  
     	if (semop(m_semHandle, &buf, 1) == -1)
     	{
-			fprintf(stderr, "errcode = %d, errmsg = %s", errno, strerror(errno));
+			fprintf(stderr, "errcode = %d, errmsg = %s\n", errno, strerror(errno));
 			return false;    	
     	}
 		

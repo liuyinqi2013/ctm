@@ -251,7 +251,7 @@ namespace ctm
         int offset = 0;
         while(1)
         {
-            int ret = write(m_pipe[1], cmd +  offset, len - offset);
+            int ret = write(m_pipe[1], cmd + offset, len - offset);
             if (ret <= 0)
             {
                 if (EINTR == errno) continue;

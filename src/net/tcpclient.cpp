@@ -64,7 +64,6 @@ namespace ctm
 
     int CTcpClient::SyncSendData(char* data, int len)
     {
-        //DEBUG_LOG("SyncSendData size : %d", len);
         if (!IsValidNetLen(len)) return -1;
         int ret = SendPacketSize(m_connFd, len);
         if (ret == -1)
