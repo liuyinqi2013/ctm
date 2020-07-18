@@ -2,7 +2,7 @@ RM=rm -rf
 CP=cp -rf
 CC=g++
 MKDIR=mkdir -p
-CFLAGS= -c -Wall -g -fPIC
+CFLAGS= -c -Wall -g -fPIC -std=c++11
 
 STATIC_LIB=libjsoncpp.a
 DYNAMIC_LIB=libjsoncpp.so

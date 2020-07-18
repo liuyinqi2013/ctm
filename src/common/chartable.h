@@ -25,9 +25,9 @@ namespace ctm
         friend class CCell;
         friend class CColumn;
     public:
-        const static char default_top = '-';
-        const static char default_side = '|';
-        const static char default_corner = '+';
+        static const char default_top = '-';
+        static const char default_side = '|';
+        static const char default_corner = '+';
         static CStyle default_style;
 
         CCharTable(size_t rowCnt, size_t colCnt);
@@ -73,12 +73,12 @@ namespace ctm
         friend class CCell;
         friend class CCharTable;
     public:
-        static const size_t max_hight = 16;
-        static const size_t default_hight = 1;
+        #define max_hight ((size_t)16)
+        #define default_hight ((size_t)1)
 
         ~CRow() {}
 
-        void SetHight(size_t hight) { m_hight = std::min(hight, max_hight); }
+        void SetHight(size_t hight);
         void SetStyle(CStyle* style) { m_style = style; }
         CCell* Cell(size_t col) { return m_cellVec[col]; }
         void Add(CCell* cell) { m_cellVec.push_back(cell); }
@@ -103,12 +103,13 @@ namespace ctm
         friend class CCell;
         friend class CCharTable;
     public:
-        static const size_t max_width = 128;
-        static const size_t default_width = 8;
+        #define max_width ((size_t)128)
+        #define default_width ((size_t)8)
 
         ~CColumn() { }
 
-        void SetWidth(size_t width) { m_width = std::min(width, max_width); }
+        void SetWidth(size_t width);
+
         void SetStyle(CStyle* style) { m_style = style; }
         CCell* Cell(size_t row) { return m_cellVec[row]; }
         void Add(CCell* cell) { m_cellVec.push_back(cell); }
@@ -164,23 +165,43 @@ namespace ctm
 
     class CStyle
     {
+        friend class CCell;
         friend class CCharTable;
     public:
-        enum Alignment
+        enum HorAlignment
+        {
+            LIFT = 0x01,
+            RIGHT = 0x02,
+            HCENTER = 0x03,
+        };
+
+        enum VerAlignment
         {
             TOP = 0x01,
             BOTTOM = 0x02,
-            HCENTER = 0x04,
-            LIFT = 0x10,
-            RIGHT = 0x20,
-            VCENTER = 0x40,
+            VCENTER = 0x03,
         };
 
-        int m_align;
+        enum Color
+        {
+            RED = 0x01,
+            GREE = 0x02,
+            BLUE = 0x03,
+            BLACK = 0x04,
+            WHITE = 0x05,
+        };
+
+        void SetHorAlign(HorAlignment align) { m_horAlign = align; }
+        void SetVerAlign(VerAlignment align) { m_verAlign = align; }
+        void SetColor(Color color) { m_color = color; } 
 
     private:
-        CStyle(int align = HCENTER | VCENTER)
-        : m_align(align) {}
+        CStyle()
+        : m_horAlign(HCENTER), m_verAlign(VCENTER), m_color(BLACK) {}
+
+        int m_horAlign;
+        int m_verAlign;
+        int m_color;
     };
 };
 

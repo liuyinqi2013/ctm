@@ -18,15 +18,15 @@ namespace ctm
     {
         if (strIn.size() >= fixedLen) return strIn.substr(0, fixedLen);
 
-        if (align == 1) 
-            return strIn + StrNum(padding, fixedLen - strIn.size());
-        else if (align == 2)
+        if (align == CStyle::RIGHT) 
             return StrNum(padding, fixedLen - strIn.size()) + strIn;
+        else if (align == CStyle::LIFT)
+            return strIn + StrNum(padding, fixedLen - strIn.size());
         
         return StrNum(padding, floor((fixedLen - strIn.size()) / 2.0)) + strIn + StrNum(padding, ceil((fixedLen - strIn.size())/2.0));
     }
 
-    CStyle CCharTable::default_style(CStyle::HCENTER | CStyle::VCENTER);
+    CStyle CCharTable::default_style;
 
     CCharTable::CCharTable(size_t rowCnt, size_t colCnt)
     {
@@ -167,12 +167,22 @@ namespace ctm
         return topLine;
     }
 
+    void CRow::SetHight(size_t hight) 
+    { 
+        m_hight = std::min(hight, max_hight); 
+    }
+
     void CRow::ClearText()
     {
         for (size_t i = 0; m_cellVec.size(); ++i)
         {
             m_cellVec[i]->ClearText();
         }
+    }
+
+    void  CColumn::SetWidth(size_t width) 
+    { 
+        m_width = std::min(width, max_width); 
     }
 
     void CColumn::ClearText()
@@ -185,20 +195,58 @@ namespace ctm
 
     string CCell::LineString(size_t line)
     {
-        CStyle* style = Style();
-        if (style == NULL) style = &CCharTable::default_style;
         size_t width = m_pCol->m_width;
-        size_t begin = line * width;
-        size_t cnt = (m_text.size() + width - 1) / width;
-
-        if (begin >= m_text.size()) 
+        size_t hight = m_pPow->m_hight;
+        if (m_text.size() == 0) 
         {
             return StrNum(' ', width);
         }
-        else if(begin < m_text.size() && begin + width >= m_text.size())
+
+        CStyle* style = Style();
+        if (style == NULL) style = &CCharTable::default_style;
+
+        size_t cnt = (m_text.size() + width - 1) / width;
+        size_t beginLine = 0;
+        size_t endLine = hight;
+
+        switch (style->m_verAlign)
         {
+        case CStyle::TOP:
+            beginLine = 0;
+            break;
+        case CStyle::BOTTOM:
+            beginLine = max((size_t)0, hight - cnt);
+            break;
+        case CStyle::VCENTER:
+            beginLine = max((size_t)0, (size_t)floor((hight - cnt) / 2.0));
+            break;
+        default:
+            beginLine = 0;
+            break;
         }
-        
+
+        endLine = min(hight, beginLine + cnt);
+        printf("m_text:%s\n", m_text.c_str());
+        printf("hight:%d, width:%d, cnt:%d, line:%d\n", hight, width, cnt, line);
+        printf("beginLine:%d, endLine:%d\n", beginLine, endLine);
+
+        if ((int)line < (int)beginLine || (int)line >= (int)endLine) 
+        {
+            printf("xxxxxxxx\n");
+            return StrNum(' ', width);
+        }
+
+        if ((line - beginLine < cnt - 1) || cnt > hight)
+        {
+            printf("00000\n");
+            return FixedString(m_text.substr((line - beginLine) * width, width), width, style->m_horAlign);
+        }
+        else
+        {
+            printf("111111\n");
+            return FixedString(m_text.substr((line - beginLine) * width), width, style->m_horAlign);
+        }
+
         return StrNum(' ', width);
     }
 

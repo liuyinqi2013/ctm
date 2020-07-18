@@ -110,6 +110,31 @@ DECLARE_FUNC(tcdemo)
 DECLARE_FUNC(chartable)
 {
 	CCharTable tab(4, 5);
+	CStyle* style = tab.CreateStyle();
+
+	style->SetHorAlign(CStyle::LIFT);
+	style->SetVerAlign(CStyle::VCENTER);
+
+	tab.Write(0, 0, "id");
+	tab.Write(0, 1, "name");
+	tab.Write(0, 2, "age");
+	tab.Write(0, 3, "sexy");
+	tab.Write(0, 4, "addr");
+
+	tab.Column(0)->SetStyle(style);
+	tab.Column(4)->SetStyle(style);
+	tab.Column(4)->SetWidth(10);
+
+	for (int i = 1; i < 4; i++)
+	{
+		tab.Row(i)->SetHight(3);
+		tab.Write(i, 0, I2S(i+1));
+		tab.Write(i, 1, "panda");
+		tab.Write(i, 2, "10");
+		tab.Write(i, 3, "man");
+		tab.Write(i, 4, "sheng zheng baoan xi xiang");
+	}
+
 	tab.Print();
 	//cout << tab.TopLine() << endl;
 	//cout << StrNum('*', 10) << endl;
