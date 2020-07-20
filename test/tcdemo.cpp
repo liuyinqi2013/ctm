@@ -112,8 +112,8 @@ DECLARE_FUNC(chartable)
 	CCharTable tab(4, 5);
 	CStyle* style = tab.CreateStyle();
 
-	style->SetHorAlign(CStyle::LIFT);
-	style->SetVerAlign(CStyle::VCENTER);
+	style->SetHorAlign(CStyle::HCENTER);
+	style->SetVerAlign(CStyle::TOP);
 
 	tab.Write(0, 0, "id");
 	tab.Write(0, 1, "name");

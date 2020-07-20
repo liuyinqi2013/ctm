@@ -226,24 +226,24 @@ namespace ctm
         }
 
         endLine = min(hight, beginLine + cnt);
+        
+        /*
         printf("m_text:%s\n", m_text.c_str());
         printf("hight:%d, width:%d, cnt:%d, line:%d\n", hight, width, cnt, line);
         printf("beginLine:%d, endLine:%d\n", beginLine, endLine);
+        */
 
         if ((int)line < (int)beginLine || (int)line >= (int)endLine) 
         {
-            printf("xxxxxxxx\n");
             return StrNum(' ', width);
         }
 
         if ((line - beginLine < cnt - 1) || cnt > hight)
         {
-            printf("00000\n");
             return FixedString(m_text.substr((line - beginLine) * width, width), width, style->m_horAlign);
         }
         else
         {
-            printf("111111\n");
             return FixedString(m_text.substr((line - beginLine) * width), width, style->m_horAlign);
         }
 
