@@ -3,11 +3,14 @@
 #include <map>
 #include <unistd.h>
 #include <pthread.h>
+ #include <sys/stat.h>
 
 #include <cassert>
 #include <termios.h>
+#include <sys/sysmacros.h>
 #include "testdef.h"
 #include "common/chartable.h"
+#include "common/terminal.h"
 
 using namespace std;
 
@@ -114,6 +117,7 @@ DECLARE_FUNC(chartable)
 
 	style->SetHorAlign(CStyle::HCENTER);
 	style->SetVerAlign(CStyle::TOP);
+	style->SetColor(CStyle::RED);
 
 	tab.Write(0, 0, "id");
 	tab.Write(0, 1, "name");
@@ -138,5 +142,101 @@ DECLARE_FUNC(chartable)
 	tab.Print();
 	//cout << tab.TopLine() << endl;
 	//cout << StrNum('*', 10) << endl;
+	return 0;
+}
+
+void ShowStat(struct stat& sb)
+{
+	printf("---------------------------------------------------\n");
+
+	printf("ID of containing device:  [%lx,%lx]\n",
+	     (long) major(sb.st_dev), (long) minor(sb.st_dev));
+
+	printf("File type:                ");
+
+	switch (sb.st_mode & S_IFMT) {
+	case S_IFBLK:  printf("block device\n");            break;
+	case S_IFCHR:  printf("character device\n");        break;
+	case S_IFDIR:  printf("directory\n");               break;
+	case S_IFIFO:  printf("FIFO/pipe\n");               break;
+	case S_IFLNK:  printf("symlink\n");                 break;
+	case S_IFREG:  printf("regular file\n");            break;
+	case S_IFSOCK: printf("socket\n");                  break;
+	default:       printf("unknown?\n");                break;
+	}
+
+	printf("I-node number:            %ld\n", (long) sb.st_ino);
+
+	printf("Mode:                     %lo (octal)\n",
+	        (unsigned long) sb.st_mode);
+
+	printf("Link count:               %ld\n", (long) sb.st_nlink);
+	printf("Ownership:                UID=%ld   GID=%ld\n",
+	        (long) sb.st_uid, (long) sb.st_gid);
+
+	printf("Preferred I/O block size: %ld bytes\n",
+	        (long) sb.st_blksize);
+	printf("File size:                %lld bytes\n",
+	        (long long) sb.st_size);
+	printf("Blocks allocated:         %lld\n",
+	        (long long) sb.st_blocks);
+
+	printf("Last status change:       %s", ctime(&sb.st_ctime));
+	printf("Last file access:         %s", ctime(&sb.st_atime));
+	printf("Last file modification:   %s", ctime(&sb.st_mtime));
+
+	printf("---------------------------------------------------\n");
+}
+
+DECLARE_FUNC(iostat)
+{
+	struct stat sb;
+	if (argc >= 2)
+	{
+		if (stat(argv[1], &sb)) 
+		{
+			printf("get stat faild:%s\n", argv[1]);
+			return -1;
+		}
+	}
+	else
+	{
+		if(fstat(STDOUT_FILENO, &sb) == -1) 
+		{
+			printf("get stat faild:STDOUT");
+			return -1;
+		}
+	}
+
+	ShowStat(sb);
+
+	return 0;
+}
+
+DECLARE_FUNC(color)
+{
+	if (IsCharDevice(stdout))
+	{
+		printf("%s\n", ColorString("black", BLACK).c_str());
+		printf("%s\n", ColorString("red", RED).c_str());
+		printf("%s\n", ColorString("green", GREEN).c_str());
+		printf("%s\n", ColorString("yellow", YELLOW).c_str());
+		printf("%s\n", ColorString("bule", BLUE).c_str());
+		printf("%s\n", ColorString("purple", PURPLE).c_str());
+		printf("%s\n", ColorString("skybule", SKYBLUE).c_str());
+		printf("%s\n", ColorString("white", WHITE).c_str());
+	}
+	else
+	{
+		printf("%s\n", "black");
+		printf("%s\n", "red");
+		printf("%s\n", "green");
+		printf("%s\n", "yellow");
+		printf("%s\n", "bule");
+		printf("%s\n", "purple");
+		printf("%s\n", "skybule");
+		printf("%s\n", "white");
+	}
+
 	return 0;
 }

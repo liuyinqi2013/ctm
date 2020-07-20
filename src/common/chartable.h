@@ -43,7 +43,7 @@ namespace ctm
         void Write(size_t row, size_t col, const string& text);
         void ClearText();
 
-        string ToString() const;
+        string ToString(bool bandColor = false) const;
         void Print(FILE* out = stdout) const;
         void Print(ostream& out);
 
@@ -141,8 +141,6 @@ namespace ctm
         void SetText(const string& text) { m_text = text; }
         void SetStyle(CStyle* style) { m_style = style; }
 
-        string LineString(size_t line);
-
     private:
         CCell(CRow* pRow, CColumn* pCol) 
         : m_pPow(pRow), m_pCol(pCol), m_text(""), m_style(NULL), m_offset(0) { }
@@ -154,6 +152,9 @@ namespace ctm
             if (m_pPow->m_style) return m_pPow->m_style;
             return m_pPow->m_pParent->m_style;
         }
+
+        string ColorLineString(size_t line);
+        string LineString(size_t line);
 
     protected:
         CRow* m_pPow;
@@ -184,11 +185,14 @@ namespace ctm
 
         enum Color
         {
+            BLACK = 0x00,
             RED = 0x01,
-            GREE = 0x02,
-            BLUE = 0x03,
-            BLACK = 0x04,
-            WHITE = 0x05,
+            GREEN = 0x02,
+            YELLOW = 0x03,
+            BLUE = 0x04,
+            PURPLE = 0x05,
+            SKYBLUE = 0x06,
+            WHITE = 0x07,
         };
 
         void SetHorAlign(HorAlignment align) { m_horAlign = align; }
@@ -197,7 +201,7 @@ namespace ctm
 
     private:
         CStyle()
-        : m_horAlign(HCENTER), m_verAlign(VCENTER), m_color(BLACK) {}
+        : m_horAlign(HCENTER), m_verAlign(VCENTER), m_color(SKYBLUE) {}
 
         int m_horAlign;
         int m_verAlign;

@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <math.h>
+#include "terminal.h"
 #include "chartable.h"
 
 namespace ctm
@@ -118,7 +119,7 @@ namespace ctm
 
     }
 
-    string CCharTable::ToString() const
+    string CCharTable::ToString(bool bandColor) const
     {
         string topLine = TopLine();
         string text = "\n" + topLine + '\n';
@@ -128,8 +129,13 @@ namespace ctm
             for (size_t i = 0; i < m_rowVec[row]->m_hight; ++i)
             {
                 line = m_side;
-                for (size_t col = 0; col < m_colVec.size(); ++col){
-                    line += StrNum(' ', m_gap) + m_rowVec[row]->Cell(col)->LineString(i) + StrNum(' ', m_gap) + m_side;
+                for (size_t col = 0; col < m_colVec.size(); ++col) {
+                    if (bandColor) {
+                        line += StrNum(' ', m_gap) + m_rowVec[row]->Cell(col)->ColorLineString(i) + StrNum(' ', m_gap) + m_side;
+                    }
+                    else {
+                        line += StrNum(' ', m_gap) + m_rowVec[row]->Cell(col)->LineString(i) + StrNum(' ', m_gap) + m_side;
+                    }
                 }
                 text += line + "\n";
             }
@@ -141,7 +147,7 @@ namespace ctm
 
     void CCharTable::Print(FILE* out) const
     {
-        fprintf(out, ToString().c_str());
+        fprintf(out, ToString(IsCharDevice(out)).c_str());
     }
 
     void CCharTable::Print(ostream& out)
@@ -226,7 +232,7 @@ namespace ctm
         }
 
         endLine = min(hight, beginLine + cnt);
-        
+
         /*
         printf("m_text:%s\n", m_text.c_str());
         printf("hight:%d, width:%d, cnt:%d, line:%d\n", hight, width, cnt, line);
@@ -248,6 +254,11 @@ namespace ctm
         }
 
         return StrNum(' ', width);
+    }
+
+    string CCell::ColorLineString(size_t line)
+    {
+        return ColorString(LineString(line), Style()->m_color);
     }
 
 }
