@@ -57,7 +57,7 @@ void Test(int argc, char **argv)
 	}
 }
 
-void TestTcpClient(int argc, char **argv)
+void EchoClient(int argc, char **argv)
 {
 	CCommonQueue recv;
 	CTcpClient client(argv[1], atoi(argv[2]));
@@ -70,11 +70,13 @@ void TestTcpClient(int argc, char **argv)
 
 	char buf[4096] = {0};
 	int len = 0;
-	FILE* fin = fopen(argv[3], "rb+");
-	FILE* fout = fopen("server_echo", "wb");
+	int sendTotalLen = 0;
+	int recvTotalLen = 0;
+
+	FILE* fin  = stdin;
+	FILE* fout = fopen("echo_return", "wb");
 	client.OnRunning();
 	bool isConn = false;
-	bool send = false;
 	CClock clock;
 	while(1)
 	{
@@ -84,14 +86,7 @@ void TestTcpClient(int argc, char **argv)
 			if (message->m_type == MSG_SYS_NET_DATA)
 			{
 				shared_ptr<CNetDataMessage> netdata = dynamic_pointer_cast<CNetDataMessage>(message);
-				//DEBUG_LOG("Recv Data len = %d" , netdata->m_buf->len);
-				if (strncmp("&&END", netdata->m_buf->data, 5) == 0)
-				{
-					fclose(fout);
-					recv.PopFront();
-					DEBUG_LOG("End!");
-					break;
-				}
+				recvTotalLen += netdata->m_buf->len;
 				fwrite(netdata->m_buf->data, 1, netdata->m_buf->len, fout);
 			}
 			else if (message->m_type == MSG_SYS_NET_CONN)
@@ -100,6 +95,7 @@ void TestTcpClient(int argc, char **argv)
 				DEBUG_LOG("Conn ip : %s, port : %d, opt : %d", netconn->m_conn.ip.c_str(),
 						  netconn->m_conn.port,
 						  netconn->m_opt);
+
 				if (netconn->m_opt == CNetConnMessage::CONNECT_OK)
 				{
 					isConn = true;
@@ -112,18 +108,19 @@ void TestTcpClient(int argc, char **argv)
 			recv.PopFront();
 		}
 		
-		if (!send && isConn)
+		if (isConn)
 		{
 			len = fread(buf, 1, 4096, fin);
+
 			if (len > 0)
 			{
+				sendTotalLen += len;
 				client.SyncSendData(buf, len);
 			}
-			if (!send && feof(fin))
+
+			if (feof(fin))
 			{
-				client.SyncSendData("&&END", 5);
-				DEBUG_LOG("Send End!");
-				send = true;
+				client.WriteClose();
 			}
 		}
 		else
@@ -132,15 +129,18 @@ void TestTcpClient(int argc, char **argv)
 		}
 	}
 
+	fclose(fout);
 	client.UnInit();
+	DEBUG_LOG("send len %d",  sendTotalLen);
+	DEBUG_LOG("recv len %d", recvTotalLen);
 	DEBUG_LOG("%s", clock.RunInfo().c_str());
 }
 
-DECLARE_FUNC_EX(client)
+DECLARE_FUNC_EX(echo_client)
 {
-	CHECK_PARAM(argc, 4, "client [ip] [port] [filename].");
+	CHECK_PARAM(argc, 3, "echo_client [ip] [port].");
 
-	TestTcpClient(argc, argv);
+	EchoClient(argc, argv);
 	//CLog::GetInstance()->SetLogName("testclient");
 	//CLog::GetInstance()->SetLogPath("./log/");
 

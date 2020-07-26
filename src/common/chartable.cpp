@@ -176,6 +176,7 @@ namespace ctm
     void CRow::SetHight(size_t hight) 
     { 
         m_hight = std::min(hight, max_hight); 
+        m_hight = std::max(m_hight, min_hight); 
     }
 
     void CRow::ClearText()
@@ -189,6 +190,7 @@ namespace ctm
     void  CColumn::SetWidth(size_t width) 
     { 
         m_width = std::min(width, max_width); 
+        m_width = std::max(m_width, min_width);
     }
 
     void CColumn::ClearText()

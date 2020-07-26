@@ -52,6 +52,19 @@ namespace ctm
         return Connect();
     }
 
+    void CTcpClient::ReadClose()
+    {
+        shutdown(m_connFd, SHUT_RD);
+        DEBUG_LOG("status : %d", GetTcpState(m_connFd));
+    }
+
+    void CTcpClient::WriteClose()
+    {
+        shutdown(m_connFd, SHUT_WR);
+        DEBUG_LOG("status : %d", GetTcpState(m_connFd));
+        m_sendQueue->Clear();
+    }
+
     int CTcpClient::SendData(char* data, int len)
     {
         if (!IsValidNetLen(len)) return -1;

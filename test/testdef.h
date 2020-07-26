@@ -17,6 +17,7 @@
 #include "common/random.h"
 #include "common/inifile.h"
 #include "common/message.h"
+#include "common/terminal.h"
 
 #include "net/socket.h"
 #include "ipc/mmap.h"

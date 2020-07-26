@@ -82,6 +82,21 @@ inline std::string GetSockErrMsg(int errCode)
 
 namespace ctm
 {
+	enum TcpState
+	{
+		TCP_ESTABLISHED = 1,
+		TCP_SYN_SENT,
+		TCP_SYN_RECV,
+		TCP_FIN_WAIT1,
+		TCP_FIN_WAIT2,
+		TCP_TIME_WAIT,
+		TCP_CLOSE,
+		TCP_CLOSE_WAIT,
+		TCP_LAST_ACK,
+		TCP_LISTEN,
+		TCP_CLOSING
+	};
+
 	SOCKET_T Accept(SOCKET_T sockfd, string& outIp, int& outPort);
 
 	int Connect(SOCKET_T sockfd, const string& ip, int port);
@@ -92,7 +107,11 @@ namespace ctm
 
 	int GetSockName(SOCKET_T sockfd, string& outIp, int& outPort);
 
+	int GetTcpState(SOCKET_T sockfd);
+
 	int SetReuseAddr(SOCKET_T sockfd);
+
+	int SetNoDelay(SOCKET_T sockfd);
 
 	std::string LocalHostName();
 

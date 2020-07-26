@@ -11,6 +11,7 @@
 #include "testdef.h"
 #include "common/chartable.h"
 #include "common/terminal.h"
+#include "common/queue.h"
 
 using namespace std;
 
@@ -115,8 +116,8 @@ DECLARE_FUNC(chartable)
 	CCharTable tab(4, 5);
 	CStyle* style = tab.CreateStyle();
 
-	style->SetHorAlign(CStyle::HCENTER);
-	style->SetVerAlign(CStyle::TOP);
+	style->SetHorAlign(CStyle::RIGHT);
+	style->SetVerAlign(CStyle::VCENTER);
 	style->SetColor(CStyle::RED);
 
 	tab.Write(0, 0, "id");
@@ -236,6 +237,46 @@ DECLARE_FUNC(color)
 		printf("%s\n", "purple");
 		printf("%s\n", "skybule");
 		printf("%s\n", "white");
+	}
+
+	return 0;
+}
+
+DECLARE_FUNC(testqueue)
+{
+	CSafetyQueue<int> queue;
+	queue.PushBack(1);
+	queue.PushBack(2);
+
+	if (CSafetyQueue<int>::ERR_TIME_OUT == queue.PushBack(3, 500))
+	{
+		printf("PushBack time out\n");
+	}
+
+	if (CSafetyQueue<int>::ERR_TIME_OUT == queue.PushFront(4, 500))
+	{
+		printf("PushFront time out\n");
+	}
+
+	int a = 0;
+
+	while (1)
+	{
+		int ret = queue.GetPopBack(a, 500);
+		if (CSafetyQueue<int>::ERR_TIME_OUT == ret)
+		{
+			printf("GetPopBack time out\n");
+		}
+		else if (ret == -1)
+		{
+			printf("error !\n");
+			break;
+		}
+		else
+		{
+			printf("a = %d\n", a);
+		}
+		
 	}
 
 	return 0;

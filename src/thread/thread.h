@@ -95,7 +95,7 @@ namespace ctm
 		static void* ThreadEnterFun(void* arg);
 #endif
 		virtual int Run();
-	private:
+	protected:
 		thread_t m_thread;
 		int  m_iStatus;
 		bool m_bDetach;

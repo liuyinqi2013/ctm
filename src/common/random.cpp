@@ -2,8 +2,6 @@
 
 namespace ctm
 {
-    CRandom CRandom::global_random;
-    
     unsigned int CRandom::UIntRandom(unsigned int beg, unsigned int end)
     {
         if (beg > end)

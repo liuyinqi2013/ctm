@@ -103,6 +103,17 @@ namespace ctm
 		return 0;
 	}
 
+	int GetTcpState(SOCKET_T sockfd)
+	{
+		int val = 0;
+		int len = sizeof(val);
+		if (getsockopt(sockfd, IPPROTO_TCP, TCP_INFO, &val, (SOCKETLEN_T*)&len) != 0)
+		{
+			return -1;
+		}
+		return  val;
+	}
+
 	int SetReuseAddr(SOCKET_T sockfd)
 	{
 		int val = 1;
@@ -110,7 +121,24 @@ namespace ctm
 		{
 			return -1;
 		}
+
+		val = 1;
+		if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEPORT, (const char*)&val, sizeof(val)) != 0)
+		{
+			return -1;
+		}
 	
+		return 0;
+	}
+
+	int SetNoDelay(SOCKET_T sockfd)
+	{
+		int val = 1;
+		if (setsockopt(sockfd, IPPROTO_TCP, TCP_NODELAY, (const char*)&val, sizeof(val)) != 0)
+		{
+			return -1;
+		}
+
 		return 0;
 	}
 

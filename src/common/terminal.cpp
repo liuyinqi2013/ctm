@@ -36,7 +36,7 @@ namespace ctm
             return "\033[30m" + strIn +"\033[0m";
         case RED:
             return "\033[31m" + strIn +"\033[0m";
-        case GREE:
+        case GREEN:
             return "\033[32m" + strIn +"\033[0m";
         case YELLOW:
             return "\033[33m" + strIn +"\033[0m";

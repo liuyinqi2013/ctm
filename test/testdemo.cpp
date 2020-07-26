@@ -1,6 +1,7 @@
 #include "testdef.h"
+#include "common/queue.h"
 
-CCommonQueue queue1;
+CSafetyQueue<string> queue1;
 
 void ShowSign(int sign)
 {
@@ -28,32 +29,32 @@ protected:
 	virtual int Run();
 };
 
-static int gvalue = 0x01020304;
 int TestThread::Run()
 {
 	int i = 0;
-	while (i < 100000)
+	string a;
+	int cnt = 0;
 	{
-		if (status)
+		CClock clock(m_strName);
+		while(1)
 		{
-			usleep(1);
-			if (i % 2 == 0)
+			int ret = queue1.GetPopFront(a, 1000);
+			if (ret == queue1.ERR_TIME_OUT)
 			{
-				gvalue = 0x04030201;
+				cout << m_strName << "GetPopFront time out" << endl;
+				break;
 			}
-			else
+			else if(ret == queue1.ERR_OK)
 			{
-				gvalue = 0x01020304;
+				cnt += 1;
+				//cout << m_strName <<" recv : " << a << endl;
+				//cout << m_strName <<" cnt : " << cnt << endl;
 			}
 		}
-		else
-		{
-			usleep(1);
-			printf("a = %0x\n", gvalue);
-		}
-		
-		i++;
+		cout << m_strName <<" cnt : " << cnt << endl;
+		cout << clock.RunInfo() << endl;
 	}
+
 	return 0;
 }
 
@@ -215,12 +216,25 @@ DECLARE_FUNC(msg)
 
 DECLARE_FUNC(message)
 {
-	TestThread t;
+	TestThread t(1);
+	TestThread t1(2);
+	t.SetName("thread1");
+	t1.SetName("thread2");
 	t.Start();
-	while(1)
+	t1.Start();
+
+	string a("main");
+	int cnt = 0;
+	for (int i = 0; i < 100000; i++)
 	{
-		cout << queue1.GetFront()->ToJsonString() << endl;
+		int ret = queue1.PushBack(a + I2S(i));
+		if (ret == queue1.ERR_TIME_OUT)
+		{
+			cout << "PushBack time out " << a + I2S(i) << endl;
+		}
 	}
+	
+	WaitEnd();
 	return 0;
 }
 

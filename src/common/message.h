@@ -28,19 +28,19 @@ namespace ctm
     class CMessage
     {
     public:
-        CMessage() : m_id(/*GenerateId()*/), m_type(0), m_createTime(time(NULL)){
-        }
+        CMessage() 
+        : m_id(), m_type(0), m_createTime(time(NULL))
+        { }
 
         CMessage(unsigned int type, unsigned long time = time(NULL)) 
-        : m_id(/*GenerateId()*/), m_type(type), m_createTime(time){   
-        }
+        : m_id(), m_type(type), m_createTime(time)
+        { }
 
         CMessage(const CMessage& other) 
-        : m_id(other.m_id), m_type(other.m_type), m_createTime(other.m_createTime){
-        }
+        : m_id(other.m_id), m_type(other.m_type), m_createTime(other.m_createTime)
+        { }
 
-        virtual ~CMessage() { 
-        }
+        virtual ~CMessage() { }
 
         CMessage& operator = (const CMessage& other) { CopyFrom(other); return *this; }
 

@@ -33,6 +33,8 @@ namespace ctm
         int ReConnect();
         void SetAutoReConnect(bool flag) { m_autoReconnect = flag; }
         void SetTryReconnectCount(unsigned int count) { m_tryReconnectCount = count; }
+        void ReadClose();
+        void WriteClose();
 
     protected:
         virtual int Run();

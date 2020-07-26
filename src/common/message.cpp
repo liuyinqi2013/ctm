@@ -196,7 +196,9 @@ namespace ctm
 
     void CCommonQueue::Clear() 
     {
+        pthread_mutex_lock(&m_mutex);
         m_queue.clear();
+        pthread_mutex_unlock(&m_mutex);
     }
 
     int CCommonQueue::Push(const shared_ptr<CMessage>& message, int pos)

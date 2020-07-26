@@ -73,6 +73,7 @@ namespace ctm
         friend class CCell;
         friend class CCharTable;
     public:
+        #define min_hight ((size_t)1)
         #define max_hight ((size_t)16)
         #define default_hight ((size_t)1)
 
@@ -103,6 +104,7 @@ namespace ctm
         friend class CCell;
         friend class CCharTable;
     public:
+        #define min_width ((size_t)1)
         #define max_width ((size_t)128)
         #define default_width ((size_t)8)
 

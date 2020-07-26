@@ -14,7 +14,10 @@ int Usage(int argc, char** argv)
     unordered_map<string, TestFuncion>::iterator it = pTestFunctionMap->begin();
     for(; it != pTestFunctionMap->end(); it++) 
     {
-        printf("    %s\n", it->first.c_str());
+        if (IsCharDevice(stdout))
+            printf("    %s\n", ColorString(it->first, SKYBLUE).c_str());
+        else
+            printf("    %s\n", it->first.c_str());
     }
 
     return 0;
