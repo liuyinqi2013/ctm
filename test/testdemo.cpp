@@ -1,5 +1,4 @@
 #include "testdef.h"
-#include "common/queue.h"
 
 CSafetyQueue<string> queue1;
 
@@ -410,7 +409,7 @@ list_node* ListReverse(list_node* head)
 	return q;
 }
 
-DECLARE_FUNC(ListReverse)
+DECLARE_FUNC(listreverse)
 {
 	list_node node10(10, NULL);
 	list_node node9(9, &node10);

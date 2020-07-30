@@ -65,7 +65,7 @@ namespace ctm
         m_sendQueue->Clear();
     }
 
-    int CTcpClient::SendData(char* data, int len)
+    int CTcpClient::SendData(const char* data, int len)
     {
         if (!IsValidNetLen(len)) return -1;
         shared_ptr<CNetDataMessage> message = make_shared<CNetDataMessage>();
@@ -75,7 +75,7 @@ namespace ctm
         return m_sendQueue->PushBack(message);
     }
 
-    int CTcpClient::SyncSendData(char* data, int len)
+    int CTcpClient::SyncSendData(const char* data, int len)
     {
         if (!IsValidNetLen(len)) return -1;
         int ret = SendPacketSize(m_connFd, len);

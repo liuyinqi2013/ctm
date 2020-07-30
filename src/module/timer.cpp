@@ -202,7 +202,7 @@ namespace ctm
         unsigned long sleepTime = 1000000;
         long timeCost = 0;
         long timeLeft = 0;
-        unsigned long long currTime = MilliTimestamp();
+        unsigned long currTime = MilliTimestamp();
 
         CLockOwner Owner(m_mutex);
 

@@ -4,8 +4,8 @@
 #include <deque>
 #include <errno.h>
 #include <stdio.h>
+#include <pthread.h>
 #include <sys/time.h>
-#include "thread/mutex.h"
 
 namespace ctm
 {
@@ -202,7 +202,6 @@ namespace ctm
                         return ERR_TIME_OUT;
                     }
                     else if (ret != 0) {
-                        printf("error code : %d\n", ret);
                         pthread_mutex_unlock(&m_mutex);
                         return ERR_OTHER;
                     }

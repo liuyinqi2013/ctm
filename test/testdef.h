@@ -8,25 +8,8 @@
 #include <map>
 #include <unordered_map>
 
-#include "common/singleton.h"
-#include "common/string_tools.h"
-#include "common/time_tools.h"
-#include "common/msg.h"
-#include "common/com.h"
-#include "common/log.h"
-#include "common/random.h"
-#include "common/inifile.h"
-#include "common/message.h"
-#include "common/terminal.h"
-
-#include "net/socket.h"
-#include "ipc/mmap.h"
-#include "ipc/semaphore.h"
-#include "ipc/sharememory.h"
-#include "module/timer.h"
-
+#include "ctm.h"
 #include "md5/md5.h"
-#include "thread/thread.h"
 
 using namespace ctm;
 using namespace std;
@@ -49,16 +32,16 @@ static int FuncName##Ex(int argc, char** argv);\
 DECLARE_FUNC(FuncName) {\
 	CClock clock;\
 	FuncName##Ex(argc, argv);\
-	cout << clock.RunInfo() << endl;\
+	cerr << clock.RunInfo() << endl;\
 	return 0;\
 }\
 static int FuncName##Ex(int argc, char** argv)\
 
-#define CHECK_PARAM(argc, min, info)  { if (argc < min) {printf("%s\n", info); return -1; } }
+#define CHECK_PARAM(argc, min, info)  { if (argc < min) {fprintf(stderr, "%s\n", info); return -1; } }
 
 inline void WaitEnd()
 {
-	cout<<"Please enter any to exit!"<<endl;
+	cerr<<"Please enter any to exit!"<<endl;
 	int a;
 	cin >> a;
 }

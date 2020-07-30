@@ -1,25 +1,25 @@
 RM=rm -rf
 CP=cp -rf
 CC=g++
-CFLAGS= -c -Wall -g -std=c++11
+MKDIR=mkdir -p
+CFLAGS= -c -Wall -g -fPIC -std=c++11
 
-TARGET=ctm
+STATIC_LIB=libctm.a
+DYNAMIC_LIB=libctm.so
 BIN_PATH=../bin
-INSTALL=
+INSTALL=../lib
+INSTALL_INC=
+HEADERS=headers
 
 SUBDIRS=$(shell find ./* -type d)
 INC_SUBDIRS=$(shell find ./* -type d | awk -F' ' '{print "-I"$$0}')
 INC_PATH=$(INC_SUBDIRS) -I./ -I../third_party/include
-LIB_PATH=-L../third_party/lib/
-STATIC_LIB=../third_party/lib/libjsoncpp.a
-DYNAMIC_LIB=-lpthread -ldl
-LIB=$(DYNAMIC_LIB) $(STATIC_LIB)
+LIB_PATH=
+LIB=
 
 C_SRC=$(shell find . -type f | grep "\.c$$" | grep -v grep)
-#C_SRC=$(notdir $(C_SRC_NAME)) 
 C_OBJ=$(patsubst %.c, %.o, $(C_SRC))
 CPP_SRC=$(shell find . -type f | grep "\.cpp$$" | grep -v grep)
-#CPP_SRC=$(notdir $(CPP_SRC_NAME)) 
 CPP_OBJ=$(patsubst %.cpp, %.o, $(CPP_SRC))
 OBJS=$(C_OBJ) $(CPP_OBJ)
 
@@ -28,17 +28,23 @@ VPATH=$(SUBDIRS)
 
 .PHONY:all
 	
-all:$(TARGET)
+all:$(STATIC_LIB) $(DYNAMIC_LIB) $(HEADERS)
 	
-$(TARGET):$(OBJS)
-	$(CC) -o $@ $(OBJS) $(LIB_PATH) $(LIB)
+$(STATIC_LIB):$(OBJS)
+	ar -cr $@ $(OBJS) $(LIB_PATH) $(LIB)
+$(DYNAMIC_LIB):$(OBJS)
+	$(CC) -shared -o $@ $(OBJS) $(LIB_PATH) $(LIB)
 $(CPP_OBJ):%.o:%.cpp
 	$(CC) $(CFLAGS) $(INC_PATH) $< -o $@
 $(C_OBJ):%.o:%.c
 	$(CC) $(CFLAGS) $(INC_PATH) $< -o $@
+$(HEADERS):
+	./header.sh > ctm.h
 
 install:
-	$(CP) $@ $(BIN_PATH)
-	
+	$(CP) $(STATIC_LIB) $(DYNAMIC_LIB) $(INSTALL)
+	$(MKDIR) $(INSTALL_INC)
+	$(CP) *.h $(INSTALL_INC)
+
 clean:
-	$(RM) $(TARGET) $(OBJS)
+	$(RM) $(STATIC_LIB) $(DYNAMIC_LIB) $(OBJS)

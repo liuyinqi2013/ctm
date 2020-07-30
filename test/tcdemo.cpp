@@ -9,9 +9,6 @@
 #include <termios.h>
 #include <sys/sysmacros.h>
 #include "testdef.h"
-#include "common/chartable.h"
-#include "common/terminal.h"
-#include "common/queue.h"
 
 using namespace std;
 

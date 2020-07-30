@@ -2,15 +2,12 @@
 #define CTM_SERVER_SERVER_H__
 #include "thread/thread.h"
 #include "module/module.h"
-
-class CTcpServer;
-class CCommonQueue;
-class CTimer;
-class CTimerMessage;
-class CNetConnMessage;
+#include "net/netpacket.h"
 
 namespace ctm
 {
+    class CTcpServer;
+    
     class CServer : public CModule, public CThread
     {
     public:

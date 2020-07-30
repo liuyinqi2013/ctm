@@ -27,8 +27,8 @@ namespace ctm
         virtual int UnInit();
         virtual int OnRunning();
 
-        int SendData(char* data, int len);
-        int SyncSendData(char* data, int len);
+        int SendData(const char* data, int len);
+        int SyncSendData(const char* data, int len);
         int Connect();
         int ReConnect();
         void SetAutoReConnect(bool flag) { m_autoReconnect = flag; }

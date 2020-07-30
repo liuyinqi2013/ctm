@@ -1,5 +1,6 @@
 #include <assert.h>
 #include "net/tcpserver.h"
+#include "net/netpacket.h"
 #include "common/message.h"
 #include "common/macro.h"
 #include "module/timer.h"

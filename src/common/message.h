@@ -100,7 +100,7 @@ namespace ctm
 	class Register##ClassName\
 	{\
 	public:\
-		Register##ClassName() { RegisterMessage(MsgType, Function##ClassName); }\
+		Register##ClassName() { RegisterMessage(MsgType, Function##ClassName); delete this; }\
 	};\
 	static Register##ClassName *globalRegister##ClassName = new Register##ClassName()
 	
