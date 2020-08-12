@@ -89,7 +89,7 @@ namespace ctm
 		return 0;
 	}
 
-	int GetSockeName(SOCKET_T sockfd, string& outIp, int& outPort)
+	int GetSockName(SOCKET_T sockfd, string& outIp, int& outPort)
 	{
 		struct sockaddr_in m_sockAddrIn = {0};
 		int len = sizeof(m_sockAddrIn);

@@ -38,6 +38,7 @@ namespace ctm
         m_rowCnt = rowCnt;
         m_colCnt = colCnt;
         m_gap = 1;
+        m_isNoFrame = false;
 
         for (size_t i = 0; i < m_rowCnt; ++i)
         {
@@ -121,25 +122,33 @@ namespace ctm
 
     string CCharTable::ToString(bool bandColor) const
     {
-        string topLine = TopLine();
-        string text = "\n" + topLine + '\n';
+        string side;
+        string topLine;
+
+        if (!m_isNoFrame)
+        {
+            side = m_side;
+            topLine = TopLine();
+        }
+
+        string text = "\n" + topLine;
         string line;
         for (size_t row = 0; row < m_rowVec.size(); ++row)
         {
             for (size_t i = 0; i < m_rowVec[row]->m_hight; ++i)
             {
-                line = m_side;
+                line = side;
                 for (size_t col = 0; col < m_colVec.size(); ++col) {
                     if (bandColor) {
-                        line += StrNum(' ', m_gap) + m_rowVec[row]->Cell(col)->ColorLineString(i) + StrNum(' ', m_gap) + m_side;
+                        line += StrNum(' ', m_gap) + m_rowVec[row]->Cell(col)->ColorLineString(i) + StrNum(' ', m_gap) + side;
                     }
                     else {
-                        line += StrNum(' ', m_gap) + m_rowVec[row]->Cell(col)->LineString(i) + StrNum(' ', m_gap) + m_side;
+                        line += StrNum(' ', m_gap) + m_rowVec[row]->Cell(col)->LineString(i) + StrNum(' ', m_gap) + side;
                     }
                 }
                 text += line + "\n";
             }
-            text += topLine + "\n";
+            text += topLine;
         }
 
         return text;
@@ -170,7 +179,7 @@ namespace ctm
         {
             topLine += StrNum(m_top, m_colVec[i]->m_width + 2 * m_gap) + m_corner;
         }
-        return topLine;
+        return topLine + "\n";
     }
 
     void CRow::SetHight(size_t hight) 

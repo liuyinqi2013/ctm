@@ -50,7 +50,17 @@ namespace ctm
         CStyle* CreateStyle();
         void SetStyle(CStyle* style) { m_style = style; }
         string TopLine() const;
-    
+
+        void SetTop(char top) { m_top = top; }
+        void SetSide(char side) { m_side = side; }
+        void SetCorner(char corner) { m_corner = corner; }
+
+        void SetNoFrame(bool b) { m_isNoFrame = b; }
+        void SetGapCout(size_t count ) { m_gap = count; }
+
+        size_t GapCount() const  { return m_gap; }
+        bool NoFrame() const { return m_isNoFrame; }
+     
     public:
         string m_tabName;
         char m_top;
@@ -66,6 +76,7 @@ namespace ctm
         vector<CStyle*> m_styleVec;
         list<CCell*> m_cellList;
         size_t m_gap;
+        bool m_isNoFrame;
     };
 
     class CRow
@@ -78,6 +89,8 @@ namespace ctm
         #define default_hight ((size_t)1)
 
         ~CRow() {}
+
+        size_t Hight() const { return m_hight; }
 
         void SetHight(size_t hight);
         void SetStyle(CStyle* style) { m_style = style; }
@@ -110,6 +123,7 @@ namespace ctm
 
         ~CColumn() { }
 
+        size_t Width() const { return m_width; }
         void SetWidth(size_t width);
 
         void SetStyle(CStyle* style) { m_style = style; }

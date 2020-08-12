@@ -80,14 +80,20 @@ namespace ctm
 		int m_logLevel;
 	};
 
-#define DEBUG_LOG(format,...) CLog::GetInstance()->Write(CLog::LOG_DEBUG, "[%s:%d]:" format, __FILE__, __LINE__, ##__VA_ARGS__)
-#define ERROR_LOG(format,...) CLog::GetInstance()->Write(CLog::LOG_ERROR, "[%s:%d]:" format, __FILE__, __LINE__, ##__VA_ARGS__)
-#define WARN_LOG(format,...) CLog::GetInstance()->Write(CLog::LOG_WARN, "[%s:%d]:" format, __FILE__, __LINE__, ##__VA_ARGS__)
-#define INFO_LOG(format,...) CLog::GetInstance()->Write(CLog::LOG_INFO, "[%s:%d]:" format, __FILE__, __LINE__, ##__VA_ARGS__)
-
+#define DEBUG_LOG(format, ...) CLog::GetInstance()->Write(CLog::LOG_DEBUG, "[%s:%d]:" format, __FILE__, __LINE__, ##__VA_ARGS__)
+#define ERROR_LOG(format, ...) CLog::GetInstance()->Write(CLog::LOG_ERROR, "[%s:%d]:" format, __FILE__, __LINE__, ##__VA_ARGS__)
+#define WARN_LOG(format, ...) CLog::GetInstance()->Write(CLog::LOG_WARN, "[%s:%d]:" format, __FILE__, __LINE__, ##__VA_ARGS__)
+#define INFO_LOG(format, ...) CLog::GetInstance()->Write(CLog::LOG_INFO, "[%s:%d]:" format, __FILE__, __LINE__, ##__VA_ARGS__)
 #define FUNC_BEG() DEBUG_LOG("Begin...")
 #define FUNC_END() DEBUG_LOG("End...")
 
+#define CTM_DEBUG_LOG(log, format, ...) if (log) (log)->Write(CLog::LOG_DEBUG, "[%s:%d]:" format, __FILE__, __LINE__, ##__VA_ARGS__)
+#define CTM_ERROR_LOG(log, format, ...) if (log) (log)->Write(CLog::LOG_ERROR, "[%s:%d]:" format, __FILE__, __LINE__, ##__VA_ARGS__)
+#define CTM_WARN_LOG(log, format, ...)  if (log) (log)->Write(CLog::LOG_WARN,  "[%s:%d]:" format, __FILE__, __LINE__, ##__VA_ARGS__)
+#define CTM_INFO_LOG(log, format, ...)  if (log) (log)->Write(CLog::LOG_INFO,  "[%s:%d]:" format, __FILE__, __LINE__, ##__VA_ARGS__)
+
+#define CTM_FUNC_BEG(log) CTM_DEBUG_LOG(log, "Begin...")
+#define CTM_FUNC_END(log) CTM_DEBUG_LOG(log, "End...")
 };
 
 #endif

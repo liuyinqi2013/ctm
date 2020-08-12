@@ -215,6 +215,8 @@ namespace ctm
 		va_start(args, format);
 		m_logFileSize += vfprintf(m_stream, strFmt.c_str(), args);
 		va_end(args);
+		
+		fflush(m_stream);
 
 		return true;
 	}
