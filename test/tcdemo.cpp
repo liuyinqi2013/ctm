@@ -275,6 +275,53 @@ DECLARE_FUNC(testqueue)
 		}
 		
 	}
+	return 0;
+}
+
+DECLARE_FUNC(echo_ser)
+{
+	CHECK_PARAM(argc, 3, "echo_ser [ip] [port].");
+	CLog log("echo_ser");
+	CEchoServer echoServ;
+	if (echoServ.Init(argv[1], atoi(argv[2]), &log) == -1)
+	{
+		fprintf(stderr, "echo server init failed\n");
+		return -1;
+	}
+
+	echoServ.RunProc();
+
+	return 0;
+}
+
+DECLARE_FUNC(echo_cli)
+{
+	CHECK_PARAM(argc, 3, "echo_cli [ip] [port].");
+
+	CLog log("echo_cli");
+	CEchoClient echoCli;
+	CClock clock;
+	if (echoCli.Init(argv[1], atoi(argv[2]), &log) == -1)
+	{
+		fprintf(stderr, "echo client init failed\n");
+		return -1;
+	}
+
+	/*
+	sigset_t set;
+	sigemptyset(&set);
+    sigaddset(&set, SIGQUIT);
+    sigaddset(&set, SIGPIPE);
+	sigaddset(&set, SIGSEGV);
+	sigaddset(&set, SIGFPE);
+    pthread_sigmask(SIG_BLOCK, &set, NULL);
+	*/
+
+	echoCli.RunProc();
+	
+	CTM_INFO_LOG(&log, "Send Over len = %d", echoCli.m_sendLen);
+	CTM_INFO_LOG(&log, "Recv Over len = %d", echoCli.m_recvLen);
+	CTM_INFO_LOG(&log, "%s", clock.RunInfo().c_str());
 
 	return 0;
 }

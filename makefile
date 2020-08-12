@@ -6,6 +6,6 @@ default: all
 	make -C third_party $@
 	make -C src $@
 	make -C test $@
-	make -C client $@
 	make -C game  $@
+	make -C client $@
 

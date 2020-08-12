@@ -189,7 +189,7 @@ namespace ctm
 
 		std::map<std::string, CPlayer*>::iterator it = m_mapOpenidPlayers.find(pMsg->m_openId);
 		CPlayer* pPlayer = NULL;
-		if (it != m_mapOpenidPlayers.end()) //可能掉线，重新登录。
+		if (it != m_mapOpenidPlayers.end())
 		{
 			pPlayer = it->second;
 			if (pPlayer->m_status == 1)
@@ -220,7 +220,7 @@ namespace ctm
 		m_mapSockPlayers[pMsg->m_sock] = pPlayer;
 
 		CLoginMsgS2C msg;
-		msg.m_gameInfo ="dou di zhu";
+		msg.m_gameInfo ="fightLandlord";
 		msg.m_onlineCount = m_mapOpenidPlayers.size();
 		pPlayer->SendMSG(&msg);
 		
