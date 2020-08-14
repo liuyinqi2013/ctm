@@ -21,42 +21,23 @@ namespace ctm
 
     int CEchoClient::Init(const string& ip, unsigned int port, CLog* log)
     {
-        m_log = log;
-
-        if (InitBase() == -1)
+        if (CBaseServer::Init(log) == -1)
         {
             return -1;
         }
 
-        m_conn = ConnectConn(ip, port);
+        m_conn = Connect(ip, port);
         if (m_conn == NULL)
         {
             return -1;
         }
 
-        SetNonBlock(STDIN_FILENO);
-
-        m_stdin = m_connPool->Get(STDIN_FILENO);
-        m_stdin->fd = STDIN_FILENO;
-        m_stdin->type = FileType(STDIN_FILENO);
-        m_stdin->status = CConn::ACTIVE;
-        m_stdin->isListen = false;
-        m_stdin->log = m_log;
-        m_stdin->action = this;
-        m_stdin->event.fd = STDIN_FILENO;
-        m_stdin->event.data = m_stdin;
-        m_stdin->event.handler = m_eventHandler;
-        m_stdin->event.monitor = m_eventMonitor;
-
-        int err = m_eventMonitor->AddEvent(&m_stdin->event, EVENT_READ | EVENT_EPOLL_ET);
-        if (err)
+        m_stdin = CreateConn(STDIN_FILENO, EVENT_READ | EVENT_EPOLL_ET);
+        if (m_stdin == NULL)
         {
-            CTM_DEBUG_LOG(m_log, "AddEvent faield %d:%s!", err, strerror(err));
-            m_connPool->Free(m_stdin);
+            CTM_ERROR_LOG(m_log, "CreateConn conn failed!");
             return -1;
         }
-
-        m_status = INIT;
 
         return 0;
     }
@@ -74,32 +55,25 @@ namespace ctm
         if (conn == m_stdin)
         {
             ret = conn->Recv(&buf);
+
+            if (buf.offset > 0)
+            {
+                m_conn->AsynSend(buf.data, buf.offset);
+                m_sendLen +=  buf.offset;
+            }
+
             switch (ret)
             {
             case IO_RD_OK:
-                m_conn->AsynSend(buf.data, buf.offset);
-                m_sendLen +=  buf.offset;
                 buf.offset = 0;
                 break;
             case IO_RD_AGAIN:
-                { 
-                    if (buf.offset > 0) 
-                    {
-                        m_conn->AsynSend(buf.data, buf.offset);
-                        m_sendLen +=  buf.offset;
-                    }
-                }
                 break;
             case IO_RD_CLOSE:
                 { 
-                    if (buf.offset > 0) 
-                    {
-                        m_conn->AsynSend(buf.data, buf.offset);
-                        m_sendLen +=  buf.offset;
-                    }
                     if (m_conn->sendCache.size() == 0)
                     {
-                        CTM_DEBUG_LOG(m_log, "Send Over [%s]", m_conn->ToString().c_str());
+                        CTM_DEBUG_LOG(m_log, "Send Over len =%d [%s]", m_sendLen, m_conn->ToString().c_str());
                         m_conn->CloseWrite();
                         OnWriteClose(m_conn);
                     }
@@ -113,22 +87,18 @@ namespace ctm
         else if (conn == m_conn)
         {
             ret = conn->Recv(&buf);
+
+            if (buf.offset > 0)
+            {
+                write(STDOUT_FILENO, buf.data, buf.offset);
+                m_recvLen +=  buf.offset;
+            }
+
             switch (ret)
             {
             case IO_RD_OK:
-                write(STDOUT_FILENO, buf.data, buf.offset);;
-                m_recvLen +=  buf.offset;
-                buf.offset = 0;
-                break;
             case IO_RD_AGAIN:
             case IO_RD_CLOSE:
-                { 
-                    if (buf.offset > 0) 
-                    {
-                        write(STDOUT_FILENO, buf.data, buf.offset);
-                        m_recvLen +=  buf.offset;
-                    } 
-                }
                 break;
             case IO_EXCEPT:
                 CTM_DEBUG_LOG(m_log, "offset = %d IO_EXCEPT:[%s]", buf.offset, conn->ToString().c_str());
@@ -146,7 +116,8 @@ namespace ctm
         {
             if (m_stdin->status == CConn::CLOSED && m_conn->sendCache.size() == 0)
             {
-                CTM_DEBUG_LOG(m_log, "Send Over [%s]", conn->ToString().c_str());
+                CTM_DEBUG_LOG(m_log, "Send Over len =%d [%s]", m_sendLen, m_conn->ToString().c_str());
+
                 m_conn->CloseWrite();
                 OnWriteClose(m_conn);
             }
@@ -159,34 +130,28 @@ namespace ctm
 
         if (conn == m_stdin)
         {
-            m_connPool->Free(conn);
+            OnClose(conn);
         }
         else if (conn == m_conn)
         {
-            m_connPool->Free(conn);
+            OnClose(conn);
             m_status = EXIT;
         }
     }
-
+    
     void CEchoClient::OnException(CConn* conn)
     {
         CTM_DEBUG_LOG(m_log, "OnException:[%s]", conn->ToString().c_str());
 
         if (m_conn == conn)
         {
-            m_connPool->Free(conn);
+            OnClose(conn);
             m_status = EXIT;
         }
         else if (conn == m_stdin)
         {
-            if (m_conn->sendCache.size() == 0)
-            {
-                CTM_DEBUG_LOG(m_log, "Send Over [%s]", conn->ToString().c_str());
-                m_conn->CloseWrite();
-                OnWriteClose(m_conn);
-            }
-
-            m_connPool->Free(conn);
+            OnClose(conn);
+            m_status = EXIT;
         }
     }
 }

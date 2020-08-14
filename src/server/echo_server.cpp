@@ -13,32 +13,46 @@ namespace ctm
     {
 
     }
+
+    int CEchoServer::Init(const string& ip, unsigned int port, CLog* log)
+    {
+        if (CBaseServer::Init(log) == -1)
+        {
+            CTM_DEBUG_LOG(m_log, "CBaseServer init failed");
+            return -1;
+        }
+
+        CConn* listenConn = Listen(ip, port);
+        if (listenConn == NULL)
+        {
+            CTM_DEBUG_LOG(m_log, "Listen failed");
+            return -1;
+        }
+
+        return 0;
+    }
         
     void CEchoServer::OnRead(CConn* conn)
     {
         Buffer buf(4096);
         int ret = conn->Recv(&buf);
+        if (buf.offset > 0) 
+        {
+            conn->AsynSend(buf.data, buf.offset);
+        }
+             
         switch (ret)
         {
         case IO_RD_OK:
-            conn->AsynSend(buf.data, buf.offset);
-            buf.offset = 0;
             break;
         case IO_RD_AGAIN:
-            { 
-                if (buf.offset > 0) conn->AsynSend(buf.data, buf.offset); 
-            }
             break;
         case IO_RD_CLOSE:
             { 
-                if (buf.offset > 0)
-                {
-                    conn->AsynSend(buf.data, buf.offset);
-                }
                 if (conn->sendCache.size() == 0) 
                 {
-                    m_connPool->Free(conn);
                     CTM_DEBUG_LOG(m_log, "XXX IO_RD_CLOSE:[%s]", conn->ToString().c_str());
+                    OnClose(conn);
                 }
             }
             break;
@@ -54,8 +68,8 @@ namespace ctm
 
         if (conn->status == CConn::RDCLOSED && conn->sendCache.size() == 0)
         {
-            m_connPool->Free(conn);
             CTM_DEBUG_LOG(m_log, "XXX OnWrite:[%s]", conn->ToString().c_str());
+            OnClose(conn);
         }
     }
 
@@ -65,6 +79,6 @@ namespace ctm
         {
             m_status = EXIT;
         }
-        m_connPool->Free(conn);
+        OnClose(conn);
     }
 }

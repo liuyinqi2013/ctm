@@ -57,7 +57,6 @@ namespace ctm
 
     int  CTimerMessage::FormJsonString(const string &jsonString)
     {
-
         return 0;
     }
 
@@ -86,7 +85,7 @@ namespace ctm
 
     CTimer::CTimer()
     {
-        m_timerMaxCount =  default_timer_max_count;
+        m_timerMaxCount = default_timer_max_count;
         m_generateId = 1;
         assert(pipe(m_pipe) == 0);
     }

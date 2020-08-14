@@ -31,14 +31,13 @@ namespace ctm
                 conn->event.monitor->DelEvent(&conn->event, EVENT_WRITE);
                 conn->action->OnAsynConnOk(conn);
             }
-            else if(events & EVENT_EPOLL_LLHUP)
-            {
-                CTM_ERROR_LOG(conn->log, "Conn hanpend LLHUP event:[%s]", conn->ToString().c_str());
 
-                // conn->status = CConn::EXCEPT;
-                // conn->event.monitor->DelConn(conn);
-                // conn->action->OnException(conn);
+            /*
+            if(events & EVENT_EPOLL_LLHUP)
+            {
+                conn->action->OnHangUp(conn);
             }
+            */
         }
         else
         {
@@ -59,14 +58,17 @@ namespace ctm
                 conn->action->OnWrite(conn);
             }
 
+            /*
             if(events & EVENT_EPOLL_LLHUP)
             {
-                CTM_ERROR_LOG(conn->log, "Conn hanpend llhup event:[%s]", conn->ToString().c_str());
-
-                // conn->status = CConn::EXCEPT;
-                // conn->event.monitor->DelConn(conn);
-                // conn->action->OnException(conn);
+                conn->action->OnHangUp(conn);
             }
+
+            if (events & EVENT_ERROR)
+            {
+                conn->action->OnError(conn);
+            }
+            */
         }
         
         return 0;

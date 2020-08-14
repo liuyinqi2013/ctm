@@ -11,6 +11,8 @@ namespace ctm
         CEchoServer();
         virtual ~CEchoServer();
         
+        virtual int Init(const string& ip, unsigned int port, CLog* log = NULL);
+
         virtual void OnRead(CConn* conn);
         virtual void OnWrite(CConn* conn);
         virtual void OnException(CConn* conn);

@@ -29,7 +29,7 @@ namespace ctm
 		if (-1 == m_epollFd)
 		{
             int err = errno;
-            CTM_DEBUG_LOG(m_log, "epoll_create failed %d:%s", err, strerror(err));
+            CTM_ERROR_LOG(m_log, "epoll_create failed %d:%s", err, strerror(err));
 			return -1;
 		}
 
@@ -49,25 +49,34 @@ namespace ctm
 
     int CEpollEventMonitor::WaitProc(unsigned int msec)
     {
-        int n = epoll_wait(m_epollFd, eventList, MAX_WAIT_EVENTS, msec);
-
-        if (n == -1)
+        int n = 0;
+        
+        while (1)
         {
-            int err = errno;
-            CTM_DEBUG_LOG(m_log, "epoll_wait failed %d:%s", err, strerror(err));
-            return -1;
+            n = epoll_wait(m_epollFd, eventList, MAX_WAIT_EVENTS, msec);
+
+            if (n == -1)
+            {
+                int err = errno;
+                if (EINTR == err) continue;
+                CTM_ERROR_LOG(m_log, "epoll_wait failed %d:%s", err, strerror(err));
+                return -1;
+            }
+
+            break;
         }
 
         struct Event* ev = NULL;
         for (int i = 0; i < n; ++i)
         {
             ev = (struct Event*)eventList[i].data.ptr;
-            if (ev == NULL || ev->handler == NULL) {
-
+            if (ev == NULL || ev->handler == NULL) 
+            {
+                CTM_ERROR_LOG(m_log, "epoll_wait event is null.");
                 continue;
             }
 
-            ev->handler->OnProcessEvent(ev, ToCtmEvent(eventList[i].events));
+            ev->handler->OnProcessEvent(ev, ev->events & ToCtmEvent(eventList[i].events));
         }
 
         return 0;
@@ -80,7 +89,7 @@ namespace ctm
 
         if (ev->handler == NULL)
         {
-            CTM_DEBUG_LOG(m_log, "Event handler is null");
+            CTM_ERROR_LOG(m_log, "Event handler is null");
             return -1;
         }
 
@@ -100,7 +109,7 @@ namespace ctm
         if (iRet == -1)
         {
             int err = errno;
-            CTM_DEBUG_LOG(m_log, "epoll_ctl failed %d:%s", err, strerror(err));
+            CTM_ERROR_LOG(m_log, "epoll_ctl failed %d:%s", err, strerror(err));
             return -1;
         }
 
@@ -129,6 +138,8 @@ namespace ctm
         }
         else
         {
+            CTM_DEBUG_LOG(m_log, "Delete ev fd : %d", ev->fd);
+
             op = EPOLL_CTL_DEL;
             ee.events = 0;
             ee.data.ptr = NULL;
@@ -138,7 +149,7 @@ namespace ctm
         if (iRet == -1)
         {
             int err = errno;
-            CTM_DEBUG_LOG(m_log, "epoll_ctl failed %d:%s", err, strerror(err));
+            CTM_ERROR_LOG(m_log, "epoll_ctl failed %d:%s", err, strerror(err));
             return -1;
         }
 
@@ -162,7 +173,7 @@ namespace ctm
         conn->event.fd = conn->fd;
         conn->event.monitor = this;
 
-        return AddEvent(&conn->event, EVENT_READ | EVENT_EPOLL_ET);
+        return AddEvent(&conn->event, EVENT_READ | EVENT_WRITE | EVENT_EPOLL_ET | EVENT_PEER_CLOSE);
     }
 
     int CEpollEventMonitor::DelConn(CConn* conn)
@@ -180,7 +191,10 @@ namespace ctm
             CTM_ERROR_LOG(m_log, "epoll_ctl failed %d:%s [%s]", err, strerror(err), conn->ToString().c_str());
             return -1;
         }
+
+        CTM_DEBUG_LOG(m_log, "Del conn :[%s]", conn->ToString().c_str());
         
+        conn->event.events  = 0;
         conn->event.active  = 0;
 
         return 0;
@@ -224,7 +238,7 @@ namespace ctm
 
         if (events & EPOLLRDHUP)
         {
-            ctmEvent |= EVENT_PEER_CLOSE;
+            ctmEvent |= EVENT_READ;
         }
 
         if (events & EPOLLIN)
@@ -239,7 +253,12 @@ namespace ctm
 
         if (events & EPOLLHUP)
         {
-            ctmEvent |= EVENT_EPOLL_LLHUP;
+            ctmEvent |= EVENT_WRITE | EVENT_READ;
+        }
+
+        if (events & EPOLLERR)
+        {
+            ctmEvent |= EVENT_WRITE | EVENT_READ;
         }
 
         return ctmEvent;

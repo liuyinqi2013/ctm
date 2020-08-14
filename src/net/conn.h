@@ -51,6 +51,9 @@ namespace ctm
         CMutex mutex;
         Action* action;
         CLog* log;
+        void* data;
+        bool  readable;
+        bool  writable;
 
         string LocalStrIp() const;
         string PeerStrIp() const;
@@ -105,6 +108,9 @@ namespace ctm
         virtual void OnAsynConnOk(CConn* conn) = 0;
         virtual void OnAsynConnTimeOut(CConn* conn) = 0;
         virtual void OnException(CConn* conn) = 0;
+        virtual void OnHangUp(CConn* conn) = 0;
+        virtual void OnReady(CConn* conn) = 0;
+        virtual void OnError(CConn* conn) = 0;
     };
 
     class CConnPool
@@ -133,6 +139,19 @@ namespace ctm
     
     int Read(int fd, Buffer* buf, int& errnum);
     int Write(int fd, Buffer* buf, int& errnum);
+
+    enum CTYPE
+    {
+        C_FILE   = 0,
+        C_FDIR   = 1,
+        C_SOCK   = 2,
+        C_FIFO   = 3,
+        C_FCHR   = 4,
+        C_FBLK   = 5,
+        C_FLNK   = 6,
+        C_FREG   = 7,
+        C_OTHER  = 8,
+    };
 
     int FileType(int fd);
 }

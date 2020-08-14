@@ -10,8 +10,10 @@ namespace ctm
     #define EVENT_TIMEOUT       0x00000004
     #define EVENT_PEER_CLOSE    0x00000008
     #define EVENT_WRITE_EPIPE   0x00000010
+    #define EVENT_ERROR         0x00000020
 
     #define EVENT_EPOLL_RDHUP   EVENT_PEER_CLOSE
+    #define EVENT_EPOLL_ERROR   EVENT_ERROR
 
     #define EVENT_EPOLL_ET      0x00010000
     #define EVENT_EPOLL_ONESHOT 0x00020000

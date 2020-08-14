@@ -83,10 +83,18 @@ namespace ctm
             return 1;
         }
 
+        // mutex.Lock();
         sendCache.push_back(buf);
+        // mutex.Lock();
+
         if ((event.events & EVENT_WRITE) == 0)
         {
-            event.monitor->AddEvent(&event, EVENT_WRITE);
+            //event.monitor->AddEvent(&event, EVENT_WRITE);
+        }
+
+        if (writable)
+        {
+            OnAsynWrite();
         }
 
         return 0;
@@ -94,14 +102,17 @@ namespace ctm
 
     int CConn::OnAsynWrite()
     {
+        int cnt = 1;
         int ret = 0;
         Buffer* buf = NULL;
 
-        while(1)
+        for(int i = 0; i < cnt; i++)
         {
             if (sendCache.size() == 0)
             {
-                event.monitor->DelEvent(&event, EVENT_WRITE);
+                // event.monitor->DelEvent(&event, EVENT_WRITE);
+                writable = true;
+                // if (action) action->OnReady(this);
                 return 0;
             }
             else
@@ -115,6 +126,7 @@ namespace ctm
                     sendCache.pop_front(); 
                     delete buf; 
                     break;
+                    //return ret;
                 case IO_WR_AGAIN:
                 case IO_WR_CLOSE:
                 case IO_EXCEPT:
@@ -129,7 +141,16 @@ namespace ctm
     int CConn::Send(Buffer* buf)
     {
         int retlen = 0;
+
+        if (status == WRCLOSED || status == CLOSED)
+        {
+            CTM_DEBUG_LOG(log, "Conn can not read status : %d", status);
+
+            return IO_EXCEPT;
+        }
         
+        writable = false;
+
         while(1)
         {
             retlen = write(fd, buf->data + buf->offset, buf->len - buf->offset);
@@ -142,6 +163,7 @@ namespace ctm
                     continue;
                 }
                 else if (EAGAIN == error || EWOULDBLOCK == error) {
+                    if (event.monitor) event.monitor->AddEvent(&event, EVENT_WRITE);
                     return IO_WR_AGAIN;
                 }
                 else {
@@ -173,6 +195,9 @@ namespace ctm
                 else 
                 {
                     if (event.monitor) event.monitor->AddEvent(&event, EVENT_WRITE);
+                    writable = true;
+                    // if (action) action->OnReady(this);
+                    
                     return IO_WR_OK;
                 }
             }
@@ -183,7 +208,16 @@ namespace ctm
 
     int CConn::Recv(Buffer* buf)
     {
+        if (status == RDCLOSED || status == CLOSED)
+        {
+            CTM_DEBUG_LOG(log, "Conn can not read status : %d", status);
+
+            return IO_EXCEPT;
+        }
+
         int retlen = 0;
+
+        readable = false;
 
         while(1)
         {
@@ -198,13 +232,11 @@ namespace ctm
                 }
                 else if (EAGAIN == error || EWOULDBLOCK == error) 
                 {
+                    if (event.monitor) event.monitor->AddEvent(&event, EVENT_READ);
                     return IO_RD_AGAIN;
                 }
                 else 
                 {
-                    //ChangeStatus(EXCEPT);
-                    //if (event.monitor) event.monitor->DelConn(this);
-
                     Close();
 
                     if (action) action->OnException(this);
@@ -232,11 +264,14 @@ namespace ctm
                 else 
                 {
                     if (event.monitor) event.monitor->AddEvent(&event, EVENT_READ);
+                    readable = true;
+                    // if (action) action->OnReady(this);
+
                     return IO_RD_OK;
                 }
             }
         }
-        return 0;
+        return IO_EXCEPT;
     }
 
     void CConn::ClearCache()
@@ -305,6 +340,9 @@ namespace ctm
         recvBuff = NULL;
         action = NULL;
         log = NULL;
+        data = NULL;
+        readable = false;
+        writable = false;
 
         ClearCache();
     }
@@ -316,7 +354,7 @@ namespace ctm
             return;
         }
 
-        if (event.active && event.monitor)
+        if (event.monitor)
         {
             event.monitor->DelConn(this);
         }
@@ -328,12 +366,14 @@ namespace ctm
 
     void CConn::CloseRead()
     {
+        readable = false;
+
         if (event.active && event.monitor)
         {
             event.monitor->DelEvent(&event, EVENT_READ);
         }
 
-        if (type == S_IFSOCK)
+        if (type == C_SOCK)
         {
             shutdown(fd, SHUT_RD);
             ChangeStatus(RDCLOSED);
@@ -346,12 +386,14 @@ namespace ctm
 
     void CConn::CloseWrite()
     {
+        writable = false;
+
         if (event.active && event.monitor)
         {
             event.monitor->DelEvent(&event, EVENT_WRITE);
         }
 
-        if (type == S_IFSOCK)
+        if (type == C_SOCK)
         {
             shutdown(fd, SHUT_WR);
             ClearCache();
@@ -489,9 +531,19 @@ namespace ctm
     {
         struct stat buf;
         if(fstat(fd, &buf) == -1) 
-		{
 			return -1;
-		}
-        return buf.st_mode & S_IFMT;
+
+        switch (buf.st_mode & S_IFMT) {
+        case S_IFBLK: return C_FBLK ;
+        case S_IFCHR: return C_FCHR ;
+        case S_IFDIR: return C_FDIR ;
+        case S_IFIFO: return C_FIFO ;
+        case S_IFSOCK:return C_SOCK ;
+        case S_IFLNK: return C_FLNK ;
+        case S_IFREG: return C_FREG ;
+        default:      return C_OTHER;
+        }
+
+        return C_OTHER;
     }
 }

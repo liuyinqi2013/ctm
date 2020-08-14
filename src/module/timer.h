@@ -26,7 +26,7 @@ namespace ctm
         int m_remindCount;
         int m_totalCount;
         unsigned long m_milliInterval;
-        unsigned long long m_beginTime;
+        unsigned long m_beginTime;
         CModule* m_object;
         TimerCallBack m_cbFunction;
         void* m_param;

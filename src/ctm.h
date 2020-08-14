@@ -14,6 +14,7 @@
 #include "./event/event.h"
 #include "./event/epoll_monitor.h"
 #include "./server/echo_server.h"
+#include "./server/test_server.h"
 #include "./server/echo_client.h"
 #include "./server/base_server.h"
 #include "./net/tcpclient.h"

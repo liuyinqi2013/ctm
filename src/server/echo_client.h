@@ -16,6 +16,7 @@ namespace ctm
         virtual void OnRead(CConn* conn);
         virtual void OnWrite(CConn* conn);
         virtual void OnReadClose(CConn* conn);
+        // virtual void OnHangUp(CConn* conn);
         virtual void OnException(CConn* conn);
 
     private:

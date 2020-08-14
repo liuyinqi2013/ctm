@@ -1,6 +1,7 @@
 #ifndef CTM_SERVER_BASE_SERVER_H__
 #define CTM_SERVER_BASE_SERVER_H__
 
+#include <set>
 #include "net/conn.h"
 
 namespace ctm
@@ -24,9 +25,10 @@ namespace ctm
         CBaseServer();
         virtual ~CBaseServer();
 
-        virtual int Init(const string& ip, unsigned int port, CLog* log = NULL);
-        virtual int RunProc();
+        virtual int Init(CLog* log = NULL);
+        virtual int Execute();
 
+    public:
         virtual void OnAccept(CConn* conn);
         virtual void OnRead(CConn* conn);
         virtual void OnWrite(CConn* conn);
@@ -36,14 +38,22 @@ namespace ctm
         virtual void OnAsynConnOk(CConn* conn);
         virtual void OnAsynConnTimeOut(CConn* conn);
         virtual void OnException(CConn* conn);
-
+        virtual void OnHangUp(CConn* conn);
+        virtual void OnReady(CConn* conn);
+        virtual void OnError(CConn* conn);
+    
+        CConn* Listen(const string& ip, unsigned int port);
+        CConn* Connect(const string& ip, unsigned int port);
+        CConn* CreateConn(int fd, int events, int status = CConn::ACTIVE, bool listen = false, int family = 0);
+        int Pipe(CConn* ConnArr[2]);
+        
     protected:
-        int InitBase();
-        CConn* ListenConn(const string& ip, unsigned int port);
-        CConn* ConnectConn(const string& ip, unsigned int port);
 
+        int InitBase();
+
+        int HandleIOEvent();
+        int HandleReadyCConns();
         CConn* HandleAccpet(CConn* listenConn);
-        int Read(CConn* conn, char* buf, int len);
 
     protected:
         int m_status;
@@ -51,6 +61,8 @@ namespace ctm
         CConnPool* m_connPool;
         CEventHandler* m_eventHandler;
         CEventMonitor* m_eventMonitor;
+        std::list<CConn*> m_readyCConns;
+        std::set<CConn*>  m_readyCConnsSet;
     };
 }
 
