@@ -289,7 +289,9 @@ DECLARE_FUNC(echo_ser)
 		return -1;
 	}
 
-	echoServ.RunProc();
+	CTM_INFO_LOG(&log, "echo_ser init OK");
+
+	while(echoServ.Execute() == 0);
 
 	return 0;
 }
@@ -317,11 +319,57 @@ DECLARE_FUNC(echo_cli)
     pthread_sigmask(SIG_BLOCK, &set, NULL);
 	*/
 
-	echoCli.RunProc();
-	
+	CTM_INFO_LOG(&log, "echo_cli init OK");
+
+	while(echoCli.Execute() == 0);
+
 	CTM_INFO_LOG(&log, "Send Over len = %d", echoCli.m_sendLen);
 	CTM_INFO_LOG(&log, "Recv Over len = %d", echoCli.m_recvLen);
 	CTM_INFO_LOG(&log, "%s", clock.RunInfo().c_str());
+
+	return 0;
+}
+
+DECLARE_FUNC(test_ser)
+{
+	CClock clock;
+	CTestServer testSer;
+	if (testSer.Init(CLog::GetInstance()) == -1)
+	{
+		fprintf(stderr, "test server init failed\n");
+		return -1;
+	}
+
+	CTM_INFO_LOG(CLog::GetInstance(), "test_ser init OK");
+
+	while(testSer.Execute() == 0);
+
+	CTM_INFO_LOG(CLog::GetInstance(), "%s", clock.RunInfo().c_str());
+
+	return 0;
+}
+
+DECLARE_FUNC(base_game)
+{
+	CClock clock;
+	CBaseGame game;
+
+	printf("game %x\n", &game);
+
+	if (game.Init(CLog::GetInstance()) == -1)
+	{
+		CTM_ERROR_LOG(CLog::GetInstance(), "base_game init failed\n");
+		return -1;
+	}
+
+	CTM_INFO_LOG(CLog::GetInstance(), "base_game init OK");
+
+	game.StartTimer(100, 10, (TimerCallBack)&CBaseGame::Second_1);
+    game.StartTimer(200, 10, (TimerCallBack)&CBaseGame::Second_2);
+
+	game.LoopRun();
+
+	CTM_INFO_LOG(CLog::GetInstance(), "%s", clock.RunInfo().c_str());
 
 	return 0;
 }

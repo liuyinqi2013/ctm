@@ -572,18 +572,84 @@ DECLARE_FUNC(ini)
 	return 0;
 }
 
+class CTestTimer : public CTimerApi
+{
+public:
+	CTestTimer(int val) : m_val(val) {}
+
+	void MillSecond_1(unsigned int timerId, unsigned int remindCount, void* param)
+	{
+		printf("MillSecond_1 timerId:%d remindCount:%d\n", timerId, remindCount);
+	}
+	void MillSecond_3(unsigned int timerId, unsigned int remindCount, void* param)
+	{
+		printf("MillSecond_3 timerId:%d remindCount:%d\n", m_val, timerId, remindCount);
+	}
+	void MillSecond_5(unsigned int timerId, unsigned int remindCount, void* param)
+	{
+		printf("MillSecond_5 timerId:%d remindCount:%d\n", timerId, remindCount);
+	}
+	void MillSecond_10(unsigned int timerId, unsigned int remindCount, void* param)
+	{
+		printf("MillSecond_10 timerId:%d remindCount:%d\n", timerId, remindCount);
+	}
+	void MillSecond_30(unsigned int timerId, unsigned int remindCount, void* param)
+	{
+		printf("MillSecond_30 timerId:%d remindCount:%d\n", timerId, remindCount);
+	}
+
+	void Second_1(unsigned int timerId, unsigned int remindCount, void* param)
+	{
+		printf("Second_1 %x\n", this);
+		printf("Second_1 m_val = %d timerId:%d remindCount:%d\n", m_val, timerId, remindCount);
+	}
+	void Second_5(unsigned int timerId, unsigned int remindCount, void* param)
+	{
+		printf("Second_5 timerId:%d remindCount:%d\n", timerId, remindCount);
+	}
+	void Second_10(unsigned int timerId, unsigned int remindCount, void* param)
+	{
+		printf("Second_10 timerId:%d remindCount:%d\n", timerId, remindCount);
+	}
+	void Second_30(unsigned int timerId, unsigned int remindCount, void* param)
+	{
+		printf("Second_30 timerId:%d remindCount:%d\n", timerId, remindCount);
+	}
+	void Second_60(unsigned int timerId, unsigned int remindCount, void* param)
+	{
+		printf("Second_60 timerId:%d remindCount:%d\n", timerId, remindCount);
+	}
+
+	int m_val;
+};
+
 DECLARE_FUNC(timer)
 {
+	CTestTimer testTimer(6);
 	CTimer timer;
 	timer.Start();
-	int timerId =  timer.AddTimer(100, 10, NULL, NULL, NULL);
-	int timerId1 = timer.AddTimer(500, 10, NULL, NULL, NULL);
-	int timerId2 = timer.AddTimer(1000, 10, NULL, NULL, NULL);
-	DEBUG_LOG("timerId = %d, timerId1 = %d, timerId2 = %d,", timerId, timerId1, timerId2);
-	sleep(10);
-	timer.StopTimer(timerId1);
-	timerId1 = timer.AddTimer(2000, 10, NULL, NULL, NULL);
-	timer.StopAllTimer();
+
+	printf("testTimer %x", &testTimer);
+
+	timer.AddTimer(1,  10, (TimerCallBack)&CTestTimer::MillSecond_1,  &testTimer);
+	timer.AddTimer(3,  10,(TimerCallBack)&CTestTimer::MillSecond_3,  &testTimer);
+	timer.AddTimer(5,  2, (TimerCallBack)&CTestTimer::MillSecond_5,  &testTimer);
+	timer.AddTimer(10, 2, (TimerCallBack)&CTestTimer::MillSecond_10, &testTimer);
+	timer.AddTimer(30, 1, (TimerCallBack)&CTestTimer::MillSecond_30, &testTimer);
+
+	int t1 = timer.AddTimer(1000,  10, (TimerCallBack)&CTestTimer::Second_1, &testTimer);
+	int t2 = timer.AddTimer(5000,  6, (TimerCallBack)&CTestTimer::Second_5,  &testTimer);
+	int t3 = timer.AddTimer(10000, 2, (TimerCallBack)&CTestTimer::Second_10, &testTimer);
+	int t4 = timer.AddTimer(30000, 2, (TimerCallBack)&CTestTimer::Second_30, &testTimer);
+	int t5 = timer.AddTimer(60000, 2, (TimerCallBack)&CTestTimer::Second_60, &testTimer);
+
+	// timer.StopTimer(timerId1);
+
+	sleep(6);
+
+	timer.StopTimer(t1);
+
+	WaitEnd();
 	return 0;
 }
 
