@@ -32,12 +32,10 @@ namespace ctm
                 conn->action->OnAsynConnOk(conn);
             }
 
-            /*
             if(events & EVENT_EPOLL_LLHUP)
             {
                 conn->action->OnHangUp(conn);
             }
-            */
         }
         else
         {
@@ -58,17 +56,10 @@ namespace ctm
                 conn->action->OnWrite(conn);
             }
 
-            /*
             if(events & EVENT_EPOLL_LLHUP)
             {
                 conn->action->OnHangUp(conn);
             }
-
-            if (events & EVENT_ERROR)
-            {
-                conn->action->OnError(conn);
-            }
-            */
         }
         
         return 0;

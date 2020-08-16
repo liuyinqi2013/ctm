@@ -16,9 +16,9 @@ namespace ctm
 
     int CEchoServer::Init(const string& ip, unsigned int port, CLog* log)
     {
-        if (CBaseServer::Init(log) == -1)
+        if (CConnServer::Init(log) == -1)
         {
-            CTM_DEBUG_LOG(m_log, "CBaseServer init failed");
+            CTM_DEBUG_LOG(m_log, "CConnServer init failed");
             return -1;
         }
 
@@ -34,32 +34,24 @@ namespace ctm
         
     void CEchoServer::OnRead(CConn* conn)
     {
-        Buffer buf(4096);
-        int ret = conn->Recv(&buf);
-        if (buf.offset > 0) 
+        int ret = 0;
+        Buffer buf(4096 * 2);
+
+        for (int i = 0; i < 3; i++)
         {
-            conn->AsynSend(buf.data, buf.offset);
-        }
-             
-        switch (ret)
-        {
-        case IO_RD_OK:
-            break;
-        case IO_RD_AGAIN:
-            break;
-        case IO_RD_CLOSE:
-            { 
-                if (conn->sendCache.size() == 0) 
-                {
-                    CTM_DEBUG_LOG(m_log, "XXX IO_RD_CLOSE:[%s]", conn->ToString().c_str());
-                    OnClose(conn);
-                }
+            buf.offset = 0;
+            ret = conn->Recv(&buf);
+            if (buf.offset > 0) 
+            {
+                conn->AsynSend(buf.data, buf.offset);
             }
-            break;
-        case IO_EXCEPT:
-            CTM_DEBUG_LOG(m_log, "offset = %d IO_EXCEPT:[%s]", buf.offset, conn->ToString().c_str());
-            break;
+
+            if (ret != IO_RD_OK)
+            {
+                break;
+            }
         }
+        OnError(conn, ret);
     }
 
     void CEchoServer::OnWrite(CConn* conn)
@@ -73,12 +65,12 @@ namespace ctm
         }
     }
 
-    void CEchoServer::OnException(CConn* conn)
+    void CEchoServer::OnReadClose(CConn* conn)
     {
-        if (conn->isListen)
+        if (conn->sendCache.size() == 0) 
         {
-            m_status = EXIT;
+            CTM_DEBUG_LOG(m_log, "XXX IO_RD_CLOSE:[%s]", conn->ToString().c_str());
+            OnClose(conn);
         }
-        OnClose(conn);
     }
 }

@@ -16,7 +16,7 @@ namespace ctm
 
     int CTestServer::Init(CLog* log)
     {
-        if (CBaseServer::Init(log) == -1)
+        if (CConnServer::Init(log) == -1)
         {
             return -1;
         }
@@ -36,6 +36,7 @@ namespace ctm
 
         Buffer buf(1024);
         int ret = conn->Recv(&buf);
+        OnError(conn, ret);
         CTM_DEBUG_LOG(m_log, "Read ret:%d len:%d ", ret, buf.offset);
     }
 
@@ -47,11 +48,5 @@ namespace ctm
         CTM_DEBUG_LOG(m_log, "Write ret:%d len:%d ", ret, buf.offset);
         m_pipeConn[1]->Close();
         //m_pipeConn[1]->event.monitor->DelEvent(&m_pipeConn[1]->event, EVENT_WRITE);
-    }
-
-    void CTestServer::OnException(CConn* conn)
-    {
-        m_status = EXIT;
-        OnClose(conn);
     }
 }

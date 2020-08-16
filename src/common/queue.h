@@ -103,7 +103,7 @@ namespace ctm
             TAIL = 1,
         };
 
-        int Push(const T& val, int pos, unsigned int timeout = -1) 
+        int Push(const T& val, int pos, unsigned int timeout) 
         {
             int ret = 0;
             struct timespec abstime = {0};
@@ -143,7 +143,7 @@ namespace ctm
             return ERR_OK;
         }
 
-        int Get(T& out, int pos, unsigned int timeout = -1)
+        int Get(T& out, int pos, unsigned int timeout)
         {
             int ret = 0;
             struct timespec abstime = {0};
@@ -180,7 +180,7 @@ namespace ctm
             return ERR_OK;
         }
 
-        int GetPop(T& out, int pos, unsigned int timeout = -1)
+        int GetPop(T& out, int pos, unsigned int timeout)
         {
             int ret = 0;
             struct timespec abstime = {0};

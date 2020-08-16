@@ -67,7 +67,7 @@ namespace ctm
     {
         if (buf == NULL || len == 0)
         {
-            return 1;
+            return -1;
         }
 
         Buffer* bbuf = new Buffer(len);
@@ -80,7 +80,14 @@ namespace ctm
     {
         if (buf == NULL)
         {
-            return 1;
+            return -1;
+        }
+
+        if (status == WRCLOSED || status == CLOSED)
+        {
+            CTM_DEBUG_LOG(log, "Conn can not write status : %d", status);
+            
+            return IO_NO_WRITE;
         }
 
         // mutex.Lock();
@@ -102,7 +109,7 @@ namespace ctm
 
     int CConn::OnAsynWrite()
     {
-        int cnt = 1;
+        int cnt = 2;
         int ret = 0;
         Buffer* buf = NULL;
 
@@ -120,36 +127,35 @@ namespace ctm
                 buf = sendCache.front();
                 ret = Send(buf);
 
-                switch (ret)
+                if (ret == IO_WR_OK)
                 {
-                case IO_WR_OK:
                     sendCache.pop_front(); 
-                    delete buf; 
+                    delete buf;
+                } 
+                else
+                {
                     break;
-                    //return ret;
-                case IO_WR_AGAIN:
-                case IO_WR_CLOSE:
-                case IO_EXCEPT:
-                    return ret;
                 }
             }
         }
+
+        if (action) action->OnError(this, ret);
 
         return 0;
     }
 
     int CConn::Send(Buffer* buf)
     {
-        int retlen = 0;
+        writable = false;
 
         if (status == WRCLOSED || status == CLOSED)
         {
-            CTM_DEBUG_LOG(log, "Conn can not read status : %d", status);
+            CTM_DEBUG_LOG(log, "Conn can not write status : %d", status);
 
-            return IO_EXCEPT;
+            return IO_NO_WRITE;
         }
-        
-        writable = false;
+
+        int retlen = 0;
 
         while(1)
         {
@@ -163,14 +169,14 @@ namespace ctm
                     continue;
                 }
                 else if (EAGAIN == error || EWOULDBLOCK == error) {
-                    if (event.monitor) event.monitor->AddEvent(&event, EVENT_WRITE);
+                    //if (event.monitor) event.monitor->AddEvent(&event, EVENT_WRITE);
                     return IO_WR_AGAIN;
                 }
                 else {
 
-                    Close();
+                    // Close();
 
-                    if (action) action->OnException(this);
+                    // if (action) action->OnException(this);
 
                     CTM_DEBUG_LOG(log, "write failed :%d:%s", error, strerror(error));
 
@@ -179,9 +185,9 @@ namespace ctm
             }
             else if (retlen == 0)
             {
-                CloseWrite();
+                // CloseWrite();
 
-                if (action) action->OnWriteClose(this);
+                // if (action) action->OnWriteClose(this);
 
                 return IO_WR_CLOSE;
             }
@@ -194,7 +200,8 @@ namespace ctm
                 }
                 else 
                 {
-                    if (event.monitor) event.monitor->AddEvent(&event, EVENT_WRITE);
+                    // if (event.monitor) event.monitor->AddEvent(&event, EVENT_WRITE);
+
                     writable = true;
                     // if (action) action->OnReady(this);
                     
@@ -208,16 +215,16 @@ namespace ctm
 
     int CConn::Recv(Buffer* buf)
     {
+        readable = false;
+
         if (status == RDCLOSED || status == CLOSED)
         {
             CTM_DEBUG_LOG(log, "Conn can not read status : %d", status);
 
-            return IO_EXCEPT;
+            return IO_NO_READ;
         }
 
         int retlen = 0;
-
-        readable = false;
 
         while(1)
         {
@@ -232,14 +239,14 @@ namespace ctm
                 }
                 else if (EAGAIN == error || EWOULDBLOCK == error) 
                 {
-                    if (event.monitor) event.monitor->AddEvent(&event, EVENT_READ);
+                    // if (event.monitor) event.monitor->AddEvent(&event, EVENT_READ);
                     return IO_RD_AGAIN;
                 }
                 else 
                 {
-                    Close();
+                    //Close();
 
-                    if (action) action->OnException(this);
+                    //if (action) action->OnException(this);
 
                     CTM_DEBUG_LOG(log, "Recv failed :%d:%s", error, strerror(error));
 
@@ -248,9 +255,9 @@ namespace ctm
             }
             else if (retlen == 0)
             {
-                CloseRead();
+                //CloseRead();
 
-                if (action) action->OnReadClose(this);
+                //if (action) action->OnReadClose(this);
 
                 return IO_RD_CLOSE;
             }
@@ -263,9 +270,10 @@ namespace ctm
                 }
                 else 
                 {
-                    if (event.monitor) event.monitor->AddEvent(&event, EVENT_READ);
+                    //if (event.monitor) event.monitor->AddEvent(&event, EVENT_READ);
+
                     readable = true;
-                    // if (action) action->OnReady(this);
+                    //if (action) action->OnReady(this);
 
                     return IO_RD_OK;
                 }
@@ -354,7 +362,7 @@ namespace ctm
             return;
         }
 
-        if (event.monitor)
+        if (event.active && event.monitor)
         {
             event.monitor->DelConn(this);
         }

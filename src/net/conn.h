@@ -107,10 +107,8 @@ namespace ctm
         virtual void OnClose(CConn* conn) = 0;
         virtual void OnAsynConnOk(CConn* conn) = 0;
         virtual void OnAsynConnTimeOut(CConn* conn) = 0;
-        virtual void OnException(CConn* conn) = 0;
         virtual void OnHangUp(CConn* conn) = 0;
-        virtual void OnReady(CConn* conn) = 0;
-        virtual void OnError(CConn* conn) = 0;
+        virtual void OnError(CConn* conn, int error) = 0;
     };
 
     class CConnPool
@@ -127,16 +125,19 @@ namespace ctm
         unordered_map<int, CConn*> m_connMap;
     };
 
-    #define IO_RD_OK         1
-    #define IO_RD_AGAIN      2
-    #define IO_RD_CLOSE      3
-    #define IO_WR_OK         4
-    #define IO_WR_AGAIN      5
-    #define IO_WR_CLOSE      6
-    #define IO_EXCEPT        9
-    #define IO_NO_READ       10
-    #define IO_NO_WRITE      11
-    
+    enum IO_ERROR
+    {
+        IO_RD_OK       = 1,
+        IO_RD_AGAIN    = 2,
+        IO_RD_CLOSE    = 3,
+        IO_WR_OK       = 4,
+        IO_WR_AGAIN    = 5,
+        IO_WR_CLOSE    = 6,
+        IO_EXCEPT      = 9,
+        IO_NO_READ     = 10,
+        IO_NO_WRITE    = 11,
+    };
+
     int Read(int fd, Buffer* buf, int& errnum);
     int Write(int fd, Buffer* buf, int& errnum);
 

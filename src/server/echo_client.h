@@ -1,11 +1,11 @@
 #ifndef CTM_SERVER_ECHO_CLIENT_H__
 #define CTM_SERVER_ECHO_CLIENT_H__
 
-#include "base_server.h"
+#include "conn_server.h"
 
 namespace ctm
 {
-    class CEchoClient : public CBaseServer
+    class CEchoClient : public CConnServer
     {
     public:
         CEchoClient();
@@ -16,8 +16,7 @@ namespace ctm
         virtual void OnRead(CConn* conn);
         virtual void OnWrite(CConn* conn);
         virtual void OnReadClose(CConn* conn);
-        // virtual void OnHangUp(CConn* conn);
-        virtual void OnException(CConn* conn);
+        virtual void OnClose(CConn* conn);
 
     private:
         CConn* m_stdin;

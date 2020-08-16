@@ -1,11 +1,11 @@
 #ifndef CTM_SERVER_TEST_SERVER_H__
 #define CTM_SERVER_TEST_SERVER_H__
 
-#include "base_server.h"
+#include "conn_server.h"
 
 namespace ctm
 {
-    class CTestServer : public CBaseServer
+    class CTestServer : public CConnServer
     {
     public:
         CTestServer();
@@ -15,8 +15,7 @@ namespace ctm
 
         virtual void OnRead(CConn* conn);
         virtual void OnWrite(CConn* conn);
-        virtual void OnException(CConn* conn);
-
+        
         CConn* m_pipeConn[2];
     };
 }

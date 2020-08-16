@@ -236,11 +236,6 @@ namespace ctm
     {
         int ctmEvent = 0;
 
-        if (events & EPOLLRDHUP)
-        {
-            ctmEvent |= EVENT_READ;
-        }
-
         if (events & EPOLLIN)
         {
             ctmEvent |= EVENT_READ;
@@ -253,11 +248,18 @@ namespace ctm
 
         if (events & EPOLLHUP)
         {
+            // ctmEvent |= EVENT_EPOLL_LLHUP;
             ctmEvent |= EVENT_WRITE | EVENT_READ;
+        }
+
+        if (events & EPOLLRDHUP)
+        {
+            ctmEvent |= EVENT_READ | EVENT_WRITE;
         }
 
         if (events & EPOLLERR)
         {
+            // ctmEvent |= EVENT_ERROR;
             ctmEvent |= EVENT_WRITE | EVENT_READ;
         }
 
