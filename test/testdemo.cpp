@@ -442,7 +442,7 @@ struct TestA
 class Foo
 {
 public:
-	//virtual int func1() { return 1;}
+	virtual int func1() { return 1;}
 	int func2() { return 2;}
 	int data1;
 	static int data2;
@@ -492,7 +492,7 @@ DECLARE_FUNC(tencent)
 	cout<< "*(ptr - 1) = " <<*(ptr - 1) << endl;
 	cout<< "sizeof(n) = " <<sizeof(n) << endl;
 
-	Foo* foo = (Foo*)malloc(sizeof(Foo));
+	Foo* foo = new Foo;
 	Foo foo2;
 	cout<< "sizeof(Foo) = " << sizeof(Foo)<< endl;
 	cout<< "foo->func2() = " <<foo->func2() << endl;
@@ -505,10 +505,21 @@ DECLARE_FUNC(tencent)
 	cout<< "foo2.data2 = " <<foo2.data2 << endl;
 	//cout<< "foo2.func1() = " <<foo2.func1() << endl;
 
-	cout<< "&foo2.data2" << (long)&foo2.data2<< endl;
-	cout<< "&foo1->data2" << (long)&(foo->data2)<< endl;
-	cout<< "&foo2.data1" << (long)&foo2.data1<< endl;
-	cout<< "&foo1->data1" << (long)&(foo->data1)<< endl;
+	long p1 = 0;
+	long p2 = 0;
+
+	memcpy(&p1, foo, 8);
+	memcpy(&p2, &foo2, 8);
+
+	cout<< "&foo2 = " << (long)&foo2 << endl;
+	cout<< "&foo1 = " << (long)foo << endl;
+	cout<< "&foo2.data2 = " << (long)&foo2.data2<< endl;
+	cout<< "&foo1->data2 = " << (long)&(foo->data2)<< endl;
+	cout<< "&foo2.data1 = " << (long)&foo2.data1<< endl;
+	cout<< "&foo1.data1 = " << (long)&(foo->data1)<< endl;
+
+	cout<< "p1 = " << p1 << endl;
+	cout<< "p2 = " << p2 << endl;
 
 	Show(bitCount2(0));
 	Show(bitCount2(1));
@@ -600,7 +611,6 @@ public:
 
 	void Second_1(unsigned int timerId, unsigned int remindCount, void* param)
 	{
-		printf("Second_1 %x\n", this);
 		printf("Second_1 m_val = %d timerId:%d remindCount:%d\n", m_val, timerId, remindCount);
 	}
 	void Second_5(unsigned int timerId, unsigned int remindCount, void* param)
@@ -623,9 +633,23 @@ public:
 	int m_val;
 };
 
+class CTestTimer2 : public CTestTimer
+{
+public:
+	CTestTimer2(int a): CTestTimer(a), m_A(a) {}
+
+	void Second_3(unsigned int timerId, unsigned int remindCount, void* param)
+	{
+		printf("CTestTimer2 Second_3  A:%d timerId:%d remindCount:%d\n", m_A, timerId, remindCount);
+	}
+
+	int m_A;
+};
+
 DECLARE_FUNC(timer)
 {
 	CTestTimer testTimer(6);
+	CTestTimer2 testTimer2(10);
 	CTimer timer;
 	timer.Start();
 
@@ -646,6 +670,8 @@ DECLARE_FUNC(timer)
 	// timer.StopTimer(timerId1);
 
 	sleep(6);
+
+	int t6 = timer.AddTimer(3000, 10, (TimerCallBack)&CTestTimer2::Second_3, &testTimer2);
 
 	timer.StopTimer(t1);
 
@@ -775,5 +801,72 @@ DECLARE_FUNC(realpath)
 	char* realname = realpath(argv[1], NULL);
 	printf("realname:%s\n", realname);
 	free(realname);
+	return 0;
+}
+
+// return -1 no find pos
+int GetComfortPos(char* chairList, int len)
+{
+	int pos = -1;
+
+	int maxSpace = 0;
+	int maxbeg = 0;
+	int maxEnd = 0;
+
+	for (int i = 0; i <= len; i++)
+	{
+		if (len == i || chairList[i])
+		{
+			if (i - pos > maxSpace)
+			{
+				maxSpace = i - pos;
+				maxbeg = pos;
+				maxEnd = i;
+			}
+
+			pos = i;
+		}
+	}
+
+	if (maxSpace >= 2)
+	{
+		return (maxbeg + maxEnd) / 2;
+	}
+
+	return -1;
+}
+
+void Test()
+{
+	char a0[] = {1, 1, 1, 0, 0,  0, 0, 0, 0, 0}; // pos0 6
+	char a1[] = {1, 1, 1, 1, 0,  0, 0, 0, 1, 1}; // pos0 5
+	char a2[] = {1, 0, 0, 0, 1,  0, 0, 1, 1, 1}; // pos0 2
+	char a3[] = {0, 0, 0, 0, 1,  1, 1, 1, 1, 1}; // pos0 1
+	char a4[] = {0, 1, 1, 1, 1,  1, 1, 1, 1, 1}; // pos0 0
+	char a5[] = {1, 1, 1, 1, 1,  1, 1, 1, 1, 0}; // pos0 9
+	char a6[] = {1, 1, 1, 1, 1,  1, 1, 1, 1, 1}; // pos0 -1
+	char a7[] = {1, 1, 1, 1, 0,  1, 1, 1, 1, 1}; // pos0 4
+
+	char a8[]  = {1, 0, 1}; // pos0 1
+	char a9[]  = {1, 0};    // pos0 1
+	char a10[] = {0};       // pos0 0
+
+	printf("pos0:%d\n", GetComfortPos(a0, sizeof(a0)));
+	printf("pos1:%d\n", GetComfortPos(a1, sizeof(a1)));
+	printf("pos2:%d\n", GetComfortPos(a2, sizeof(a2)));
+	printf("pos3:%d\n", GetComfortPos(a3, sizeof(a3)));
+	printf("pos4:%d\n", GetComfortPos(a4, sizeof(a4)));
+	printf("pos5:%d\n", GetComfortPos(a5, sizeof(a5)));
+	printf("pos6:%d\n", GetComfortPos(a6, sizeof(a6)));
+	printf("pos7:%d\n", GetComfortPos(a7, sizeof(a7)));
+	printf("pos8:%d\n", GetComfortPos(a8, sizeof(a8)));
+	printf("pos9:%d\n", GetComfortPos(a9, sizeof(a9)));
+	printf("pos9:%d\n", GetComfortPos(a10, sizeof(a10)));
+}
+
+DECLARE_FUNC(safepos)
+{
+	Test();
+	
 	return 0;
 }

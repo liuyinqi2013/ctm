@@ -349,25 +349,55 @@ DECLARE_FUNC(test_ser)
 	return 0;
 }
 
-DECLARE_FUNC(base_game)
+DECLARE_FUNC(base_game_ser)
 {
 	CClock clock;
-	CBaseGame game;
+	CBaseGame gameServer;
 
-	printf("game %x\n", &game);
+	printf("gameServer %x\n", &gameServer);
 
-	if (game.Init(CLog::GetInstance()) == -1)
+	if (gameServer.Init(CLog::GetInstance()) == -1)
 	{
 		CTM_ERROR_LOG(CLog::GetInstance(), "base_game init failed\n");
 		return -1;
 	}
 
-	CTM_INFO_LOG(CLog::GetInstance(), "base_game init OK");
+	gameServer.StartListen(9999);
+	gameServer.StartListen(8888);
 
-	game.StartTimer(100, 10, (TimerCallBack)&CBaseGame::Second_1);
-    game.StartTimer(200, 10, (TimerCallBack)&CBaseGame::Second_2);
+	CTM_INFO_LOG(CLog::GetInstance(), "gameServer init OK");
 
-	game.LoopRun();
+	gameServer.LoopRun();
+
+	CTM_INFO_LOG(CLog::GetInstance(), "%s", clock.RunInfo().c_str());
+
+	return 0;
+}
+
+DECLARE_FUNC(base_game_cli)
+{
+	CClock clock;
+	CBaseGame gameClient;
+
+	printf("gameClient %x\n", &gameClient);
+
+	if (gameClient.Init(CLog::GetInstance()) == -1)
+	{
+		CTM_ERROR_LOG(CLog::GetInstance(), "base_game init failed\n");
+		return -1;
+	}
+
+	CTM_INFO_LOG(CLog::GetInstance(), "gameClient init OK");
+
+	// gameClient.StartTimer(100, 10, (TimerCallBack)&CBaseGame::Second_1);
+    // gameClient.StartTimer(200, 10, (TimerCallBack)&CBaseGame::Second_2);
+
+	CConn* conn = gameClient.Connect("127.0.0.1", 9999);
+	CConn* conn1 = gameClient.Connect("127.0.0.1", 8888);
+	gameClient.StartTimer(500, 50, (TimerCallBack)&CBaseGame::TestEchoTimer, conn, (void*)"hello 9999");
+	gameClient.StartTimer(100, 20, (TimerCallBack)&CBaseGame::TestEchoTimer, conn, (void*)"hello 8888");
+
+	gameClient.LoopRun();
 
 	CTM_INFO_LOG(CLog::GetInstance(), "%s", clock.RunInfo().c_str());
 
