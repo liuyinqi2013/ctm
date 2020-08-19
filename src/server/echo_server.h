@@ -1,11 +1,11 @@
 #ifndef CTM_SERVER_ECHO_SERVER_H__
 #define CTM_SERVER_ECHO_SERVER_H__
 
-#include "conn_server.h"
+#include "connector.h"
 
 namespace ctm
 {
-    class CEchoServer : public CConnServer
+    class CEchoServer : public CConnector
     {
     public:
         CEchoServer();

@@ -16,7 +16,7 @@ namespace ctm
 
     int CTestServer::Init(CLog* log)
     {
-        if (CConnServer::Init(log) == -1)
+        if (CConnector::Init(log) == -1)
         {
             return -1;
         }

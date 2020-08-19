@@ -108,7 +108,7 @@ namespace ctm
 	
 	extern CMessage* CreateMessage(unsigned int msgType);
 
-    typedef CSafetyQueue<CMessage*> SafeyMsgQueue;
+    typedef CFastSafetyQueue<CMessage*> SafeyMsgQueue;
 };
 
 #endif

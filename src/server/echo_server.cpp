@@ -16,9 +16,9 @@ namespace ctm
 
     int CEchoServer::Init(const string& ip, unsigned int port, CLog* log)
     {
-        if (CConnServer::Init(log) == -1)
+        if (CConnector::Init(log) == -1)
         {
-            CTM_DEBUG_LOG(m_log, "CConnServer init failed");
+            CTM_DEBUG_LOG(m_log, "CConnector init failed");
             return -1;
         }
 
@@ -51,6 +51,7 @@ namespace ctm
                 break;
             }
         }
+        
         OnError(conn, ret);
     }
 
@@ -70,6 +71,7 @@ namespace ctm
         if (conn->sendCache.size() == 0) 
         {
             CTM_DEBUG_LOG(m_log, "XXX IO_RD_CLOSE:[%s]", conn->ToString().c_str());
+
             OnClose(conn);
         }
     }

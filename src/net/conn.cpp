@@ -83,8 +83,10 @@ namespace ctm
             return -1;
         }
 
-        if (status == WRCLOSED || status == CLOSED)
+        if (status == WRCLOSED || status >= HANGUP)
         {
+            delete buf;
+            
             CTM_DEBUG_LOG(log, "Conn can not write status : %d", status);
             
             return IO_NO_WRITE;
@@ -148,7 +150,7 @@ namespace ctm
     {
         writable = false;
 
-        if (status == WRCLOSED || status == CLOSED)
+        if (status == WRCLOSED || status >= HANGUP)
         {
             CTM_DEBUG_LOG(log, "Conn can not write status : %d", status);
 
@@ -217,7 +219,7 @@ namespace ctm
     {
         readable = false;
 
-        if (status == RDCLOSED || status == CLOSED)
+        if (status == RDCLOSED || status >= HANGUP)
         {
             CTM_DEBUG_LOG(log, "Conn can not read status : %d", status);
 
@@ -297,15 +299,15 @@ namespace ctm
         if (hanpend == RDCLOSED)
         {
             if (status == WRCLOSED)
-                Close();
-            else
+                status = HANGUP;
+            else if (status == ACTIVE)
                 status = RDCLOSED;
         }
         else if (hanpend == WRCLOSED)
         {
             if (status == RDCLOSED)
-                Close();
-            else
+                status = HANGUP;
+            else if (status == ACTIVE)
                 status = WRCLOSED;
         }
         else
@@ -345,12 +347,14 @@ namespace ctm
         status = CREATE;
         memset(&localAddr, 0, sizeof(localAddr));
         memset(&peerAddr, 0, sizeof(peerAddr));
+        readable = false;
+        writable = false;
+
         recvBuff = NULL;
         action = NULL;
         log = NULL;
         data = NULL;
-        readable = false;
-        writable = false;
+        data1 = NULL;
 
         ClearCache();
     }
@@ -388,7 +392,7 @@ namespace ctm
         }
         else
         {
-            Close();
+            ChangeStatus(HANGUP);
         }
     }
 
@@ -409,7 +413,7 @@ namespace ctm
         }
         else
         {
-            Close();
+            ChangeStatus(HANGUP);
         }
     }
 

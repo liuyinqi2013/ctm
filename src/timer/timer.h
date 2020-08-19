@@ -10,6 +10,7 @@ namespace ctm
     {
     public:
         virtual ~CTimerApi() {};
+        virtual void OnTimer(unsigned int timerId, unsigned int remindCount, void* param) {};
     };
     
     typedef void (CTimerApi::*TimerCallBack)(unsigned int timerId, unsigned int remindCount, 

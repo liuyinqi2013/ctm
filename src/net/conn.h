@@ -6,6 +6,7 @@
 #include <list>
 #include <unordered_map>
 #include <netinet/in.h>
+#include "common/buffer.h"
 #include "common/mem_pool.h"
 #include "thread/mutex.h"
 #include "event/event.h"
@@ -15,8 +16,7 @@ namespace ctm
     using std::list;
     using std::string;
     using std::unordered_map;
-    
-    struct Buffer;
+
     class CLog;
     class Action;
     class CMutex;
@@ -34,7 +34,8 @@ namespace ctm
             ACTIVE        = 4,
             RDCLOSED      = 5,
             WRCLOSED      = 6,
-            CLOSED        = 7,
+            HANGUP        = 7,
+            CLOSED        = 8,
         };
 
         int  fd;
@@ -46,14 +47,16 @@ namespace ctm
         struct sockaddr_in localAddr;
         struct sockaddr_in peerAddr;
         struct Event event;
-        Buffer* recvBuff;
         list<Buffer*> sendCache; 
-        CMutex mutex;
-        Action* action;
-        CLog* log;
-        void* data;
         bool  readable;
         bool  writable;
+        CMutex mutex;
+
+        Action* action;
+        Buffer* recvBuff;
+        CLog* log;
+        void* data;
+        void* data1;
 
         string LocalStrIp() const;
         string PeerStrIp() const;
@@ -82,17 +85,6 @@ namespace ctm
 
         CConn();
         ~CConn();
-    };
-
-    struct Buffer
-    {
-        Buffer() : len(0), offset(0), data(NULL) {}
-        Buffer(unsigned int size) : len(size), offset(0), data(new char[size + 1]) {}
-        ~Buffer() { delete data; }
-
-        unsigned int len;
-        unsigned int offset;
-        char *data;
     };
 
     class Action

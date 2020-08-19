@@ -1,11 +1,11 @@
 #ifndef CTM_SERVER_TEST_SERVER_H__
 #define CTM_SERVER_TEST_SERVER_H__
 
-#include "conn_server.h"
+#include "connector.h"
 
 namespace ctm
 {
-    class CTestServer : public CConnServer
+    class CTestServer : public CConnector
     {
     public:
         CTestServer();

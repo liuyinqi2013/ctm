@@ -5,7 +5,7 @@
 namespace ctm
 {
     CEchoClient::CEchoClient() :
-        CConnServer(),
+        CConnector(),
         m_stdin(NULL),
         m_conn(NULL),
         m_sendLen(0),
@@ -21,7 +21,7 @@ namespace ctm
 
     int CEchoClient::Init(const string& ip, unsigned int port, CLog* log)
     {
-        if (CConnServer::Init(log) == -1)
+        if (CConnector::Init(log) == -1)
         {
             return -1;
         }
@@ -119,7 +119,7 @@ namespace ctm
     {
         CTM_DEBUG_LOG(m_log, "OnClose:[%s]", conn->ToString().c_str());
 
-        CConnServer::OnClose(conn);
+        CConnector::OnClose(conn);
         
         if (m_conn == conn)
         {

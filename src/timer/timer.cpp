@@ -124,9 +124,7 @@ namespace ctm
         {
             return -1;
         }
-
-        printf("AddTimer  object %x\n", object);
-
+        
         CTimerMessage* message = new CTimerMessage;
         message->m_milliInterval = milliSecond;
         message->m_totalCount = count;
@@ -140,8 +138,6 @@ namespace ctm
         message->m_param2 = param2;
         message->m_post = post;
         message->m_queue = queue;
-
-        printf("AddTimer m_object %x\n", message->m_object);
 
         m_timerMap[timerId] = message;
 
@@ -229,7 +225,7 @@ namespace ctm
     {
         long timeCost = 0;
         long timeLeft = 0;
-        unsigned long sleepTime = 1000000;
+        unsigned long sleepTime = 1000;
         unsigned long currTime = MilliTimestamp();
 
         CLockOwner Owner(m_mutex);
@@ -257,11 +253,20 @@ namespace ctm
                         (object->*func)(it->second->m_timerId, it->second->m_remindCount, 
                                         it->second->m_param, it->second->m_param1, it->second->m_param2);
                     }
+                    else if (it->second->m_object && it->second->m_cbFunction == NULL)
+                    {
+                        CTimerApi* object = it->second->m_object;
+                        object->OnTimer(it->second->m_timerId, it->second->m_remindCount, it->second->m_param);
+                    }
                 }
 
                 if (it->second->m_totalCount <= it->second->m_remindCount)
                 {
-                    delete it->second;
+                    if (it->second->m_post == false)
+                        delete it->second;
+                    else
+                        it->second->m_delete = true;
+
                     m_timerMap.erase(it++);
                     continue;
                 }
@@ -276,6 +281,7 @@ namespace ctm
             {
                 sleepTime = timeLeft;
             }
+
             it++; 
         }
 

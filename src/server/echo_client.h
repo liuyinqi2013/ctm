@@ -1,11 +1,11 @@
 #ifndef CTM_SERVER_ECHO_CLIENT_H__
 #define CTM_SERVER_ECHO_CLIENT_H__
 
-#include "conn_server.h"
+#include "connector.h"
 
 namespace ctm
 {
-    class CEchoClient : public CConnServer
+    class CEchoClient : public CConnector
     {
     public:
         CEchoClient();

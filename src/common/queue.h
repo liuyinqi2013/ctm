@@ -9,13 +9,20 @@
 
 namespace ctm
 {
+    enum EPos
+    {
+        HEAD = 0,
+        TAIL = 1,
+    };
+
+    #define queue_default_size  ((unsigned int)50000)
+    #define queue_max_size ((unsigned int)100000)
+
     template <typename T >
     class CSafetyQueue
     {
-        #define queue_default_size  ((unsigned int)50000)
-        #define queue_max_size ((unsigned int)100000)
-
     public:
+
         enum ErrCode
         {
             ERR_OK = 0,
@@ -97,11 +104,6 @@ namespace ctm
         }
 
     private:
-        enum EPos
-        {
-            HEAD = 0,
-            TAIL = 1,
-        };
 
         int Push(const T& val, int pos, unsigned int timeout) 
         {
@@ -255,10 +257,170 @@ namespace ctm
 
     private:
         typedef std::deque<T> StdList;
+
         StdList m_queue;
         unsigned int m_size;
         pthread_mutex_t m_mutex;
         pthread_cond_t m_cond;
+    };
+
+
+    template <typename T >
+    class CFastSafetyQueue
+    {
+    public:
+        enum ErrCode
+        {
+            ERR_OK = 0,
+            ERR_TIME_OUT = 1,
+            ERR_OTHER = -1,
+        };
+
+        CFastSafetyQueue(unsigned int size = queue_default_size)
+        {
+            m_size = std::min(size, queue_max_size);
+            pthread_spin_init(&m_spin, 0);
+        }
+
+        ~CFastSafetyQueue()
+        {
+            pthread_spin_destroy(&m_spin);
+        }
+        
+        int PushFront(const T& val,  unsigned int timeout = -1)
+        {
+            return Push(val, HEAD);
+        }
+
+        int PushBack(const T& val,  unsigned int timeout = -1)
+        {
+            return Push(val, TAIL);
+        }
+
+        int GetFront(T& out, unsigned int timeout = -1)
+        {
+            return Get(out, HEAD);
+        }
+
+        int GetBack(T& out, unsigned int timeout = -1)
+        {
+            return Get(out, TAIL);
+        }
+
+        int GetPopFront(T& out, unsigned int timeout = -1)
+        {
+            return GetPop(out, HEAD);
+        }
+
+        int GetPopBack(T& out, unsigned int timeout = -1)
+        {
+            return GetPop(out, TAIL);
+        }
+
+        void PopFront()
+        {
+            Pop(HEAD);
+        }
+
+        void PopBack()
+        {
+            Pop(TAIL);
+        }
+
+        unsigned int Count()
+        {
+            return m_queue.size(); 
+        }
+
+        unsigned int Capacity() 
+        {
+            return m_size;
+        }
+
+        void Clear()
+        {
+            pthread_spin_lock(&m_spin);
+            m_queue.clear();
+            pthread_spin_unlock(&m_spin);
+        }
+
+    private:
+
+        int Push(const T& val, int pos) 
+        {
+            pthread_spin_lock(&m_spin);
+
+            if (pos == HEAD) 
+                m_queue.push_front(val);
+            else 
+                m_queue.push_back(val);
+
+            pthread_spin_unlock(&m_spin);
+
+            return ERR_OK;
+        }
+
+        int Get(T& out, int pos, unsigned int timeout)
+        {
+            pthread_spin_lock(&m_spin);
+
+            if (m_queue.size() > 0)
+            {
+                if (pos == HEAD) 
+                    out = m_queue.front();
+                else 
+                    out = m_queue.back();
+            }
+
+            pthread_spin_unlock(&m_spin);
+
+            return ERR_OK;
+        }
+
+        int GetPop(T& out, int pos)
+        {
+            pthread_spin_lock(&m_spin);
+
+            if (m_queue.size() > 0)
+            {
+                if (pos == HEAD)
+                {
+                    out = m_queue.front();
+                    m_queue.pop_front();
+                } 
+                else
+                {
+                    out = m_queue.back();
+                    m_queue.pop_back();
+                }
+            }
+
+            pthread_spin_unlock(&m_spin);
+
+            return ERR_OK;
+        }
+
+        void Pop(int pos)
+        {
+            pthread_spin_lock(&m_spin);
+
+            if (m_queue.size() > 0)
+            {
+                if (pos == HEAD) 
+                    m_queue.pop_front();
+                else 
+                    m_queue.pop_back();
+            }
+
+            pthread_spin_unlock(&m_spin);
+        }
+
+    private:
+        typedef std::deque<T> StdList;
+
+        StdList m_queue;
+        unsigned int m_size;
+        pthread_spinlock_t m_spin;
     };
 }
 

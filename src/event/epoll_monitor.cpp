@@ -254,6 +254,7 @@ namespace ctm
 
         if (events & EPOLLRDHUP)
         {
+            // ctmEvent |= EVENT_PEER_CLOSE;
             ctmEvent |= EVENT_READ | EVENT_WRITE;
         }
 

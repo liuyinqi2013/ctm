@@ -18,12 +18,12 @@ namespace ctm
 			return m_Size;
 		}
 
-		char* Head() const 
+		void* Head() const 
 		{ 
 			return m_shmHead;
 		}
 
-		char* Tail() const
+		void* Tail() const
 		{
 			return (m_shmHead + m_Size);
 		}
@@ -38,7 +38,7 @@ namespace ctm
 		std::string m_strName;
 		int m_shmId;
 		int m_Size;
-		char* m_shmHead;
+		void* m_shmHead;
 	};
 }
 #endif

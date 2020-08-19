@@ -12,10 +12,10 @@
 #include "./event/event.h"
 #include "./event/epoll_monitor.h"
 #include "./timer/timer.h"
+#include "./server/connector.h"
 #include "./server/echo_server.h"
 #include "./server/test_server.h"
 #include "./server/echo_client.h"
-#include "./server/conn_server.h"
 #include "./server/base_game.h"
 #include "./net/socket.h"
 #include "./net/netclient.h"
@@ -41,8 +41,10 @@
 #include "./common/lock.h"
 #include "./common/chartable.h"
 #include "./common/refcount.h"
+#include "./common/pack.h"
 #include "./common/exception.h"
 #include "./common/templates.h"
+#include "./common/buffer.h"
 #include "./common/message.h"
 
 #endif

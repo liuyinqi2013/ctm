@@ -1,13 +1,18 @@
 #include "base_game.h"
 #include "net/socket.h"
 #include "net/conn.h"
+#include "common/pack.h"
 
 namespace ctm
 {
+    static CFixedPack gFixedPack;
+
     CBaseGame::CBaseGame() : 
     m_timer(NULL),
     m_msgQueue(NULL),
-    m_protoMap(NULL)
+    m_protoMap(NULL),
+    m_pack(NULL),
+    m_echoServConn(NULL)
     {
 
     }
@@ -21,9 +26,9 @@ namespace ctm
 
     int CBaseGame::Init(CLog* log)
     {
-        if (CConnServer::Init(log) == -1)
+        if (CConnector::Init(log) == -1)
         {
-            CTM_DEBUG_LOG(m_log, "CConnServer init failed");
+            CTM_DEBUG_LOG(m_log, "CConnector init failed");
             return -1;
         }
 
@@ -48,7 +53,12 @@ namespace ctm
             return -1;
         }
 
+        m_pack = &gFixedPack;
+
         m_timer->Start();
+
+        RegProtoHandle(ECHO_PROTO_REQ_ID, &CBaseGame::EchoReq, this);
+        RegProtoHandle(ECHO_PROTO_RSP_ID, &CBaseGame::EchoRsp, this);
 
         return 0;
     }
@@ -69,85 +79,256 @@ namespace ctm
         
     void CBaseGame::OnRead(CConn* conn)
     {
+        int len = 0;
         int ret = 0;
-        Buffer buf(4096 * 2);
+        Buffer* buf = NULL;
 
-        for (int i = 0; i < 3; i++)
+        if (conn->recvBuff == NULL)
         {
-            buf.offset = 0;
-            ret = conn->Recv(&buf);
-            if (buf.offset > 0) 
+            if (conn->data)
             {
-                conn->AsynSend(buf.data, buf.offset);
+                buf = (Buffer*)conn->data;
+                conn->data = NULL;
+            }
+            else
+            {
+                buf = new Buffer(4);
+            }
+            
+            ret = conn->Recv(buf);
+            if (ret == IO_RD_OK)
+            {
+                memcpy(&len, buf->data, 4);
+                len = htonl(len);
+                delete buf;
+
+                buf = new Buffer(len);
+
+                goto read_data;
+            }
+            else if (ret == IO_RD_AGAIN)
+            {
+                conn->data = buf;
+            }
+            else
+            {
+                delete buf;
             }
 
-            if (ret != IO_RD_OK)
-            {
-                break;
-            }
+            goto err;
         }
+        else 
+        {
+            buf = conn->recvBuff;
+            conn->recvBuff = NULL;
+        }
+
+    read_data:
+
+        ret = conn->Recv(buf);
+        if (ret == IO_RD_OK)
+        {
+            unsigned int protoId = 0;
+            int ret = m_pack->UnPack(buf, protoId, buf);
+            if (ret != -1 )
+            {
+                buf->data[buf->len] = 0;
+
+                HandleProtoMSG(conn, protoId, buf->data, buf->len);
+            }
+            else
+            {
+                CTM_DEBUG_LOG(m_log, "Recv can not UnPack data");
+            }
+
+            delete buf;
+        }
+        else if (ret == IO_RD_AGAIN)
+        {
+            conn->recvBuff = buf;
+        }
+        else
+        {
+            delete buf;
+        }
+        
+    err:
         OnError(conn, ret);
     }
 
     void CBaseGame::OnWrite(CConn* conn)
     {
         conn->OnAsynWrite();
-
-        if (conn->status == CConn::RDCLOSED && conn->sendCache.size() == 0)
-        {
-            CTM_DEBUG_LOG(m_log, "XXX OnWrite:[%s]", conn->ToString().c_str());
-            OnClose(conn);
-        }
     }
 
     void CBaseGame::OnReadClose(CConn* conn)
     {
-        if (conn->sendCache.size() == 0) 
-        {
-            CTM_DEBUG_LOG(m_log, "XXX IO_RD_CLOSE:[%s]", conn->ToString().c_str());
-            OnClose(conn);
-        }
+        OnClose(conn);
     }
 
-    void CBaseGame::RegProtoHandle(int protoId, ProtoHandle handle, CBaseGame* object)
+    void CBaseGame::OnWriteClose(CConn* conn)
+    {
+        OnClose(conn);
+    }
+
+    void CBaseGame::OnClose(CConn* conn)
+    {
+        /*
+            do something;
+        */
+
+        // CTM_DEBUG_LOG(m_log, "conn free [%s]", conn->ToString().c_str());
+        CConnector::OnClose(conn);
+    }
+
+    int CBaseGame::StartListen(int port)
+    {
+        CConn* conn = Listen("0.0.0.0", port);
+        if (conn == NULL)
+        {
+            return -1;
+        }
+
+        return 0;
+    }
+
+    int CBaseGame::TestEcho(const string& ip, unsigned int port, char* buf)
+    {
+        CConn* conn = Connect(ip, port);
+        if (conn == NULL)
+        {
+            CTM_DEBUG_LOG(m_log, "Connect falied ip:%s, port:%d", ip.c_str(), port);
+            return -1;
+        }
+
+        Send(conn, ECHO_PROTO_REQ_ID, buf, strlen(buf));
+
+        return 0;
+    }
+
+    void CBaseGame::SetPacker(CPack* pack)
+    {
+        m_pack = pack;
+    }
+
+    void CBaseGame::RegProtoHandle(unsigned int protoId, ProtoHandle handle, CBaseGame* object)
     {
         (*m_protoMap)[protoId].handle = handle;
         (*m_protoMap)[protoId].object = object;
     }
 
+    int CBaseGame::Send(CConn* conn, char* buf, unsigned int len)
+    {
+        Buffer* dst = new Buffer(len + 4);
+        int nlen = htonl(len);
+        memmove(dst->data, &nlen, 4);
+        memmove(dst->data + 4, buf, len);
+
+        return conn->AsynSend(dst);
+    }
+
+    int CBaseGame::Send(CConn* conn, unsigned int protoId, char* buf, unsigned int len)
+    {
+        unsigned int retlen = 0;
+        retlen = m_pack->Pack(protoId, buf, len, (void*)NULL, retlen);
+
+        Buffer* dst = new Buffer(retlen + 4);
+        retlen = htonl(retlen);
+        memmove(dst->data, &retlen, 4);
+
+        retlen = dst->len - 4;
+        m_pack->Pack(protoId, buf, len, dst->data + 4, retlen);
+        dst->offset = 0;
+
+        return conn->AsynSend(dst);
+    }
+
     int CBaseGame::StartTimer(int milliSecond, int count, TimerCallBack cb, void* param, void* param1, void* param2)
     {
-        printf("StartTimer %x\n", this);
         return m_timer->AddTimer(milliSecond, count, cb, this, param, param1, param2, true, m_msgQueue);
     }
 
     void CBaseGame::Second_1(unsigned int timerId, unsigned int remindCount, void* param)
     {
-        printf("Second_1 %x\n", this);
         CTM_DEBUG_LOG(m_log, "CBaseGame::Second_1 timerId:%d remindCount:%d", timerId, remindCount);
     }
 
     void CBaseGame::Second_2(unsigned int timerId, unsigned int remindCount, void* param)
     {
-        printf("Second_2 %x\n", this);
         CTM_DEBUG_LOG(m_log, "CBaseGame::Second_2 timerId:%d remindCount:%d", timerId, remindCount);
+    }
+
+    void CBaseGame::TestEchoTimer(unsigned int timerId, unsigned int remindCount, void* param, void* param1)
+    {
+        CTM_DEBUG_LOG(m_log, "CBaseGame::TestEchoTimer timerId:%d remindCount:%d", timerId, remindCount);
+
+        CConn* conn = (CConn*)param;
+        Send(conn, ECHO_PROTO_REQ_ID, (char*)param1, strlen((const char*)param1));
+    }
+
+    void CBaseGame::EchoReq(void* data, char* buf, int len)
+    {
+        CConn* conn = (CConn*)data;
+        Send(conn, ECHO_PROTO_RSP_ID, buf, len);
+    }
+
+    void CBaseGame::EchoRsp(void* data, char* buf, int len)
+    {
+        CTM_DEBUG_LOG(m_log, "%s", buf);
+    }
+
+    void CBaseGame::Unknown(void* data, char* buf, int len)
+    {
+        CConn* conn = (CConn*)data;
+        CTM_DEBUG_LOG(m_log, "Recv un known data [%s]", conn->ToString().c_str());
     }
 
     void CBaseGame::HandleMSG()
     {
         CMessage* msg = NULL;
         m_msgQueue->GetPopFront(msg, 1);
-        if (msg)
+
+        if (msg == NULL)
         {
-          HandleTimerMSG((CTimerMessage*)msg);  
+            return; 
+        }
+
+        switch (msg->m_type)
+        {
+        case MSG_SYS_TIMER:
+            HandleTimerMSG(dynamic_cast<CTimerMessage*>(msg));
+            break;
+        default:
+            break;
+        }
+
+        if (msg->m_delete)
+        {
+            delete msg;
         }
     }
 
     void CBaseGame::HandleTimerMSG(CTimerMessage* msg)
     {
-        printf("HandleTimerMSG %x\n", msg->m_object);
         CTimerApi* object  = msg->m_object;
         TimerCallBack func = msg->m_cbFunction;
         (object->*func)(msg->m_timerId, msg->m_remindCount, msg->m_param, msg->m_param1, msg->m_param2);
+    }
+
+    void CBaseGame::HandleProtoMSG(CConn* conn, unsigned int protoId, char* buf, int len)
+    {
+        if (m_protoMap->find(protoId) != m_protoMap->end())
+        {
+            CBaseGame* object  = (*m_protoMap)[protoId].object;
+            ProtoHandle handle = (*m_protoMap)[protoId].handle;
+
+            if (object == NULL) object = this;
+
+            (object->*handle)(conn, buf, len);
+        }
+        else
+        {
+            Unknown(conn, buf, len);
+        }
     }
 }
