@@ -365,7 +365,13 @@ DECLARE_FUNC(base_game_ser)
 	gameServer.StartListen(9999);
 	gameServer.StartListen(8888);
 
+	gameServer.MemroyConn(2048, 2048, true);
+	gameServer.MemroyConn(2049, 2048, true);
+
 	CTM_INFO_LOG(CLog::GetInstance(), "gameServer init OK");
+
+	gameServer.SetHeartBeat(true);
+	gameServer.SetHBInterval(5);
 
 	gameServer.LoopRun();
 
@@ -389,15 +395,117 @@ DECLARE_FUNC(base_game_cli)
 
 	CTM_INFO_LOG(CLog::GetInstance(), "gameClient init OK");
 
-	// gameClient.StartTimer(100, 10, (TimerCallBack)&CBaseGame::Second_1);
-    // gameClient.StartTimer(200, 10, (TimerCallBack)&CBaseGame::Second_2);
-
-	CConn* conn = gameClient.Connect("127.0.0.1", 9999);
+	CConn* conn  = gameClient.Connect("127.0.0.1", 9999);
 	CConn* conn1 = gameClient.Connect("127.0.0.1", 8888);
+
+	// CConn* conn2  = gameClient.MemroyConn(2048, 2048, false);
+	// CConn* conn3 = gameClient.MemroyConn(2049, 2048, false);
+
 	gameClient.StartTimer(500, 50, (TimerCallBack)&CBaseGame::TestEchoTimer, conn, (void*)"hello 9999");
 	gameClient.StartTimer(100, 20, (TimerCallBack)&CBaseGame::TestEchoTimer, conn, (void*)"hello 8888");
 
+	// gameClient.SetHeartBeat(true);
+	// gameClient.SetHBInterval(5);
+
 	gameClient.LoopRun();
+
+	CTM_INFO_LOG(CLog::GetInstance(), "%s", clock.RunInfo().c_str());
+
+	return 0;
+}
+
+DECLARE_FUNC(mem_queue_send)
+{
+	CClock clock;
+
+	CSemaphore sem(1024);
+	sem.Open();
+	sem.SetVal(1);
+
+	CShareMemory mem(1024);
+
+	mem.Open(32 * 1024);
+
+	CTM_INFO_LOG(CLog::GetInstance(), "head = %x size = %d", mem.Head(), mem.Size());
+
+	CMemoryQueue queue(mem.Head(), mem.Size(), sem.GetSemId(), 0);
+
+	char data[]  = "hello world";
+	char data1[] = "I am liu yin qi hello world";
+
+	char* d = data;
+	int len = 0;
+
+	int i = 0;
+	int ret = 0;
+
+	while(1)
+	{
+		if ((i % 2) == 0)
+		{
+			d = data;
+			len = sizeof(data);
+		}
+		else
+		{
+			d = data1;
+			len = sizeof(data1);
+		}
+
+		CTM_INFO_LOG(CLog::GetInstance(), "cnt = %d", queue.Count());
+
+		ret = queue.Push(d, len);
+		if (ret == 0)
+		{
+			CTM_INFO_LOG(CLog::GetInstance(), "Send failed");
+		}
+
+		++i;
+		
+		sleep(1);
+	}
+
+	CTM_INFO_LOG(CLog::GetInstance(), "%s", clock.RunInfo().c_str());
+
+	return 0;
+}
+
+DECLARE_FUNC(mem_queue_recv)
+{
+	CClock clock;
+
+	CSemaphore sem(1024);
+	sem.Open();
+
+	CShareMemory mem(1024);
+
+	mem.Open(32 * 1024);
+
+	CMemoryQueue queue(mem.Head(), mem.Size(), sem.GetSemId(), 0);
+
+	char data[64] = {0};
+	uint32_t len  = 64;
+
+	int ret = 0;
+
+	while(1)
+	{
+		CTM_INFO_LOG(CLog::GetInstance(), "cnt = %d", queue.Count());
+
+		ret = queue.Get(data, len);
+
+		if (ret == 0)
+		{
+			CTM_INFO_LOG(CLog::GetInstance(), "Get failed");
+		}
+		else
+		{
+			data[ret] = 0;
+			CTM_INFO_LOG(CLog::GetInstance(), "ret=%d, %s", ret, data);
+		}
+
+		sleep(1);
+	}
 
 	CTM_INFO_LOG(CLog::GetInstance(), "%s", clock.RunInfo().c_str());
 

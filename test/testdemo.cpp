@@ -285,7 +285,7 @@ DECLARE_FUNC(shamem)
 			return 0;
 		}
 
-		char* p = mem.Head();
+		char* p = (char*)mem.Head();
 		int size = mem.Size();
 		DEBUG_LOG("size : %d", size);
 		p[size] = '\0';
@@ -303,7 +303,7 @@ DECLARE_FUNC(shamem)
 			return 0;
 		}
 
-		char* p = mem.Head();
+		char* p = (char*)mem.Head();
 		int size = mem.Size();
 		DEBUG_LOG("size : %d", size);
 
