@@ -25,10 +25,14 @@ namespace ctm
 
 		void* Tail() const
 		{
-			return (m_shmHead + m_Size);
+			return ((char*)m_shmHead + m_Size);
 		}
 
 		bool Destroy();
+
+		int GetAttchCnt();
+
+		bool Dettch();
 
 	private:
 		void GetSize();

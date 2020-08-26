@@ -13,27 +13,19 @@
 
 namespace ctm
 {
-	union semun
-	{
-	    int val;  
-	    struct semid_ds *buf;  
-	    unsigned short  *array;  
-	    struct seminfo  *__buf;   
-	};
-	
-	CSemaphore::CSemaphore(int key) :
+	CSemaphore::CSemaphore(int key, int semSize) :
 		m_iKey(key),
 		m_strName(""),
 		m_semHandle(-1),
-		m_val(0)
+		m_semSize(semSize)
 	{
 	}
 	
-	CSemaphore::CSemaphore(const std::string& name) :
+	CSemaphore::CSemaphore(const std::string& name, int semSize) :
 		m_iKey(-1),
 		m_strName(name),
 		m_semHandle(-1),
-		m_val(0)
+		m_semSize(semSize)
 	{
 	}
 
@@ -56,17 +48,17 @@ namespace ctm
 			return false;	
 		}
 
-		m_semHandle = semget(m_iKey, 1, IPC_CREAT | 0644);
+		m_semHandle = semget(m_iKey, m_semSize, IPC_CREAT | 0644);
 		if (m_semHandle == -1)
 		{
-			fprintf(stderr, "errcode = %d, errmsg = %s\n", errno, strerror(errno));
+			fprintf(stderr, "CSemaphore::Open errcode = %d, errmsg = %s\n", errno, strerror(errno));
 			return false;
 		}
-	
+
 		return true;
 	}
 
-	bool CSemaphore::SetVal(int val)
+	bool CSemaphore::SetVal(int val, int semNum)
 	{
 		if (m_semHandle == -1)
 		{
@@ -76,14 +68,12 @@ namespace ctm
 				
 		union semun un;
 		un.val = val;
-		if (semctl(m_semHandle, 0, SETVAL, un) == -1)
+		if (semctl(m_semHandle, semNum, SETVAL, un) == -1)
 		{
 			fprintf(stderr, "errcode = %d, errmsg = %s\n", errno, strerror(errno));
 			return false;
 		}
 		
-		m_val = val;
-
 		return true;
 	}
 
@@ -106,17 +96,17 @@ namespace ctm
 		return true;
 	}
 		
-	bool CSemaphore::Post()
+	bool CSemaphore::Post(int semNum)
 	{
-		return SemOpt(1);
+		return SemOpt(1, semNum);
 	}
 	
-	bool CSemaphore::Wait()
+	bool CSemaphore::Wait(int semNum)
 	{
-		return SemOpt(-1);
+		return SemOpt(-1, semNum);
 	}
 
-	bool CSemaphore::SemOpt(int opt)
+	bool CSemaphore::SemOpt(int opt, int semNum)
 	{
 		if (m_semHandle == -1)
 		{
@@ -125,9 +115,9 @@ namespace ctm
 		}
 		
 		struct sembuf buf;  
-    	buf.sem_num = 0;  
-    	buf.sem_op = opt;  
-    	buf.sem_flg = 0;  
+    	buf.sem_num = semNum;  
+    	buf.sem_op  = opt;  
+    	buf.sem_flg = SEM_UNDO;  
     	if (semop(m_semHandle, &buf, 1) == -1)
     	{
 			fprintf(stderr, "errcode = %d, errmsg = %s\n", errno, strerror(errno));

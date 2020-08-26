@@ -4,8 +4,14 @@
 #include "connector.h"
 #include "timer/timer.h"
 
+#define MAX_PACK_LEN (32 * 1024)
+#define HB_IDLE_SECOND 30
+
 #define ECHO_PROTO_REQ_ID 0
 #define ECHO_PROTO_RSP_ID 1
+
+#define HB_PROTO_REQ_ID 2
+#define HB_PROTO_RSP_ID 3
 
 namespace ctm
 {
@@ -40,7 +46,23 @@ namespace ctm
         int StartListen(int port);
         int TestEcho(const string& ip, unsigned int port, char* buf);
 
-        void SetPacker(CPack* pack);
+        // 设置打包器
+        void SetPacker(CPack* pack)
+        {
+            m_pack = pack;
+        }
+
+        // 设置心跳间隔
+        void SetHBInterval(unsigned int idleSecond)
+        {
+            m_idleSecond = idleSecond;
+        }
+
+        // 设置心跳启停
+        void SetHeartBeat(bool bStart)
+        {
+            m_bHeartBeat = bStart;
+        }
         
     public:
     
@@ -58,11 +80,16 @@ namespace ctm
         void EchoRsp(void* data, char* buf, int len);
         void Unknown(void* data, char* buf, int len);
 
+        void HeartBeatReq(void* data, char* buf, int len);
+        void HeartBeatRsp(void* data, char* buf, int len);
+
     protected:
 
         void HandleMSG();
         void HandleTimerMSG(CTimerMessage* msg);
         void HandleProtoMSG(CConn* conn, unsigned int protoId, char* buf, int len);
+
+        void HandleHeartBeat();
 
     protected:
         CTimer* m_timer;
@@ -70,6 +97,10 @@ namespace ctm
         ProtoMap* m_protoMap;
         CPack* m_pack;
         CConn* m_echoServConn;
+        short  m_millTimeOut;
+        unsigned int m_idleSecond;
+        bool   m_bHeartBeat;
+        unsigned int m_maxPackLen;
     };
 }
 

@@ -14,7 +14,9 @@ namespace ctm
     static struct epoll_event eventList[MAX_WAIT_EVENTS];
 
     CEpollEventMonitor::CEpollEventMonitor(CLog* log) 
-    : CEventMonitor(CEventMonitor::EPOLL, log), m_epollFd(0)
+    : CEventMonitor(CEventMonitor::EPOLL, log), 
+      m_epollFd(0),
+      m_eventCnt(0)
     {
     }
 
@@ -49,6 +51,11 @@ namespace ctm
 
     int CEpollEventMonitor::WaitProc(unsigned int msec)
     {
+        if (m_eventCnt <= 0)
+        {
+           return 1; 
+        }
+
         int n = 0;
         
         while (1)
@@ -61,6 +68,10 @@ namespace ctm
                 if (EINTR == err) continue;
                 CTM_ERROR_LOG(m_log, "epoll_wait failed %d:%s", err, strerror(err));
                 return -1;
+            }
+            else if (n == 0)
+            {
+                return 1;
             }
 
             break;
@@ -116,6 +127,8 @@ namespace ctm
         ev->events |= events;
         ev->active = 1;
 
+        if (op == EPOLL_CTL_ADD) ++m_eventCnt;
+
         return 0;
     }
 
@@ -156,6 +169,7 @@ namespace ctm
         ev->events &= ~events;
         if (op == EPOLL_CTL_DEL)
         {
+            --m_eventCnt;
             ev->active = 0; 
         }
             
@@ -196,6 +210,7 @@ namespace ctm
         
         conn->event.events  = 0;
         conn->event.active  = 0;
+        --m_eventCnt;
 
         return 0;
     }

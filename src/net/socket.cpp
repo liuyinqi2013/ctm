@@ -67,9 +67,14 @@ namespace ctm
 		m_sockAddrIn.sin_family = AF_INET;
 		m_sockAddrIn.sin_port = htons(port);
 		m_sockAddrIn.sin_addr.s_addr = inet_addr(ip.c_str());
-		if (SOCKET_ERR == connect(sockfd, (struct sockaddr*)&m_sockAddrIn, sizeof(m_sockAddrIn)))
+		while(1)
 		{
-			return -1;
+			if (SOCKET_ERR == connect(sockfd, (struct sockaddr*)&m_sockAddrIn, sizeof(m_sockAddrIn)))
+			{
+				if (errno == EINTR) continue;
+				return -1;
+			}
+			break;
 		}
 
 		return 0;

@@ -55,14 +55,14 @@ namespace ctm
 		m_shmId = shmget(m_iKey, size, IPC_CREAT | IPC_EXCL | 0644);
 		if (m_shmId == -1)
 		{
-			fprintf(stderr, "errcode = %d, errmsg = %s\n", errno, strerror(errno));
+			fprintf(stderr, "CShareMemory::Open errcode = %d, errmsg = %s\n", errno, strerror(errno));
 			if (errno != EEXIST) {
 				return false;
 			} 
 
-			m_shmId = shmget(m_iKey, size, 0644);
+			m_shmId = shmget(m_iKey, 0, 0644);
 			if (m_shmId == -1) {
-				fprintf(stderr, "errcode = %d, errmsg = %s\n", errno, strerror(errno));
+				fprintf(stderr, "CShareMemory::Open errcode = %d, errmsg = %s\n", errno, strerror(errno));
 				return false;
 			} 
 		}
@@ -70,7 +70,7 @@ namespace ctm
 		m_shmHead = (char*)shmat(m_shmId, NULL, 0);
 		if (m_shmHead == NULL)
 		{
-			fprintf(stderr, "errcode = %d, errmsg = %s\n", errno, strerror(errno));
+			fprintf(stderr, "CShareMemory::Open errcode = %d, errmsg = %s\n", errno, strerror(errno));
 			return false;
 		}
 
@@ -107,6 +107,23 @@ namespace ctm
 			return ;
 		}
 		m_Size = buf.shm_segsz;
+	}
+
+	int CShareMemory::GetAttchCnt()
+	{
+	 	struct shmid_ds buf = {0};
+		if (shmctl(m_shmId, IPC_STAT, &buf) == -1)
+		{
+			fprintf(stderr, "errcode = %d, errmsg = %s\n", errno, strerror(errno));
+			return -1;
+		}
+
+		return buf.shm_nattch;
+	}
+
+	bool CShareMemory::Dettch()
+	{
+		return shmdt(m_shmHead) == 0;
 	}
 
 }

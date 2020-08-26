@@ -53,6 +53,12 @@ namespace ctm
             }
         }
 
+        void Add(T* ptr)
+        {
+            CLockOwner owner(m_mutex);
+            m_freeSet.insert(ptr);
+        }
+
         void GC()
         {
             CLockOwner owner(m_mutex);

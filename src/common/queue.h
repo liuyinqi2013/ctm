@@ -9,14 +9,14 @@
 
 namespace ctm
 {
+    #define queue_default_size  ((unsigned int)50000)
+    #define queue_max_size ((unsigned int)100000)
+
     enum EPos
     {
         HEAD = 0,
         TAIL = 1,
     };
-
-    #define queue_default_size  ((unsigned int)50000)
-    #define queue_max_size ((unsigned int)100000)
 
     template <typename T >
     class CSafetyQueue
@@ -269,6 +269,7 @@ namespace ctm
     class CFastSafetyQueue
     {
     public:
+
         enum ErrCode
         {
             ERR_OK = 0,
@@ -276,6 +277,7 @@ namespace ctm
             ERR_OTHER = -1,
         };
 
+    
         CFastSafetyQueue(unsigned int size = queue_default_size)
         {
             m_size = std::min(size, queue_max_size);

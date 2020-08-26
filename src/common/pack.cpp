@@ -31,7 +31,7 @@ namespace ctm
         protoId = htonl(protoId);
 
         memmove(dst, &protoId, 4);
-        memmove(dst + 4, src, srcLen);
+        memmove((char*)dst + 4, src, srcLen);
 
         dstLen = srcLen + 4;
 
@@ -67,7 +67,7 @@ namespace ctm
         }
 
         memmove(&protoId, src, 4);
-        memmove(dst, src + 4, srcLen - 4);
+        memmove(dst, (char*)src + 4, srcLen - 4);
 
         protoId = ntohl(protoId);
         dstLen = srcLen - 4;

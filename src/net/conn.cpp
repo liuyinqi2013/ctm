@@ -5,6 +5,7 @@
 
 #include "socket.h"
 #include "conn.h"
+#include "memconn.h"
 
 namespace ctm
 {
@@ -86,9 +87,6 @@ namespace ctm
         if (status == WRCLOSED || status >= HANGUP)
         {
             delete buf;
-            
-            CTM_DEBUG_LOG(log, "Conn can not write status : %d", status);
-            
             return IO_NO_WRITE;
         }
 
@@ -143,7 +141,7 @@ namespace ctm
 
         if (action) action->OnError(this, ret);
 
-        return 0;
+        return ret;
     }
 
     int CConn::Send(Buffer* buf)
@@ -158,6 +156,7 @@ namespace ctm
         }
 
         int retlen = 0;
+        time_t now = time(NULL);
 
         while(1)
         {
@@ -195,6 +194,9 @@ namespace ctm
             }
             else
             {
+                lastWrite  = now;
+                lastActive = now;
+
                 buf->offset += retlen;
                 if (buf->offset < buf->len) 
                 {
@@ -227,6 +229,7 @@ namespace ctm
         }
 
         int retlen = 0;
+        time_t now = time(NULL);
 
         while(1)
         {
@@ -265,6 +268,9 @@ namespace ctm
             }
             else
             {
+                lastRead   = now;
+                lastActive = now;
+
                 buf->offset += retlen;
                 if (buf->offset < buf->len) 
                 {
@@ -340,6 +346,7 @@ namespace ctm
 
     void CConn::Reset()
     {
+        id = 0;
         fd = 0;
         type = 0;
         family = 0;
@@ -355,6 +362,10 @@ namespace ctm
         log = NULL;
         data = NULL;
         data1 = NULL;
+
+        lastRead = time(NULL);
+        lastWrite = lastRead;
+        lastActive = lastRead;
 
         ClearCache();
     }
@@ -417,42 +428,65 @@ namespace ctm
         }
     }
 
-    CConnPool::CConnPool(size_t size) 
-    : m_memPool(new CSimpleMemPool<CConn>(size))
+    CConnPool::CConnPool(unsigned int size) 
+    : m_size(size)
     {
 
     }
 
     CConnPool::~CConnPool()
     {
-        unordered_map<int, CConn*>::iterator it = m_connMap.begin();
-        for (; it != m_connMap.end(); it++)
+        set<CConn*>::iterator it = m_connSet.begin();
+        for (; it != m_connSet.end(); it++)
         {
-            it->second->Close();
+            (*it)->Close();
+            delete *it;
         }
 
-        m_memPool->Clear();
-        delete m_memPool;
+        m_connSet.clear();
     }
 
-    CConn* CConnPool::Get(int fd)
+    CConn* CConnPool::Create(unsigned int type)
     {
-        if (m_connMap.find(fd) != m_connMap.end())
+        CConn* conn = NULL;
+        if (m_connTypeMap[type].size() > 0)
         {
-            return m_connMap[fd];
+            conn = m_connTypeMap[type].front();
+            m_connTypeMap[type].pop_front();
+
+            conn->Reset();
+
+            return conn;
         }
 
-        CConn* conn = m_memPool->Alloc();
-        m_connMap[fd] = conn;
-        conn->fd = fd;
-        
+        if (type == C_SMEM)
+        {
+            conn = new CShardMemConn;
+        }
+        else
+        {
+            conn = new CConn;
+        }
+
+        if (conn)
+        {
+            conn->type = type;
+            m_connSet.insert(conn);
+        }
+
         return conn;
     }
 
     void CConnPool::Free(CConn* conn)
     {
-        conn->Close();
-        m_memPool->Free(conn);
+        if (m_connSet.find(conn) != m_connSet.end())
+        {
+            m_connTypeMap[conn->type].push_back(conn);
+            conn->Close();
+            
+            // m_connSet.erase(conn);
+            // delete conn;
+        }
     }
 
     int Read(int fd, Buffer* buf, int& errnum)

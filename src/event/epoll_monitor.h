@@ -25,6 +25,7 @@ namespace ctm
 
     private:
         int m_epollFd;
+        int m_eventCnt;
     };
 }
 

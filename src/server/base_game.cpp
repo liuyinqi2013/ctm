@@ -12,7 +12,11 @@ namespace ctm
     m_msgQueue(NULL),
     m_protoMap(NULL),
     m_pack(NULL),
-    m_echoServConn(NULL)
+    m_echoServConn(NULL),
+    m_millTimeOut(0),
+    m_idleSecond(HB_IDLE_SECOND),
+    m_bHeartBeat(false),
+    m_maxPackLen(MAX_PACK_LEN)
     {
 
     }
@@ -59,6 +63,8 @@ namespace ctm
 
         RegProtoHandle(ECHO_PROTO_REQ_ID, &CBaseGame::EchoReq, this);
         RegProtoHandle(ECHO_PROTO_RSP_ID, &CBaseGame::EchoRsp, this);
+        RegProtoHandle(HB_PROTO_REQ_ID, &CBaseGame::HeartBeatReq, this);
+        RegProtoHandle(HB_PROTO_RSP_ID, &CBaseGame::HeartBeatRsp, this);
 
         return 0;
     }
@@ -71,6 +77,11 @@ namespace ctm
             if (-1 == Execute())
             {
                 break;
+            }
+
+            if (m_bHeartBeat)
+            {
+                HandleHeartBeat();
             }
         }
 
@@ -101,6 +112,13 @@ namespace ctm
                 memcpy(&len, buf->data, 4);
                 len = htonl(len);
                 delete buf;
+
+                if (len > m_maxPackLen)
+                {
+                    CTM_DEBUG_LOG(m_log, "Recv len overload max:%d len:%d [%s]", 
+                                  m_maxPackLen, len, conn->ToString().c_str());
+                    goto err;
+                }
 
                 buf = new Buffer(len);
 
@@ -206,11 +224,6 @@ namespace ctm
         return 0;
     }
 
-    void CBaseGame::SetPacker(CPack* pack)
-    {
-        m_pack = pack;
-    }
-
     void CBaseGame::RegProtoHandle(unsigned int protoId, ProtoHandle handle, CBaseGame* object)
     {
         (*m_protoMap)[protoId].handle = handle;
@@ -219,6 +232,11 @@ namespace ctm
 
     int CBaseGame::Send(CConn* conn, char* buf, unsigned int len)
     {
+        if (conn->status != CConn::ACTIVE)
+        {
+            return -1;
+        }
+
         Buffer* dst = new Buffer(len + 4);
         int nlen = htonl(len);
         memmove(dst->data, &nlen, 4);
@@ -229,6 +247,11 @@ namespace ctm
 
     int CBaseGame::Send(CConn* conn, unsigned int protoId, char* buf, unsigned int len)
     {
+        if (conn->status != CConn::ACTIVE)
+        {
+            return -1;
+        }
+
         unsigned int retlen = 0;
         retlen = m_pack->Pack(protoId, buf, len, (void*)NULL, retlen);
 
@@ -261,7 +284,7 @@ namespace ctm
     void CBaseGame::TestEchoTimer(unsigned int timerId, unsigned int remindCount, void* param, void* param1)
     {
         CTM_DEBUG_LOG(m_log, "CBaseGame::TestEchoTimer timerId:%d remindCount:%d", timerId, remindCount);
-
+        
         CConn* conn = (CConn*)param;
         Send(conn, ECHO_PROTO_REQ_ID, (char*)param1, strlen((const char*)param1));
     }
@@ -283,15 +306,31 @@ namespace ctm
         CTM_DEBUG_LOG(m_log, "Recv un known data [%s]", conn->ToString().c_str());
     }
 
+    void CBaseGame::HeartBeatReq(void* data, char* buf, int len)
+    {
+        CConn* conn = (CConn*)data;
+        Send(conn, HB_PROTO_RSP_ID, buf, len);
+    }
+
+    void CBaseGame::HeartBeatRsp(void* data, char* buf, int len)
+    {
+        CConn* conn = (CConn*)data;
+        CTM_DEBUG_LOG(m_log, "Recv heart beat [%s]", conn->ToString().c_str());
+    }
+
     void CBaseGame::HandleMSG()
     {
         CMessage* msg = NULL;
-        m_msgQueue->GetPopFront(msg, 1);
+
+        m_msgQueue->GetPopFront(msg, m_millTimeOut);
 
         if (msg == NULL)
         {
+            m_millTimeOut = 1;
             return; 
         }
+
+        m_millTimeOut = 0;
 
         switch (msg->m_type)
         {
@@ -329,6 +368,27 @@ namespace ctm
         else
         {
             Unknown(conn, buf, len);
+        }
+    }
+
+    void CBaseGame::HandleHeartBeat()
+    {
+        time_t now = time(NULL);
+        
+        set<CConn*>::iterator it = m_connPool->m_connSet.begin();
+        for (;it != m_connPool->m_connSet.end();)
+        {
+            if( (*it)->isListen == false &&
+                (*it)->status == CConn::ACTIVE && 
+                now - (*it)->lastActive > m_idleSecond)
+            {
+                set<CConn*>::iterator it1 = it++;
+                Send(*it1, HB_PROTO_REQ_ID, (char*)&now, sizeof(time_t));
+            }
+            else
+            {
+                it++;
+            }
         }
     }
 }

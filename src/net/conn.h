@@ -1,9 +1,11 @@
 #ifndef CTM_NET_CONN_H__
 #define CTM_NET_CONN_H__
 
+#include <set>
 #include <stdint.h>
 #include <string>
 #include <list>
+
 #include <unordered_map>
 #include <netinet/in.h>
 #include "common/buffer.h"
@@ -13,6 +15,7 @@
 
 namespace ctm
 {
+    using std::set;
     using std::list;
     using std::string;
     using std::unordered_map;
@@ -20,7 +23,26 @@ namespace ctm
     class CLog;
     class Action;
     class CMutex;
+    class CConn;
     class CConnPool;
+
+    typedef list<CConn*> CConnList;
+    typedef set<CConn*> CConnSet;
+
+    enum CONN_TYPE
+    {
+        C_FILE   = 0,
+        C_FDIR   = 1,
+        C_SOCK   = 2,
+        C_FIFO   = 3,
+        C_FCHR   = 4,
+        C_FBLK   = 5,
+        C_FLNK   = 6,
+        C_FREG   = 7,
+        C_SMEM   = 8,
+        C_OTHER  = 9,
+    };
+
 
     class CConn
     {
@@ -38,6 +60,7 @@ namespace ctm
             CLOSED        = 8,
         };
 
+        int  id;
         int  fd;
         int  type;
         int  family;
@@ -48,9 +71,12 @@ namespace ctm
         struct sockaddr_in peerAddr;
         struct Event event;
         list<Buffer*> sendCache; 
-        bool  readable;
-        bool  writable;
+        bool   readable;
+        bool   writable;
         CMutex mutex;
+        time_t lastRead;
+        time_t lastWrite;
+        time_t lastActive;
 
         Action* action;
         Buffer* recvBuff;
@@ -63,14 +89,10 @@ namespace ctm
         string StrFamily() const;
         uint16_t LocalPort() const;
         uint16_t PeerPort() const;
-        string ToString() const;
-
+        
         int AsynSend(char* buf, size_t len);
         int AsynSend(Buffer* buf);
         int OnAsynWrite();
-
-        int Send(Buffer* buf);
-        int Recv(Buffer* buf);
 
         void ClearCache();
         void ChangeStatus(int hanpend);
@@ -78,13 +100,18 @@ namespace ctm
         void GetLocalAddr();
         void GetPeerAddr();
 
-        void Reset();
-        void Close();
-        void CloseRead();
-        void CloseWrite();
+        virtual string ToString() const;
+
+        virtual void Reset();
+        virtual void Close();
+        virtual void CloseRead();
+        virtual void CloseWrite();
+
+        virtual int Send(Buffer* buf);
+        virtual int Recv(Buffer* buf);
 
         CConn();
-        ~CConn();
+        virtual ~CConn();
     };
 
     class Action
@@ -106,15 +133,22 @@ namespace ctm
     class CConnPool
     {
     public:
-        CConnPool(size_t size);
+        CConnPool(unsigned int size);
         ~CConnPool();
 
-        CConn* Get(int fd);
+        CConn* Create(unsigned int type = C_SOCK);
+
         void Free(CConn* conn);
 
-    private:
-        CSimpleMemPool<CConn>* m_memPool;
-        unordered_map<int, CConn*> m_connMap;
+        unsigned int Count() const
+        {
+            return m_connSet.size();
+        }
+
+    public:
+        unsigned int m_size; 
+        set<CConn*> m_connSet;
+        unordered_map<unsigned int, CConnList > m_connTypeMap;
     };
 
     enum IO_ERROR
@@ -132,19 +166,6 @@ namespace ctm
 
     int Read(int fd, Buffer* buf, int& errnum);
     int Write(int fd, Buffer* buf, int& errnum);
-
-    enum CTYPE
-    {
-        C_FILE   = 0,
-        C_FDIR   = 1,
-        C_SOCK   = 2,
-        C_FIFO   = 3,
-        C_FCHR   = 4,
-        C_FBLK   = 5,
-        C_FLNK   = 6,
-        C_FREG   = 7,
-        C_OTHER  = 8,
-    };
 
     int FileType(int fd);
 }

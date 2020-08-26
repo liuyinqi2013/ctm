@@ -9,6 +9,8 @@ namespace ctm
     class CLog;
     class CEventHandler;
     class CEventMonitor;
+    class CShareMemory;
+    class CSemaphore;
 
     class CConnector : public Action
     {
@@ -43,8 +45,14 @@ namespace ctm
     
         CConn* Listen(const string& ip, unsigned int port);
         CConn* Connect(const string& ip, unsigned int port);
+        CConn* MemroyConn(unsigned int key, unsigned int size, bool bServer);
+
         CConn* CreateConn(int fd, int events, int status = CConn::ACTIVE, bool listen = false, int family = 0);
+
         int Pipe(CConn* ConnArr[2]);
+        void Release(CConn* conn);
+
+        int CreateMemConn(unsigned int key, unsigned int ccnt, unsigned int csize);
         
     protected:
 
@@ -52,6 +60,7 @@ namespace ctm
 
         int HandleIOEvent();
         int HandleReadyCConns();
+        int HandleMemroyConns();
         CConn* HandleAccpet(CConn* listenConn);
 
     protected:
@@ -62,6 +71,12 @@ namespace ctm
         CEventMonitor* m_eventMonitor;
         std::list<CConn*> m_readyCConns;
         std::set<CConn*>  m_readyCConnsSet;
+        short m_timeOut;
+        CShareMemory* m_shareMem;
+        CSemaphore*   m_semaphore;
+        unsigned int  m_memConnCnt;
+        unsigned int  m_connMemSize;
+        std::set<CConn*> m_memConnSet;
     };
 }
 
