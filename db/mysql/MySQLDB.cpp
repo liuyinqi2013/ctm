@@ -49,6 +49,22 @@ bool CMySQLDB::Query(const char* sql)
 	return true;
 }
 
+bool CMySQLDB::Query(const char* sql, CStrMapArr& out)
+{
+	if (mysql_query(m_DBHandle, sql) != 0)
+	{
+		return false;
+	}
+
+	MYSQL_RES* result = mysql_store_result(m_DBHandle);
+
+	GetValues(result, out);
+
+	mysql_free_result(result);
+
+	return true;
+}
+
 int CMySQLDB::StmtPrepare(const char* sql)
 {
 	int iRet = 0;
@@ -303,20 +319,19 @@ void CMySQLDB::ConvertUpdateSQL(MYSQL_RES* result, std::vector<std::string>& out
 	}
 }
 
-
-void CMySQLDB::GetFields(std::vector<std::string>& outFieldsVec)
+void CMySQLDB::GetFields(MYSQL_RES *result, std::vector<std::string> &outFieldsVec)
 {
 	outFieldsVec.clear();
 
-	if (!m_DBRes) return;
-	int colNum = mysql_num_fields(m_DBRes);
+	if (!result) return;
+	int colNum = mysql_num_fields(result);
 
 	if (0 == colNum)
 	{
 		return;
 	}
 
-	MYSQL_FIELD* fileds = mysql_fetch_fields(m_DBRes);
+	MYSQL_FIELD* fileds = mysql_fetch_fields(result);
 	if (!fileds)
 	{
 		return;
@@ -328,13 +343,13 @@ void CMySQLDB::GetFields(std::vector<std::string>& outFieldsVec)
 	}
 }
 
-void CMySQLDB::GetValues(std::vector<std::map<std::string, std::string> >& outVaulesVec)
+void CMySQLDB::GetValues(MYSQL_RES* result, CStrMapArr& outVaulesVec)
 {
 	outVaulesVec.clear();
 
-	if (!m_DBRes) return;
-	int rowNum = mysql_num_rows(m_DBRes);
-	int colNum = mysql_num_fields(m_DBRes);
+	if (!result) return;
+	int rowNum = mysql_num_rows(result);
+	int colNum = mysql_num_fields(result);
 
 	if (0 == rowNum || 0 == colNum)
 	{
@@ -342,12 +357,12 @@ void CMySQLDB::GetValues(std::vector<std::map<std::string, std::string> >& outVa
 	}
 
 	MYSQL_ROW row(NULL);
-	MYSQL_FIELD* fileds = mysql_fetch_fields(m_DBRes);
+	MYSQL_FIELD* fileds = mysql_fetch_fields(result);
 
 	std::map<std::string, std::string> keyMap;
 	for (int i = 0; i < rowNum; ++i)
 	{
-		row = mysql_fetch_row(m_DBRes);
+		row = mysql_fetch_row(result);
 		if (!row) continue;
 		keyMap.clear();
 		for (int k = 0; k < colNum; ++k)
@@ -358,7 +373,7 @@ void CMySQLDB::GetValues(std::vector<std::map<std::string, std::string> >& outVa
 		outVaulesVec.push_back(keyMap);
 	}
 
-	mysql_data_seek(m_DBRes, 0);
+	// mysql_data_seek(m_DBRes, 0);
 }
 
 string CMySQLDB::EscapeString(const string& strIn)

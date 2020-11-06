@@ -69,7 +69,7 @@ namespace ctm
         return 0;
     }
 
-    int CBaseGame::LoopRun()
+    int CBaseGame::GoRun()
     {
         while(1)
         {
@@ -90,16 +90,16 @@ namespace ctm
         
     void CBaseGame::OnRead(CConn* conn)
     {
-        int len = 0;
         int ret = 0;
+        uint len = 0;
         Buffer* buf = NULL;
 
         if (conn->recvBuff == NULL)
         {
-            if (conn->data)
+            if (conn->head)
             {
-                buf = (Buffer*)conn->data;
-                conn->data = NULL;
+                buf = (Buffer*)conn->head;
+                conn->head = NULL;
             }
             else
             {
@@ -115,7 +115,7 @@ namespace ctm
 
                 if (len > m_maxPackLen)
                 {
-                    CTM_DEBUG_LOG(m_log, "Recv len overload max:%d len:%d [%s]", 
+                    CTM_ERROR_LOG(m_log, "Recv len overload max:%d len:%d [%s]", 
                                   m_maxPackLen, len, conn->ToString().c_str());
                     goto err;
                 }
@@ -126,7 +126,7 @@ namespace ctm
             }
             else if (ret == IO_RD_AGAIN)
             {
-                conn->data = buf;
+                conn->head = buf;
             }
             else
             {
@@ -194,8 +194,7 @@ namespace ctm
         /*
             do something;
         */
-
-        // CTM_DEBUG_LOG(m_log, "conn free [%s]", conn->ToString().c_str());
+       
         CConnector::OnClose(conn);
     }
 
@@ -269,16 +268,6 @@ namespace ctm
     int CBaseGame::StartTimer(int milliSecond, int count, TimerCallBack cb, void* param, void* param1, void* param2)
     {
         return m_timer->AddTimer(milliSecond, count, cb, this, param, param1, param2, true, m_msgQueue);
-    }
-
-    void CBaseGame::Second_1(unsigned int timerId, unsigned int remindCount, void* param)
-    {
-        CTM_DEBUG_LOG(m_log, "CBaseGame::Second_1 timerId:%d remindCount:%d", timerId, remindCount);
-    }
-
-    void CBaseGame::Second_2(unsigned int timerId, unsigned int remindCount, void* param)
-    {
-        CTM_DEBUG_LOG(m_log, "CBaseGame::Second_2 timerId:%d remindCount:%d", timerId, remindCount);
     }
 
     void CBaseGame::TestEchoTimer(unsigned int timerId, unsigned int remindCount, void* param, void* param1)

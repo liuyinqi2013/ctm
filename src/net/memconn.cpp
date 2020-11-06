@@ -58,7 +58,7 @@ namespace ctm
             m_semaphore->SetVal(1, 1);
         }
 
-        int  semId = m_semaphore->GetSemId();
+        int semId = m_semaphore->GetSemId();
         void* haed = m_shareMem->Head();
 
 

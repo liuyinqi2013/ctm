@@ -2,6 +2,7 @@
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
+#include <signal.h>
 
 namespace ctm
 {
@@ -74,6 +75,13 @@ namespace ctm
 	void* CThread::ThreadEnterFun(void* arg)
 #endif
 	{
+		sigset_t sig_mask;
+		sigfillset(&sig_mask);
+		sigdelset(&sig_mask, SIGILL);
+    		sigdelset(&sig_mask, SIGFPE);
+    		sigdelset(&sig_mask, SIGSEGV);
+		pthread_sigmask(SIG_BLOCK, &sig_mask, NULL);
+
 		CThread *pThread = static_cast<CThread *>(arg);
 		if(pThread)
 		{

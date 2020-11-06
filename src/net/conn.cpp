@@ -90,13 +90,11 @@ namespace ctm
             return IO_NO_WRITE;
         }
 
-        // mutex.Lock();
         sendCache.push_back(buf);
-        // mutex.Lock();
 
-        if ((event.events & EVENT_WRITE) == 0)
+        if (!(event.events & EVENT_WRITE) && event.monitor)
         {
-            //event.monitor->AddEvent(&event, EVENT_WRITE);
+            event.monitor->AddEvent(&event, EVENT_WRITE);
         }
 
         if (writable)
@@ -117,9 +115,13 @@ namespace ctm
         {
             if (sendCache.size() == 0)
             {
-                // event.monitor->DelEvent(&event, EVENT_WRITE);
+                if (!(event.events & EVENT_EPOLL_ET) && event.monitor) 
+                {
+                    event.monitor->DelEvent(&event, EVENT_WRITE);
+                }
+                    
                 writable = true;
-                // if (action) action->OnReady(this);
+
                 return 0;
             }
             else
@@ -357,11 +359,11 @@ namespace ctm
         readable = false;
         writable = false;
 
+        head = NULL;
         recvBuff = NULL;
         action = NULL;
         log = NULL;
         data = NULL;
-        data1 = NULL;
 
         lastRead = time(NULL);
         lastWrite = lastRead;

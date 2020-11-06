@@ -18,7 +18,7 @@ namespace ctm
         m_connPool(NULL),
         m_eventHandler(NULL),
         m_eventMonitor(NULL),
-        m_timeOut(1),
+        m_timeOut(2),
         m_shareMem(NULL),
         m_semaphore(NULL)
 
@@ -175,7 +175,8 @@ namespace ctm
 
     void CConnector::OnReady(CConn* conn)
     {
-        if (m_readyCConnsSet.find(conn) == m_readyCConnsSet.end())
+        if ((conn->event.events & EVENT_EPOLL_ET) &&
+            m_readyCConnsSet.find(conn) == m_readyCConnsSet.end())
         {
             m_readyCConns.push_back(conn);
             m_readyCConnsSet.insert(conn);
@@ -341,7 +342,7 @@ namespace ctm
 
         SetKeepAlive(fd, 10);
 
-        CConn* conn = CreateConn(fd, EVENT_READ | EVENT_WRITE | EVENT_EPOLL_ET | EVENT_PEER_CLOSE, CConn::ACTIVE, false, AF_INET);
+        CConn* conn = CreateConn(fd, EVENT_READ | EVENT_WRITE | EVENT_PEER_CLOSE /*| EVENT_EPOLL_ET*/ , CConn::ACTIVE, false, AF_INET);
         
         if (conn == NULL)
         {   
@@ -396,11 +397,11 @@ namespace ctm
                 return NULL;
             }
 
-            conn = CreateConn(fd, EVENT_READ | EVENT_WRITE | EVENT_EPOLL_ET | EVENT_PEER_CLOSE, CConn::CONNING, false, AF_INET);
+            conn = CreateConn(fd, EVENT_READ | EVENT_WRITE | EVENT_PEER_CLOSE /*| EVENT_EPOLL_ET*/, CConn::CONNING, false, AF_INET);
         }
         else
         {
-            conn = CreateConn(fd, EVENT_READ | EVENT_WRITE | EVENT_EPOLL_ET | EVENT_PEER_CLOSE, CConn::ACTIVE, false, AF_INET);
+            conn = CreateConn(fd, EVENT_READ | EVENT_WRITE | EVENT_PEER_CLOSE /*| EVENT_EPOLL_ET*/, CConn::ACTIVE, false, AF_INET);
             conn->GetLocalAddr();
             conn->GetPeerAddr();
         }
@@ -447,8 +448,8 @@ namespace ctm
             return -1;
         }
 
-        ConnArr[0] = CreateConn(pipefd[0], EVENT_READ | EVENT_EPOLL_ET | EVENT_PEER_CLOSE);
-        ConnArr[1] = CreateConn(pipefd[1], EVENT_WRITE | EVENT_EPOLL_ET | EVENT_PEER_CLOSE);
+        ConnArr[0] = CreateConn(pipefd[0], EVENT_READ | EVENT_PEER_CLOSE /*| EVENT_EPOLL_ET*/);
+        ConnArr[1] = CreateConn(pipefd[1], EVENT_WRITE | EVENT_PEER_CLOSE /*| EVENT_EPOLL_ET*/);
         if (ConnArr[0] == NULL || ConnArr[1] == NULL)
         {   
             CTM_ERROR_LOG(m_log, "CreateConn conn failed!");

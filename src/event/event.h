@@ -22,8 +22,7 @@ namespace ctm
     #define EVENT_BEGIN EVENT_READ
     #define EVENT_END EVENT_EPOLL_ONESHOT
 
-    //class Clog;
-    
+    // class Clog;
     class CConn;
     class CEventHandler;
     class CEventMonitor;

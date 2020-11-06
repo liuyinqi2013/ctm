@@ -76,6 +76,8 @@ public:
 
 	bool Query(const char* sql);
 
+	bool Query(const char* sql, CStrMapArr& out);
+
 	bool Excute(const char* sql);
 
 	bool Begin()
@@ -131,9 +133,9 @@ public:
 		}
 	}
 	
-	void GetFields(std::vector<std::string>& outFieldsVec);
+	void GetFields(MYSQL_RES* result, std::vector<std::string>& outFieldsVec);
 
-	void GetValues(std::vector<std::map<std::string, std::string> >& outVaulesVec);
+	void GetValues(MYSQL_RES* result, CStrMapArr& outVaulesVec);
 
 	bool Ping()
 	{

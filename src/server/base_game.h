@@ -35,7 +35,7 @@ namespace ctm
         virtual ~CBaseGame();
 
         virtual int Init(CLog* log = NULL);
-        virtual int LoopRun();
+        virtual int GoRun();
 
         virtual void OnRead(CConn* conn);
         virtual void OnWrite(CConn* conn);
@@ -46,22 +46,24 @@ namespace ctm
         int StartListen(int port);
         int TestEcho(const string& ip, unsigned int port, char* buf);
 
-        // 设置打包器
         void SetPacker(CPack* pack)
         {
             m_pack = pack;
         }
 
-        // 设置心跳间隔
         void SetHBInterval(unsigned int idleSecond)
         {
             m_idleSecond = idleSecond;
         }
 
-        // 设置心跳启停
         void SetHeartBeat(bool bStart)
         {
             m_bHeartBeat = bStart;
+        }
+
+        void SetMaxPackLen(unsigned int maxLen)
+        {
+            m_maxPackLen = maxLen;
         }
         
     public:
@@ -70,10 +72,7 @@ namespace ctm
         int StartTimer(int milliSecond, int count, TimerCallBack cb, void* param = NULL, void* param1 = NULL, void* param2 = NULL);
         int Send(CConn* conn, char* buf, unsigned int len);
         int Send(CConn* conn, unsigned int protoId, char* buf, unsigned int len);
-
-        void Second_1(unsigned int timerId, unsigned int remindCount, void* param);
-        void Second_2(unsigned int timerId, unsigned int remindCount, void* param);
-
+        
         void TestEchoTimer(unsigned int timerId, unsigned int remindCount, void* param, void* param1);
 
         void EchoReq(void* data, char* buf, int len);

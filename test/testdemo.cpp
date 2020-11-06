@@ -1,4 +1,5 @@
 #include "testdef.h"
+#include <algorithm>
 
 CSafetyQueue<string> queue1;
 
@@ -435,8 +436,8 @@ struct TestA
 {
 	int value;
 	char type;
-	short sShot;
 	char bit;
+	short sShot;
 };
 
 class Foo
@@ -869,4 +870,19 @@ DECLARE_FUNC(safepos)
 	Test();
 	
 	return 0;
+}
+
+DECLARE_FUNC(lambda)
+{
+    int a[4] = { 1, 2, 3, 4 };
+    int total = 0;
+    for_each(a, a + 4, [&](int & x) { total += x; x *= 2; });
+    cout << total << endl;  //输出 10
+    for_each(a, a + 4, [=](int x) { cout << x << " "; });
+	cout << endl; 
+
+	for_each(a, a + 4, [&total](int& x) { total += x; x *= 2; });
+	cout << total << endl;  //输出 30
+
+    return 0;
 }

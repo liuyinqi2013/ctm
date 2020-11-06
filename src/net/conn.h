@@ -43,6 +43,18 @@ namespace ctm
         C_OTHER  = 9,
     };
 
+    enum IO_ERROR
+    {
+        IO_RD_OK       = 1,
+        IO_RD_AGAIN    = 2,
+        IO_RD_CLOSE    = 3,
+        IO_WR_OK       = 4,
+        IO_WR_AGAIN    = 5,
+        IO_WR_CLOSE    = 6,
+        IO_EXCEPT      = 9,
+        IO_NO_READ     = 10,
+        IO_NO_WRITE    = 11,
+    };
 
     class CConn
     {
@@ -79,10 +91,10 @@ namespace ctm
         time_t lastActive;
 
         Action* action;
+        Buffer* head;
         Buffer* recvBuff;
         CLog* log;
         void* data;
-        void* data1;
 
         string LocalStrIp() const;
         string PeerStrIp() const;
@@ -149,19 +161,6 @@ namespace ctm
         unsigned int m_size; 
         set<CConn*> m_connSet;
         unordered_map<unsigned int, CConnList > m_connTypeMap;
-    };
-
-    enum IO_ERROR
-    {
-        IO_RD_OK       = 1,
-        IO_RD_AGAIN    = 2,
-        IO_RD_CLOSE    = 3,
-        IO_WR_OK       = 4,
-        IO_WR_AGAIN    = 5,
-        IO_WR_CLOSE    = 6,
-        IO_EXCEPT      = 9,
-        IO_NO_READ     = 10,
-        IO_NO_WRITE    = 11,
     };
 
     int Read(int fd, Buffer* buf, int& errnum);

@@ -8,6 +8,10 @@
 #include <cassert>
 #include <termios.h>
 #include <sys/sysmacros.h>
+#include "test_server.h"
+#include "echo_client.h"
+#include "echo_server.h"
+
 #include "testdef.h"
 
 using namespace std;
@@ -281,15 +285,15 @@ DECLARE_FUNC(testqueue)
 DECLARE_FUNC(echo_ser)
 {
 	CHECK_PARAM(argc, 3, "echo_ser [ip] [port].");
-	CLog log("echo_ser");
+	CLog* log = CLog::GetInstance();
 	CEchoServer echoServ;
-	if (echoServ.Init(argv[1], atoi(argv[2]), &log) == -1)
+	if (echoServ.Init(argv[1], atoi(argv[2]), log) == -1)
 	{
 		fprintf(stderr, "echo server init failed\n");
 		return -1;
 	}
 
-	CTM_INFO_LOG(&log, "echo_ser init OK");
+	CTM_INFO_LOG(log, "echo_ser init OK");
 
 	while(echoServ.Execute() == 0);
 
@@ -373,7 +377,7 @@ DECLARE_FUNC(base_game_ser)
 	gameServer.SetHeartBeat(true);
 	gameServer.SetHBInterval(5);
 
-	gameServer.LoopRun();
+	gameServer.GoRun();
 
 	CTM_INFO_LOG(CLog::GetInstance(), "%s", clock.RunInfo().c_str());
 
@@ -398,8 +402,8 @@ DECLARE_FUNC(base_game_cli)
 	CConn* conn  = gameClient.Connect("127.0.0.1", 9999);
 	CConn* conn1 = gameClient.Connect("127.0.0.1", 8888);
 
-	// CConn* conn2  = gameClient.MemroyConn(2048, 2048, false);
-	// CConn* conn3 = gameClient.MemroyConn(2049, 2048, false);
+	CConn* conn2  = gameClient.MemroyConn(2048, 2048, false);
+	CConn* conn3 = gameClient.MemroyConn(2049, 2048, false);
 
 	gameClient.StartTimer(500, 50, (TimerCallBack)&CBaseGame::TestEchoTimer, conn, (void*)"hello 9999");
 	gameClient.StartTimer(100, 20, (TimerCallBack)&CBaseGame::TestEchoTimer, conn, (void*)"hello 8888");
@@ -407,7 +411,7 @@ DECLARE_FUNC(base_game_cli)
 	// gameClient.SetHeartBeat(true);
 	// gameClient.SetHBInterval(5);
 
-	gameClient.LoopRun();
+	gameClient.GoRun();
 
 	CTM_INFO_LOG(CLog::GetInstance(), "%s", clock.RunInfo().c_str());
 
@@ -509,5 +513,22 @@ DECLARE_FUNC(mem_queue_recv)
 
 	CTM_INFO_LOG(CLog::GetInstance(), "%s", clock.RunInfo().c_str());
 
+	return 0;
+}
+
+int SumN(unsigned int n)
+{
+	float e = 0;
+	for (unsigned int i = 1; i <= n; i++)
+	{
+		e += 1.0 / (1 + i);
+	}
+
+	return e;
+}
+
+DECLARE_FUNC(sum_e)
+{
+	cout << "e = " << SumN(100000) << endl;
 	return 0;
 }
