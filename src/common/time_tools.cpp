@@ -108,7 +108,7 @@ namespace ctm
 		struct tm* st = localtime((const time_t *)&time);
 		strftime(buf, sizeof(buf), "%w", st);
 
-		return S2D(buf);
+		return S2I(buf);
 	}
 
 	int WeekOfYear(time_t time)
@@ -117,7 +117,36 @@ namespace ctm
 		struct tm* st = localtime((const time_t *)&time);
 		strftime(buf, sizeof(buf), "%W", st);
 
-		return S2D(buf);
+		return S2I(buf);
+	}
+
+	int Timezone()
+	{
+		time_t t = time(NULL);
+		char buf[16] = {0};
+		struct tm* st = localtime((const time_t *)&t);
+		strftime(buf, sizeof(buf), "%z", st);
+		return S2I(buf) / 100;
+	}
+
+	time_t TodayBeginTime(time_t time)
+	{
+		return time - ((time + Timezone() * 3600) % (24 * 3600));
+	}
+
+	time_t TodayEndTime(time_t time)
+	{
+		return TodayBeginTime(time) +  24 * 3600 - 1;
+	}
+
+	time_t NextDayBeginTime(time_t time, int day)
+	{
+		return TodayBeginTime(time) +  day * 24 * 3600;
+	}
+
+	time_t NextDayEndTime(time_t time, int day)
+	{
+		return NextDayBeginTime(time, day) +  24 * 3600 - 1;
 	}
 
 	string MilliTimestamp2DateTime(unsigned long time)

@@ -82,8 +82,8 @@ namespace ctm
 
 #define DEBUG_LOG(format, ...) CLog::GetInstance()->Write(CLog::LOG_DEBUG, "[%s:%d]:" format, __FILE__, __LINE__, ##__VA_ARGS__)
 #define ERROR_LOG(format, ...) CLog::GetInstance()->Write(CLog::LOG_ERROR, "[%s:%d]:" format, __FILE__, __LINE__, ##__VA_ARGS__)
-#define WARN_LOG(format, ...) CLog::GetInstance()->Write(CLog::LOG_WARN, "[%s:%d]:" format, __FILE__, __LINE__, ##__VA_ARGS__)
-#define INFO_LOG(format, ...) CLog::GetInstance()->Write(CLog::LOG_INFO, "[%s:%d]:" format, __FILE__, __LINE__, ##__VA_ARGS__)
+#define WARN_LOG(format, ...)  CLog::GetInstance()->Write(CLog::LOG_WARN, "[%s:%d]:" format, __FILE__, __LINE__, ##__VA_ARGS__)
+#define INFO_LOG(format, ...)  CLog::GetInstance()->Write(CLog::LOG_INFO, "[%s:%d]:" format, __FILE__, __LINE__, ##__VA_ARGS__)
 #define FUNC_BEG() DEBUG_LOG("Begin...")
 #define FUNC_END() DEBUG_LOG("End...")
 

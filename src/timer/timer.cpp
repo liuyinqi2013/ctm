@@ -21,151 +21,49 @@
 
 namespace ctm
 {
-    DECLARE_MSG(MSG_SYS_TIMER, CTimerMessage);
-
-    CTimerMessage::CTimerMessage() :
-        CMessage(MSG_SYS_TIMER, Timestamp()),
-        m_timerId(0),
-        m_remindCount(0),
-        m_totalCount(0),
-        m_milliInterval(0),
-        m_beginTime(0),
-        m_object(NULL),
-        m_cbFunction(NULL),
-        m_param(NULL),
-        m_param1(NULL),
-        m_param2(NULL),
-        m_post(false),
-        m_queue(NULL)
-    {
-    }
-
-    CTimerMessage::~CTimerMessage()
-    {
-    }
-
-    Json::Value  CTimerMessage::ToJsonObject()
-    {
-        Json::Value root = CMessage::ToJsonObject();
-        root["milliInterval"] = m_milliInterval;
-		root["remindCount"] = m_remindCount;
-        root["totalCount"] = m_totalCount;
-        root["object"] = (unsigned long)m_object;
-        root["param"] = (unsigned long)m_param;
-        root["totalCount"] = m_totalCount;
-        root["timerId"] = m_timerId;
-		root["beginTime"] = (unsigned long)m_beginTime;
-
-        return root;
-    }
-
-    int  CTimerMessage::FormJsonString(const string &jsonString)
-    {
-        return 0;
-    }
-
-    int  CTimerMessage::FromJsonObject(const Json::Value &jsonObject)
-    {
-        return 0;
-    }
-
-    void  CTimerMessage::CopyFrom(const CMessage &other)
-    {
-        CMessage::CopyFrom(other);
-    }
-
-    void CTimerMessage::Clear()
-    {
-        CMessage::Clear();
-        m_milliInterval = 0;
-        m_cbFunction = 0;
-        m_object = 0;
-        m_remindCount = 0;
-        m_totalCount = 0;
-        m_beginTime = 0;
-        m_timerId = 0;
-        m_param = NULL;
-        m_param1 = NULL;
-        m_param2 = NULL;
-        m_post = false;
-        m_queue = NULL;
-    }
-
     CTimer::CTimer()
     {
-        m_timerMaxCount = default_timer_max_count;
-        m_generateId = 1;
         assert(pipe(m_pipe) == 0);
     }
 
     CTimer::~CTimer()
     {
         SendCmd(CMD_EXIT, strlen(CMD_EXIT));
-        Clear();
         close(m_pipe[0]);
         close(m_pipe[1]);
-    }
-
-    int CTimer::AddTimer(unsigned long milliSecond, int count, TimerCallBack cb, CTimerApi* object,
-                void* param, void* param1, void* param2, 
-                bool post, SafeyMsgQueue* queue)
-    {
-        CLockOwner Owner(m_mutex);
-        
-        if (m_timerMaxCount < m_timerMap.size())
-        {
-            fprintf(stderr, "%s:%d Timer maximum limit %d\n", __FILE__, __LINE__, m_timerMaxCount);
-            return -1;
-        }
-
-        unsigned int timerId = GenerateId();
-        TimerMap::iterator it = m_timerMap.find(timerId);
-        if (it != m_timerMap.end())
-        {
-            return -1;
-        }
-        
-        CTimerMessage* message = new CTimerMessage;
-        message->m_milliInterval = milliSecond;
-        message->m_totalCount = count;
-        message->m_remindCount = 0;
-        message->m_cbFunction = cb;
-        message->m_object = object;
-        message->m_beginTime = MilliTimestamp();
-        message->m_timerId = timerId;
-        message->m_param = param;
-        message->m_param1 = param1;
-        message->m_param2 = param2;
-        message->m_post = post;
-        message->m_queue = queue;
-
-        m_timerMap[timerId] = message;
-
-        WakeUp();
-
-        return timerId;
     }
 
     int CTimer::StopTimer(unsigned int timerId)
     {
         CLockOwner Owner(m_mutex);
-
-        TimerMap::iterator it = m_timerMap.find(timerId);
-        if (it != m_timerMap.end())
-        {
-            delete it->second;
-            m_timerMap.erase(it);
-            WakeUp();
-        }
-
+        m_timerHandle.StopTimer(timerId);
+        WakeUp();
         return 0;  
     }
 
     void CTimer::StopAllTimer()
     {
         CLockOwner Owner(m_mutex);
-        Clear();
+        m_timerHandle.StopAllTimer();
         WakeUp();
+    }
+
+    int CTimer::AddTimer(unsigned long milliSecond, int count, TimerCallBack cb, CTimerApi* object,
+        void* param, void* param1, void* param2, bool post, SafeyMsgQueue* queue)
+    {
+        CLockOwner Owner(m_mutex);
+        int id = m_timerHandle.AddTimer(milliSecond, count, cb, object, param, param1, param2, post, queue);
+        WakeUp();
+        return id;
+    }
+
+    int CTimer::AddTimer(unsigned long milliSecond, int count, TimerCallBackEx cb,
+        void* param, void* param1, void* param2, bool post, SafeyMsgQueue* queue)
+    {
+        CLockOwner Owner(m_mutex);
+        int id = m_timerHandle.AddTimer(milliSecond, count, cb,  param, param1, param2, post, queue);
+        WakeUp();
+        return id;
     }
 
     int CTimer::Run()
@@ -180,7 +78,9 @@ namespace ctm
 
         while(1)
         {
-            sleepMilliSecond = SleepMilliSecond();
+            m_mutex.Lock();
+            sleepMilliSecond = m_timerHandle.HandleTimeOuts();
+            m_mutex.UnLock();
             val.tv_sec = sleepMilliSecond / 1000;
             val.tv_usec = (sleepMilliSecond % 1000) * 1000;
             FD_ZERO(&readset);
@@ -221,73 +121,6 @@ namespace ctm
         return 0;
     }
 
-    unsigned long CTimer::SleepMilliSecond()
-    {
-        long timeCost = 0;
-        long timeLeft = 0;
-        unsigned long sleepTime = 1000;
-        unsigned long currTime = MilliTimestamp();
-
-        CLockOwner Owner(m_mutex);
-
-        TimerMap::iterator it = m_timerMap.begin();
-        while(it != m_timerMap.end())
-        {
-            timeCost = currTime - it->second->m_beginTime;
-            timeLeft = it->second->m_milliInterval - timeCost;
-            if (timeLeft <= 0) 
-            {
-                it->second->m_remindCount++;
-
-                // 超时通知上层
-                if (it->second->m_post)
-                {
-                    if (it->second->m_queue) it->second->m_queue->PushBack(it->second);
-                }
-                else
-                {
-                    if (it->second->m_object && it->second->m_cbFunction)
-                    {
-                        CTimerApi* object = it->second->m_object;
-                        TimerCallBack func = it->second->m_cbFunction;
-                        (object->*func)(it->second->m_timerId, it->second->m_remindCount, 
-                                        it->second->m_param, it->second->m_param1, it->second->m_param2);
-                    }
-                    else if (it->second->m_object && it->second->m_cbFunction == NULL)
-                    {
-                        CTimerApi* object = it->second->m_object;
-                        object->OnTimer(it->second->m_timerId, it->second->m_remindCount, it->second->m_param);
-                    }
-                }
-
-                if (it->second->m_totalCount <= it->second->m_remindCount)
-                {
-                    if (it->second->m_post == false)
-                        delete it->second;
-                    else
-                        it->second->m_delete = true;
-
-                    m_timerMap.erase(it++);
-                    continue;
-                }
-                else
-                {
-                    timeLeft = it->second->m_milliInterval;
-                    it->second->m_beginTime = currTime;
-                }
-            }
-
-            if (timeLeft > 0 && (unsigned long)timeLeft < sleepTime)
-            {
-                sleepTime = timeLeft;
-            }
-
-            it++; 
-        }
-
-        return sleepTime;
-    }
-
     int CTimer::SendCmd(const char* cmd, int len)
     {
         int ret = 0;
@@ -312,21 +145,5 @@ namespace ctm
     bool CTimer::WakeUp()
     {
         return (SendCmd(CMD_WAKE_UP, CMD_LEN) > 0);
-    }
-
-    unsigned int CTimer::GenerateId()
-    {
-        if (++m_generateId == (unsigned long)-1) m_generateId = 1;
-        return m_generateId;
-    }
-
-    void CTimer::Clear()
-    {
-        TimerMap::iterator it = m_timerMap.begin();
-        for (; it != m_timerMap.end(); it++)
-        {
-            delete it->second;
-        }
-        m_timerMap.clear();
     }
 };

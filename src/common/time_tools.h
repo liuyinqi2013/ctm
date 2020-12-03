@@ -70,13 +70,20 @@ namespace ctm
 	{
 		return Timestamp2FormatTime(time(NULL), timeFmt);
 	}
-
 	// 指定时间是星期几[0, 6]
 	int DayOfWeek(time_t time = time(NULL));
-
 	// 指定时间是当年的第几周[00, 53]
 	int WeekOfYear(time_t time = time(NULL));
-
+	// 时区
+	int Timezone();
+	// 当天开始时间
+	time_t TodayBeginTime(time_t time = time(NULL));
+	// 当天结束时间
+	time_t TodayEndTime(time_t time = time(NULL));
+	// 下一天开始时间
+	time_t NextDayBeginTime(time_t time = time(NULL), int day = 1);
+	// 下一天结束时间
+	time_t NextDayEndTime(time_t time = time(NULL), int day = 1);
 	// 毫秒时间戳转换为日期时间
 	string MilliTimestamp2DateTime(unsigned long time);
 	

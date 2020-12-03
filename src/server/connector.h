@@ -71,7 +71,7 @@ namespace ctm
         CEventMonitor* m_eventMonitor;
         std::list<CConn*> m_readyCConns;
         std::set<CConn*>  m_readyCConnsSet;
-        short m_timeOut;
+        unsigned int m_timeOut;
         CShareMemory* m_shareMem;
         CSemaphore*   m_semaphore;
         unsigned int  m_memConnCnt;

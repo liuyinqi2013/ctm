@@ -96,12 +96,10 @@ namespace ctm
 
     void CShardMemConn::CloseRead()
     {
-        // ChangeStatus(RDCLOSED);
     }
 
     void CShardMemConn::CloseWrite()
     {
-        // ChangeStatus(WRCLOSED);
     }
 
     void CShardMemConn::Close()

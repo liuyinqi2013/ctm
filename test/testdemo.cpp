@@ -113,7 +113,6 @@ DECLARE_FUNC(strtool)
 
 DECLARE_FUNC_EX(timetool)
 {
-	// CClock clock;
 	cout << Timestamp() << endl;
 	cout << MilliTimestamp() << endl;
 
@@ -143,8 +142,10 @@ DECLARE_FUNC_EX(timetool)
 
 	cout << DayOfWeek() << endl;
 	cout << WeekOfYear() << endl;
-
-	// cout << clock.RunInfo() << endl;
+	cout << Timezone() << endl;
+	cout << TodayBeginTime() << endl;
+	cout << TodayEndTime() << endl;
+	
 	return 0;
 }
 

@@ -187,7 +187,7 @@ namespace ctm
         conn->event.fd = conn->fd;
         conn->event.monitor = this;
 
-        return AddEvent(&conn->event, EVENT_READ | EVENT_WRITE | EVENT_EPOLL_ET | EVENT_PEER_CLOSE);
+        return AddEvent(&conn->event, EVENT_READ | EVENT_WRITE | EVENT_PEER_CLOSE);
     }
 
     int CEpollEventMonitor::DelConn(CConn* conn)

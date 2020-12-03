@@ -172,26 +172,15 @@ namespace ctm
                     continue;
                 }
                 else if (EAGAIN == error || EWOULDBLOCK == error) {
-                    //if (event.monitor) event.monitor->AddEvent(&event, EVENT_WRITE);
                     return IO_WR_AGAIN;
                 }
                 else {
-
-                    // Close();
-
-                    // if (action) action->OnException(this);
-
                     CTM_DEBUG_LOG(log, "write failed :%d:%s", error, strerror(error));
-
                     return IO_EXCEPT;
                 }
             }
             else if (retlen == 0)
             {
-                // CloseWrite();
-
-                // if (action) action->OnWriteClose(this);
-
                 return IO_WR_CLOSE;
             }
             else
@@ -206,11 +195,7 @@ namespace ctm
                 }
                 else 
                 {
-                    // if (event.monitor) event.monitor->AddEvent(&event, EVENT_WRITE);
-
                     writable = true;
-                    // if (action) action->OnReady(this);
-                    
                     return IO_WR_OK;
                 }
             }
@@ -246,26 +231,16 @@ namespace ctm
                 }
                 else if (EAGAIN == error || EWOULDBLOCK == error) 
                 {
-                    // if (event.monitor) event.monitor->AddEvent(&event, EVENT_READ);
                     return IO_RD_AGAIN;
                 }
                 else 
                 {
-                    //Close();
-
-                    //if (action) action->OnException(this);
-
                     CTM_DEBUG_LOG(log, "Recv failed :%d:%s", error, strerror(error));
-
                     return IO_EXCEPT;
                 }
             }
             else if (retlen == 0)
             {
-                //CloseRead();
-
-                //if (action) action->OnReadClose(this);
-
                 return IO_RD_CLOSE;
             }
             else
@@ -280,11 +255,7 @@ namespace ctm
                 }
                 else 
                 {
-                    //if (event.monitor) event.monitor->AddEvent(&event, EVENT_READ);
-
                     readable = true;
-                    //if (action) action->OnReady(this);
-
                     return IO_RD_OK;
                 }
             }
@@ -485,9 +456,6 @@ namespace ctm
         {
             m_connTypeMap[conn->type].push_back(conn);
             conn->Close();
-            
-            // m_connSet.erase(conn);
-            // delete conn;
         }
     }
 

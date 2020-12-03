@@ -7,7 +7,7 @@
 #include "net/memconn.h"
 #include "common/mem_queue.h"
 
-#define MAX_CONN_SIZE (1024 * 10)
+#define MAX_CONN_SIZE (1024 * 100)
 #define MEM_GAP (32)
 
 namespace ctm
@@ -18,7 +18,7 @@ namespace ctm
         m_connPool(NULL),
         m_eventHandler(NULL),
         m_eventMonitor(NULL),
-        m_timeOut(2),
+        m_timeOut(1000),
         m_shareMem(NULL),
         m_semaphore(NULL)
 
@@ -64,15 +64,14 @@ namespace ctm
                 CTM_DEBUG_LOG(m_log, "Handle conns I/O event failed!");
                 return -1;
             }
-
+            /*
             if (HandleReadyCConns() == -1)
             {
                 CTM_DEBUG_LOG(m_log, "Handle already Conns I/O event failed!");
                 return -1;
             }
-
             HandleMemroyConns();
-
+            */
             return 0;
         }
         
@@ -188,7 +187,7 @@ namespace ctm
         switch (error)
         {
         case IO_RD_OK:
-            OnReady(conn);
+            // OnReady(conn);
             break;
         case IO_RD_AGAIN:
             break;
@@ -314,7 +313,7 @@ namespace ctm
         SOCKETLEN_T len = sizeof(remoteAddr);
         while(1)
         {
-            fd = accept(listenConn->fd, (struct sockaddr*)&remoteAddr,&len);
+            fd = accept(listenConn->fd, (struct sockaddr*)&remoteAddr, &len);
             if (fd == SOCKET_INVALID)
             {
                 err = errno;
@@ -341,6 +340,7 @@ namespace ctm
         }
 
         SetKeepAlive(fd, 10);
+        SetNoDelay(fd);
 
         CConn* conn = CreateConn(fd, EVENT_READ | EVENT_WRITE | EVENT_PEER_CLOSE /*| EVENT_EPOLL_ET*/ , CConn::ACTIVE, false, AF_INET);
         

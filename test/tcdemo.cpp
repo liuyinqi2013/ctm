@@ -8,7 +8,6 @@
 #include <cassert>
 #include <termios.h>
 #include <sys/sysmacros.h>
-#include "test_server.h"
 #include "echo_client.h"
 #include "echo_server.h"
 
@@ -334,25 +333,6 @@ DECLARE_FUNC(echo_cli)
 	return 0;
 }
 
-DECLARE_FUNC(test_ser)
-{
-	CClock clock;
-	CTestServer testSer;
-	if (testSer.Init(CLog::GetInstance()) == -1)
-	{
-		fprintf(stderr, "test server init failed\n");
-		return -1;
-	}
-
-	CTM_INFO_LOG(CLog::GetInstance(), "test_ser init OK");
-
-	while(testSer.Execute() == 0);
-
-	CTM_INFO_LOG(CLog::GetInstance(), "%s", clock.RunInfo().c_str());
-
-	return 0;
-}
-
 DECLARE_FUNC(base_game_ser)
 {
 	CClock clock;
@@ -368,16 +348,11 @@ DECLARE_FUNC(base_game_ser)
 
 	gameServer.StartListen(9999);
 	gameServer.StartListen(8888);
-
-	gameServer.MemroyConn(2048, 2048, true);
-	gameServer.MemroyConn(2049, 2048, true);
+	gameServer.StartHeartBeats(3);
 
 	CTM_INFO_LOG(CLog::GetInstance(), "gameServer init OK");
 
-	gameServer.SetHeartBeat(true);
-	gameServer.SetHBInterval(5);
-
-	gameServer.GoRun();
+	gameServer.Run();
 
 	CTM_INFO_LOG(CLog::GetInstance(), "%s", clock.RunInfo().c_str());
 
@@ -402,16 +377,12 @@ DECLARE_FUNC(base_game_cli)
 	CConn* conn  = gameClient.Connect("127.0.0.1", 9999);
 	CConn* conn1 = gameClient.Connect("127.0.0.1", 8888);
 
-	CConn* conn2  = gameClient.MemroyConn(2048, 2048, false);
-	CConn* conn3 = gameClient.MemroyConn(2049, 2048, false);
+	gameClient.StartTimer(5, 100, (TimerCallBack)&CBaseGame::TestEchoTimer, conn, (void*)"hello 9999");
+	gameClient.StartTimer(2, 50, (TimerCallBack)&CBaseGame::TestEchoTimer, conn, (void*)"hello 8888");
+	char buf[] = "ggggggggggggggggggggggggggggggggg";
+	gameClient.Send(conn, 100, 10, 12345, 9, buf, sizeof(buf));
 
-	gameClient.StartTimer(500, 50, (TimerCallBack)&CBaseGame::TestEchoTimer, conn, (void*)"hello 9999");
-	gameClient.StartTimer(100, 20, (TimerCallBack)&CBaseGame::TestEchoTimer, conn, (void*)"hello 8888");
-
-	// gameClient.SetHeartBeat(true);
-	// gameClient.SetHBInterval(5);
-
-	gameClient.GoRun();
+	gameClient.Run();
 
 	CTM_INFO_LOG(CLog::GetInstance(), "%s", clock.RunInfo().c_str());
 
