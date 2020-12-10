@@ -21,7 +21,7 @@ namespace ctm
 
     int CEchoClient::Init(const string& ip, unsigned int port, CLog* log)
     {
-        if (CConnector::Init(log) == -1)
+        if (CConnector::Init() == -1)
         {
             return -1;
         }
@@ -35,7 +35,7 @@ namespace ctm
         m_stdin = CreateConn(STDIN_FILENO, EVENT_READ/* | EVENT_EPOLL_ET*/);
         if (m_stdin == NULL)
         {
-            CTM_ERROR_LOG(m_log, "CreateConn conn failed!");
+            ERROR("CreateConn conn failed!");
             return -1;
         }
 
@@ -44,7 +44,7 @@ namespace ctm
 
     void CEchoClient::OnAsynConnTimeOut(CConn* conn)
     {
-        CTM_DEBUG_LOG(m_log, "On Asyn Conn Time Out");
+        DEBUG("On Asyn Conn Time Out");
         m_status = EXCEPT;
     }
 
@@ -86,7 +86,7 @@ namespace ctm
         {
             if (m_stdin->status == CConn::CLOSED && m_conn->sendCache.size() == 0)
             {
-                CTM_DEBUG_LOG(m_log, "Send Over len =%d [%s]", m_sendLen, m_conn->ToString().c_str());
+                DEBUG("Send Over len =%d [%s]", m_sendLen, m_conn->ToString().c_str());
 
                 m_conn->CloseWrite();
                 OnWriteClose(m_conn);
@@ -96,13 +96,13 @@ namespace ctm
 
     void CEchoClient::OnReadClose(CConn* conn)
     {
-        CTM_DEBUG_LOG(m_log, "OnReadClose:[%s]", conn->ToString().c_str());
+        DEBUG("OnReadClose:[%s]", conn->ToString().c_str());
 
         if (conn == m_stdin)
         {
             if (m_conn->sendCache.size() == 0)
             {
-                CTM_DEBUG_LOG(m_log, "Send Over len =%d [%s]", m_sendLen, m_conn->ToString().c_str());
+                DEBUG("Send Over len =%d [%s]", m_sendLen, m_conn->ToString().c_str());
                 m_conn->CloseWrite();
                 OnWriteClose(m_conn);
             }
@@ -117,7 +117,7 @@ namespace ctm
 
     void CEchoClient::OnClose(CConn* conn)
     {
-        CTM_DEBUG_LOG(m_log, "OnClose:[%s]", conn->ToString().c_str());
+        DEBUG("OnClose:[%s]", conn->ToString().c_str());
 
         CConnector::OnClose(conn);
         

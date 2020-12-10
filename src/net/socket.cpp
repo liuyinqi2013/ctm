@@ -147,6 +147,40 @@ namespace ctm
 		return 0;
 	}
 
+	int SetRcvLowat(SOCKET_T sockfd, int val)
+	{
+		return setsockopt(sockfd, SOL_SOCKET, SO_RCVLOWAT, (const char*)&val, sizeof(val));
+	}
+
+	int SetSndLowat(SOCKET_T sockfd, int val)
+	{
+		return setsockopt(sockfd, SOL_SOCKET, SO_SNDLOWAT, (const char*)&val, sizeof(val));
+	}
+
+	int GetRcvLowat(SOCKET_T sockfd)
+	{
+		int val = 0;
+		SOCKETLEN_T len = sizeof(val);
+		if (!getsockopt(sockfd, SOL_SOCKET, SO_RCVLOWAT, &val, &len))
+		{
+			return -1;
+		}
+
+		return val;
+	}
+
+	int GetSndLowat(SOCKET_T sockfd)
+	{
+		int val = 0;
+		SOCKETLEN_T len = sizeof(val);
+		if (!getsockopt(sockfd, SOL_SOCKET, SO_SNDLOWAT, &val, &len))
+		{
+			return -1;
+		}
+		
+		return val;
+	}
+
 	std::string LocalHostName()
 	{
 		char hostName[256] = {0};

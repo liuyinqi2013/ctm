@@ -14,7 +14,7 @@ namespace ctm
 {
 	void Thread_PIPE(int sign)
 	{
-		DEBUG_LOG("Recv sign SIGPIPE thread id : %d", pthread_self());
+		DEBUG("Recv sign SIGPIPE thread id : %d", pthread_self());
 	}
 	
 	int CTcpNetServer::CNetSendThread::Run()
@@ -64,31 +64,31 @@ namespace ctm
 		m_epollFd = epoll_create(MAX_EPOLL_FDS);
 		if (-1 == m_epollFd)
 		{
-			ERROR_LOG("epoll_create1 failed");
+			ERROR("epoll_create1 failed");
 			return false;
 		}
 
 		if(!m_sockFd.IsValid())
 		{
-			ERROR_LOG("m_tcpSock INVALID!");
+			ERROR("m_tcpSock INVALID!");
 			return false;
 		}
 
 		if (!m_sockFd.SetKeepAlive(600))
 		{
-			ERROR_LOG("errcode = %d, errmsg = %s!", m_sockFd.GetErrCode(), m_sockFd.GetErrMsg().c_str());
+			ERROR("errcode = %d, errmsg = %s!", m_sockFd.GetErrCode(), m_sockFd.GetErrMsg().c_str());
 			return false;
 		}
 		
 		if(!m_sockFd.Bind(m_strIp, m_iPort))
 		{
-			ERROR_LOG("errcode = %d, errmsg = %s!", m_sockFd.GetErrCode(), m_sockFd.GetErrMsg().c_str());
+			ERROR("errcode = %d, errmsg = %s!", m_sockFd.GetErrCode(), m_sockFd.GetErrMsg().c_str());
 			return false;
 		}
 
 		if(!m_sockFd.Listen(SOMAXCONN))
 		{
-			ERROR_LOG("errcode = %d, errmsg = %s!", m_sockFd.GetErrCode(), m_sockFd.GetErrMsg().c_str());
+			ERROR("errcode = %d, errmsg = %s!", m_sockFd.GetErrCode(), m_sockFd.GetErrMsg().c_str());
 			return false;
 		}
 
@@ -99,14 +99,14 @@ namespace ctm
 		int iRet = epoll_ctl(m_epollFd, EPOLL_CTL_ADD, m_sockFd.GetSock(), &event);
 		if (iRet != 0)
 		{
-			ERROR_LOG("epoll_ctl failed");
+			ERROR("epoll_ctl failed");
 			return false;
 		}
 
 		m_pSendThread = new CNetSendThread[m_sendThreadNum];
 		if (!m_pSendThread)
 		{
-			ERROR_LOG("create send thread failed");
+			ERROR("create send thread failed");
 			return false;			
 		}
 
@@ -119,7 +119,7 @@ namespace ctm
 		m_pRecvThread = new CNetRecvThread[m_recvThreadNum];
 		if (!m_pRecvThread)
 		{
-			ERROR_LOG("create recv thread failed");
+			ERROR("create recv thread failed");
 			return false;			
 		}
 
@@ -134,7 +134,7 @@ namespace ctm
 
 	void CTcpNetServer::ShutDown()
 	{
-		DEBUG_LOG("Tcp net server shutdown");
+		DEBUG("Tcp net server shutdown");
 		
 		CLockOwner owner(m_mutexLock);
 
@@ -215,7 +215,7 @@ namespace ctm
 			nfds = epoll_wait(m_epollFd, events, MAX_WAIT_EVENTS, -1);
 			if (nfds == -1) 
 			{
-				ERROR_LOG("epoll_wait failed");
+				ERROR("epoll_wait failed");
 				return -1;
 			}
 			
@@ -224,10 +224,10 @@ namespace ctm
 				if (events[i].data.fd == m_sockFd.GetSock())
 				{
 					clientSock = m_sockFd.Accept(strClientIp, iClientPort);
-					DEBUG_LOG("clientSock fd = %d", clientSock.GetSock());
+					DEBUG("clientSock fd = %d", clientSock.GetSock());
 					if (!clientSock.IsValid())
 					{
-						ERROR_LOG("errcode = %d, errmsg = %s!", m_sockFd.GetErrCode(), m_sockFd.GetErrMsg().c_str());
+						ERROR("errcode = %d, errmsg = %s!", m_sockFd.GetErrCode(), m_sockFd.GetErrMsg().c_str());
 						if (m_sockFd.GetErrCode() == EINTR)
 							continue;
 						
@@ -251,13 +251,13 @@ namespace ctm
 						pNetPack->olen = 0;
 						pNetPack->obuf[0] = 0x0;
 						m_recvQueue.Push(pNetPack);
-						DEBUG_LOG("Net Put Login");
+						DEBUG("Net Put Login");
 					}
 					
 				}
 				else if (events[i].events & EPOLLRDHUP)
 				{
-					DEBUG_LOG("Socket %d peer shutdown", events[i].data.fd);
+					DEBUG("Socket %d peer shutdown", events[i].data.fd);
 					/*
 					if (ReadClientConnect(m_mapConns[events[i].data.fd]) != 0)
 						DelClientConnect(events[i].data.fd);
@@ -267,12 +267,12 @@ namespace ctm
 				}
 				else if (events[i].events & EPOLLERR)
 				{
-					DEBUG_LOG("Socket %d is happend error", events[i].data.fd);
+					DEBUG("Socket %d is happend error", events[i].data.fd);
 					DelClientConnect(events[i].data.fd);
 				}	
 				else if (events[i].events & EPOLLIN)
 				{
-					//DEBUG_LOG("Socket %d is Readable", events[i].data.fd);
+					//DEBUG("Socket %d is Readable", events[i].data.fd);
 					//CReadThread::PutMsg(m_mapConns[events[i].data.fd]);
 					//ReadOnePacket(m_mapConns[events[i].data.fd]);
 					/*
@@ -304,7 +304,7 @@ namespace ctm
 	
 	bool CTcpNetServer::AddClientConnect(ClientConnect* conn)
 	{
-		DEBUG_LOG("BEGIN");
+		DEBUG("BEGIN");
 		if (!conn) return false;
 
 			
@@ -315,13 +315,13 @@ namespace ctm
 		struct epoll_event event = {0};
 		event.events  = EPOLLIN | EPOLLERR | EPOLLRDHUP | EPOLLET;
 		event.data.fd = conn->m_ConnSock.GetSock();
-		DEBUG_LOG("Add new connect [%s]", conn->ToString().c_str());
+		DEBUG("Add new connect [%s]", conn->ToString().c_str());
 		int iRet = epoll_ctl(m_epollFd, EPOLL_CTL_ADD, conn->m_ConnSock.GetSock(), &event);
 		if (iRet != 0)
 		{
 			int errCode = GetSockErrCode();
 			std::string errMsg  = GetSockErrMsg(errCode);	
-			ERROR_LOG("epoll_ctl add failed fd : %d errno = %d, errmsg = %s", conn->m_ConnSock.GetSock(), errCode, errMsg.c_str());
+			ERROR("epoll_ctl add failed fd : %d errno = %d, errmsg = %s", conn->m_ConnSock.GetSock(), errCode, errMsg.c_str());
 			
 			conn->m_ConnSock.Close();
 			delete conn;
@@ -330,14 +330,14 @@ namespace ctm
 
 		}
 		m_mapConns[conn->m_ConnSock.GetSock()] = conn;
-		DEBUG_LOG("END");
+		DEBUG("END");
 
 		return true;
 	} 
 
 	bool CTcpNetServer::DelClientConnect(SOCKET_T sock)
 	{
-		DEBUG_LOG("BEGIN");
+		DEBUG("BEGIN");
 		
 		CLockOwner owner(m_mutexLock);
 
@@ -355,19 +355,19 @@ namespace ctm
 		std::map<SOCKET_T, ClientConnect*>::iterator it = m_mapConns.find(sock);
 		if (it != m_mapConns.end())
 		{
-			DEBUG_LOG("find");
+			DEBUG("find");
 			ClientConnect* conn = it->second;
 			if (!conn) return false;
 
 
 			int iRet = epoll_ctl(m_epollFd, EPOLL_CTL_DEL, conn->m_ConnSock.GetSock(), NULL);
-			DEBUG_LOG("Delete connect [%s]", conn->ToString().c_str());
+			DEBUG("Delete connect [%s]", conn->ToString().c_str());
 			if (iRet != 0)
 			{
 				int errCode = GetSockErrCode();
 				std::string errMsg  = GetSockErrMsg(errCode);
 				
-				ERROR_LOG("epoll_ctl del failed fd : %d errno = %d, errmsg = %s", conn->m_ConnSock.GetSock(), errCode, errMsg.c_str());
+				ERROR("epoll_ctl del failed fd : %d errno = %d, errmsg = %s", conn->m_ConnSock.GetSock(), errCode, errMsg.c_str());
 			}
 
 			CSystemNetMsg systemNetMsg(conn->m_iConnPort, conn->m_strConnIp, conn->m_ConnSock.GetSock(), 2);
@@ -383,7 +383,7 @@ namespace ctm
 					pNetPack->olen = 0;
 					pNetPack->obuf[0] = 0x0;
 					m_recvQueue.Push(pNetPack);
-					DEBUG_LOG("Net off line");
+					DEBUG("Net off line");
 			}
 			
 			conn->m_ConnSock.Close();
@@ -392,7 +392,7 @@ namespace ctm
 			m_mapConns.erase(it);
 		}
 		
-		DEBUG_LOG("END");
+		DEBUG("END");
 		return true;
 	}
 
@@ -426,7 +426,7 @@ namespace ctm
 			int len = pConn->m_ConnSock.Send(buf.data(), buf.size());
 			if (len <= 0)
 			{
-				ERROR_LOG("errcode = %d, errmsg = %s!", pConn->m_ConnSock.GetErrCode(), pConn->m_ConnSock.GetErrMsg().c_str());
+				ERROR("errcode = %d, errmsg = %s!", pConn->m_ConnSock.GetErrCode(), pConn->m_ConnSock.GetErrMsg().c_str());
 			}
 		}
 
@@ -463,7 +463,7 @@ namespace ctm
 				}
 				else
 				{
-					DEBUG_LOG("errcode = %d, errmsg = %s!", errCode, errMsg.c_str());
+					DEBUG("errcode = %d, errmsg = %s!", errCode, errMsg.c_str());
 					ret = -1;
 				}
 				
@@ -497,12 +497,12 @@ namespace ctm
 
 	int CTcpNetServer::ReadOnePacket(ClientConnect* conn)
 	{
-		DEBUG_LOG("BEGIN");
+		DEBUG("BEGIN");
 		int dataLen = 0;
 
 		if (Readn(conn, (char*)&dataLen, sizeof(dataLen)) < 0)
 		{
-			DEBUG_LOG("ip = %s, port = %d read 4 bit data failed", conn->m_strConnIp.c_str(), conn->m_iConnPort);
+			DEBUG("ip = %s, port = %d read 4 bit data failed", conn->m_strConnIp.c_str(), conn->m_iConnPort);
 			return -1;
 		}
 		
@@ -510,19 +510,19 @@ namespace ctm
 		int len = conn->m_ConnSock.Recv((char*)&dataLen, sizeof(dataLen));
 		if (len < sizeof(dataLen)) 
 		{
-			DEBUG_LOG("ip = %s, port = %d, len = %d read 4 bit data failed", conn->m_strConnIp.c_str(), conn->m_iConnPort, len);
+			DEBUG("ip = %s, port = %d, len = %d read 4 bit data failed", conn->m_strConnIp.c_str(), conn->m_iConnPort, len);
 			DelClientConnect(conn);
 			return -1;
 		}
 		*/
 
 		dataLen = ntohl(dataLen);
-		DEBUG_LOG("Content dataLen = %d\n", dataLen);
+		DEBUG("Content dataLen = %d\n", dataLen);
 
 		char *buf = new char[dataLen + 1];
 		if (!buf)
 		{
-			DEBUG_LOG("malloc mem failed");
+			DEBUG("malloc mem failed");
 			return -1;
 		}
 
@@ -533,7 +533,7 @@ namespace ctm
 		
 		if (Readn(conn, buf, dataLen) < 0)
 		{
-			DEBUG_LOG("Readn failed");
+			DEBUG("Readn failed");
 			delete[] buf;
 			return -1;
 		}
@@ -546,14 +546,14 @@ namespace ctm
 			{
 				errCode = GetSockErrCode();
 				errMsg  = GetSockErrMsg(errCode);
-				//DEBUG_LOG("errcode = %d, errmsg = %s!", errCode, errMsg.c_str());
+				//DEBUG("errcode = %d, errmsg = %s!", errCode, errMsg.c_str());
 				if (errCode == EINTR) 
 				{
 					continue;
 				}
 				else if (errCode == EWOULDBLOCK || errCode == EAGAIN)
 				{
-					//DEBUG_LOG("ip = %s, port = %d, len = %d need wait data", conn->m_strConnIp.c_str(), conn->m_iConnPort, len);
+					//DEBUG("ip = %s, port = %d, len = %d need wait data", conn->m_strConnIp.c_str(), conn->m_iConnPort, len);
 					usleep(1000);
 					continue;
 				}
@@ -572,7 +572,7 @@ namespace ctm
 		*/
 		
 
-		//DEBUG_LOG("ip = %s, port = %d, len = %d, recv = %s", conn->m_strConnIp.c_str(), conn->m_iConnPort, dataLen, buf);
+		//DEBUG("ip = %s, port = %d, len = %d, recv = %s", conn->m_strConnIp.c_str(), conn->m_iConnPort, dataLen, buf);
 		
 		CNetPack* pNetPack = m_netPackPool.Get();
 		if (pNetPack)
@@ -599,14 +599,14 @@ namespace ctm
 
 		delete[] buf;
 		
-		DEBUG_LOG("END");
+		DEBUG("END");
 		return 0;
 	}
 
 
 	int CTcpNetServer::Readn(ClientConnect* conn, char* buf, int len)
 	{
-		DEBUG_LOG("BEGIN");
+		DEBUG("BEGIN");
 		int offset  = 0;
 		int errCode = 0;
 		int length  = 0;
@@ -614,19 +614,19 @@ namespace ctm
 		while (offset < len)
 		{
 			length = conn->m_ConnSock.Recv(buf + offset, len - offset);
-			DEBUG_LOG("len = %d, length = %d, offset = %d", len, length, offset);
+			DEBUG("len = %d, length = %d, offset = %d", len, length, offset);
 			if (length <= 0)
 			{
 				errCode = GetSockErrCode();
 				errMsg  = GetSockErrMsg(errCode);
-				DEBUG_LOG("errcode = %d, errmsg = %s!", errCode, errMsg.c_str());
+				DEBUG("errcode = %d, errmsg = %s!", errCode, errMsg.c_str());
 				if (errCode == EINTR)
 				{
 					continue;
 				}
 				else if (errCode == EWOULDBLOCK || errCode == EAGAIN)
 				{
-					DEBUG_LOG("ip = %s, port = %d, len = %d need wait data", conn->m_strConnIp.c_str(), conn->m_iConnPort, len);
+					DEBUG("ip = %s, port = %d, len = %d need wait data", conn->m_strConnIp.c_str(), conn->m_iConnPort, len);
 					usleep(1000);
 					continue;
 				}
@@ -642,7 +642,7 @@ namespace ctm
 			}
 		}
 		
-		DEBUG_LOG("END");
+		DEBUG("END");
 		
 		return len;
 	}

@@ -26,9 +26,9 @@ namespace ctm
 	void CNetMsg::TestPrint()
 	{
 		CMsg::TestPrint();
-		DEBUG_LOG("Port = %d", m_iPort);
-		DEBUG_LOG("IP  = %s",  m_strIp.c_str());
-		DEBUG_LOG("buf  = %s", m_buf.c_str());
+		DEBUG("Port = %d", m_iPort);
+		DEBUG("IP  = %s",  m_strIp.c_str());
+		DEBUG("buf  = %s", m_buf.c_str());
 	}
 
 	CSystemNetMsg::CSystemNetMsg() :
@@ -55,10 +55,10 @@ namespace ctm
 	void CSystemNetMsg::TestPrint()
 	{
 		CMsg::TestPrint();
-		DEBUG_LOG("sock = %d", m_sock);
-		DEBUG_LOG("Port = %d", m_iPort);
-		DEBUG_LOG("IP  = %s",  m_strIp.c_str());
-		DEBUG_LOG("opt = %s",  m_opt);
+		DEBUG("sock = %d", m_sock);
+		DEBUG("Port = %d", m_iPort);
+		DEBUG("IP  = %s",  m_strIp.c_str());
+		DEBUG("opt = %s",  m_opt);
 	}
 
 	const Json::Value& CSystemNetMsg::ToJson()
@@ -102,13 +102,13 @@ namespace ctm
 
 	void CNetPack::TestPrint()
 	{
-		DEBUG_LOG("sock  = %d",  sock);
-		DEBUG_LOG("ip  = %s",  ip);
-		DEBUG_LOG("port = %d", port);
-		DEBUG_LOG("ilen  = %d", ilen);
-		DEBUG_LOG("ibuf  = %s", ibuf);
-		DEBUG_LOG("olen  = %d", olen);
-		DEBUG_LOG("obuf  = %s", obuf);
+		DEBUG("sock  = %d",  sock);
+		DEBUG("ip  = %s",  ip);
+		DEBUG("port = %d", port);
+		DEBUG("ilen  = %d", ilen);
+		DEBUG("ibuf  = %s", ibuf);
+		DEBUG("olen  = %d", olen);
+		DEBUG("obuf  = %s", obuf);
 	}
 
 	void CNetPack::Copy(const CNetPack& other)

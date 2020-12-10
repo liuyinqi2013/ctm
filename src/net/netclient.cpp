@@ -7,19 +7,19 @@ namespace ctm
 	{
 		if(!m_Socket.IsValid())
 		{
-			ERROR_LOG("m_Socket INVALID!");
+			ERROR("m_Socket INVALID!");
 			return false;
 		}
 
 		if (!m_Socket.SetKeepAlive(600))
 		{
-			ERROR_LOG("errcode = %d, errmsg = %s!", m_Socket.GetErrCode(), m_Socket.GetErrMsg().c_str());
+			ERROR("errcode = %d, errmsg = %s!", m_Socket.GetErrCode(), m_Socket.GetErrMsg().c_str());
 			return false;
 		}
 
 		if (!m_Socket.Connect(m_strServerIp, m_iPort))
 		{
-			ERROR_LOG("Connect %s:%d failed!", m_strServerIp.c_str(), m_iPort);
+			ERROR("Connect %s:%d failed!", m_strServerIp.c_str(), m_iPort);
 			return false;
 		}
 
@@ -60,7 +60,7 @@ namespace ctm
 						
 					while(!m_Socket.ReConnect())
 					{
-						ERROR_LOG("ReConnect %s:%d failed!", m_strServerIp.c_str(), m_iPort);
+						ERROR("ReConnect %s:%d failed!", m_strServerIp.c_str(), m_iPort);
 						sleep(2);
 					}
 					

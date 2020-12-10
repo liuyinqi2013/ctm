@@ -41,13 +41,13 @@ namespace ctm
         {
             if ((events & EVENT_EPOLL_RDHUP) || (events & EVENT_EPOLL_ERROR))
             {
-                CTM_ERROR_LOG(conn->log, "xxxx [%d] [%s]", events, conn->ToString().c_str());
+               ERROR("xxxx [%d] [%s]", events, conn->ToString().c_str());
 
                 // events |= EVENT_READ | EVENT_WRITE;
             }
             else
             {
-                // CTM_ERROR_LOG(conn->log, "mmm [%d] [%s]", events, conn->ToString().c_str());
+                //ERROR("mmm [%d] [%s]", events, conn->ToString().c_str());
             }
 
             if (events & EVENT_READ)

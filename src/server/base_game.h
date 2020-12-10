@@ -26,7 +26,7 @@ namespace ctm
             void* param;
         };
 
-        typedef std::map<unsigned int, ProtoInfo> ProtoMap;
+        typedef std::unordered_map<unsigned int, ProtoInfo> ProtoMap;
 
     public:
 
@@ -42,7 +42,7 @@ namespace ctm
         CBaseGame();
         virtual ~CBaseGame();
 
-        virtual int Init(CLog* log = NULL);
+        virtual int Init();
         virtual int Run();
 
         virtual void OnRead(CConn* conn);
@@ -50,10 +50,7 @@ namespace ctm
         virtual void OnReadClose(CConn* conn);
         virtual void OnWriteClose(CConn* conn);
         virtual void OnClose(CConn* conn);
-
-        virtual unsigned int GetServerId();
-        virtual unsigned int GetServerType();
-
+        
         int StartListen(int port);
         int TestEcho(const string& ip, unsigned int port, char* buf);
 
@@ -76,10 +73,8 @@ namespace ctm
 
         int Send(CConn* conn, char* buf, unsigned int len);
         int Send(CConn* conn, unsigned int protoId, char* buf, unsigned int len);
-        int Send(CConn* conn, unsigned int dstId, unsigned int srcId, unsigned int uid, unsigned int protoId, char* buf, unsigned int len);
+        int Send(CConn* conn, unsigned int dstId, unsigned int srcId, unsigned int protoId, char* buf, unsigned int len);
 
-        int SendEx(unsigned int dstId, unsigned int protoId, char* buf, unsigned int len);
-        
         void TestEchoTimer(unsigned int timerId, unsigned int remindCount, void* param, void* param1);
 
     protected:

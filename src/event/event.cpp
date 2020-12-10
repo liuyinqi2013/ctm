@@ -4,7 +4,7 @@
 
 namespace ctm
 {
-    CEventMonitor* CrateEventMonitor(int type, CLog* log)
+    CEventMonitor* CrateEventMonitor(int type)
     {
         switch (type)
         {
@@ -12,7 +12,7 @@ namespace ctm
         case CEventMonitor::POLL:
             return NULL;
         case CEventMonitor::EPOLL:
-            return new CEpollEventMonitor(log);
+            return new CEpollEventMonitor();
         default:
             break;
         }

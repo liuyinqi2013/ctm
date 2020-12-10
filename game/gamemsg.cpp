@@ -23,8 +23,8 @@ namespace ctm
 	{
 		CMsg::TestPrint();
 
-		DEBUG_LOG("CGameMsg sock = %u",   m_sock);
-		DEBUG_LOG("CGameMsg openId = %s", m_openId.c_str());
+		DEBUG("CGameMsg sock = %u",   m_sock);
+		DEBUG("CGameMsg openId = %s", m_openId.c_str());
 	}
 
 	

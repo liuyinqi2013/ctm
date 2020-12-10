@@ -107,7 +107,7 @@ namespace ctm
 
     int CConn::OnAsynWrite()
     {
-        int cnt = 2;
+        int cnt = 10;
         int ret = 0;
         Buffer* buf = NULL;
 
@@ -152,7 +152,7 @@ namespace ctm
 
         if (status == WRCLOSED || status >= HANGUP)
         {
-            CTM_DEBUG_LOG(log, "Conn can not write status : %d", status);
+            ERROR("Conn can not write status : %d", status);
 
             return IO_NO_WRITE;
         }
@@ -175,7 +175,7 @@ namespace ctm
                     return IO_WR_AGAIN;
                 }
                 else {
-                    CTM_DEBUG_LOG(log, "write failed :%d:%s", error, strerror(error));
+                    ERROR("write failed :%d:%s", error, strerror(error));
                     return IO_EXCEPT;
                 }
             }
@@ -210,7 +210,7 @@ namespace ctm
 
         if (status == RDCLOSED || status >= HANGUP)
         {
-            CTM_DEBUG_LOG(log, "Conn can not read status : %d", status);
+            ERROR("Conn can not read status : %d", status);
 
             return IO_NO_READ;
         }
@@ -235,7 +235,7 @@ namespace ctm
                 }
                 else 
                 {
-                    CTM_DEBUG_LOG(log, "Recv failed :%d:%s", error, strerror(error));
+                    ERROR("Recv failed :%d:%s", error, strerror(error));
                     return IO_EXCEPT;
                 }
             }

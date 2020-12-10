@@ -75,6 +75,8 @@ namespace ctm
 	class CIniFile
 	{
 	public:
+		CIniFile() {}
+		
 		CIniFile(const string& fileName) :
 			m_fileName(fileName)
 		{

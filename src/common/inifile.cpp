@@ -97,8 +97,10 @@ namespace ctm
 		}
 
 		Clear();
+
+		m_fileName = fileName;
 		
-		fstream fileIni("conf.ini",  std::fstream::in | std::fstream::out);
+		fstream fileIni(fileName,  std::fstream::in | std::fstream::out);
 
 		if (!fileIni.is_open())
 		{

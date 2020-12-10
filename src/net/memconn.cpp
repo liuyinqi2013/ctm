@@ -29,26 +29,26 @@ namespace ctm
         m_shareMem = new CShareMemory(key);
         if (m_shareMem == NULL)
         {
-            CTM_ERROR_LOG(log, "Create share memory failed!");
+            ERROR("Create share memory failed!");
             return -1;
         }
 
         if (!m_shareMem->Open(memSize))
         {
-            CTM_ERROR_LOG(log, "Open share memory failed!");
+            ERROR("Open share memory failed!");
             return -1;
         }
 
         m_semaphore = new CSemaphore(key, 2);
         if (m_semaphore == NULL)
         {
-            CTM_ERROR_LOG(log, "Create semaphore failed!");
+            ERROR("Create semaphore failed!");
             return -1;
         }
 
         if (!m_semaphore->Open())
         {
-            CTM_ERROR_LOG(log, "Open semaphore failed!");
+            ERROR("Open semaphore failed!");
             return -1;
         }
 
@@ -115,7 +115,7 @@ namespace ctm
 
         if (status == WRCLOSED || status >= HANGUP)
         {
-            CTM_DEBUG_LOG(log, "Conn can not write status : %d", status);
+            DEBUG("Conn can not write status : %d", status);
 
             return IO_NO_WRITE;
         }
@@ -124,7 +124,7 @@ namespace ctm
 
         buf->offset += ret;
 
-        if (ret == buf->len - buf->offset)
+        if ((unsigned int)ret == buf->len - buf->offset)
         {
             writable = true;
             lastWrite = now;
@@ -147,7 +147,7 @@ namespace ctm
 
         if (status == RDCLOSED || status >= HANGUP)
         {
-            CTM_DEBUG_LOG(log, "Conn can not read status : %d", status);
+            DEBUG("Conn can not read status : %d", status);
 
             return IO_NO_READ;
         }

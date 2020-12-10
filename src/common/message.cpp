@@ -1,11 +1,13 @@
-#include "message.h"
 #include "common/lock.h"
 #include "common/time_tools.h"
 #include "thread/mutex.h"
 #include "common/log.h"
 #include <unistd.h>
-
 #include <stdio.h>
+#include "json/json.h"
+#include "json/json-forwards.h"
+#include "message.h"
+
 namespace ctm
 {
     static MessageFunctionMap *globalMessageFunctionMap = NULL;
@@ -51,14 +53,13 @@ namespace ctm
         return 0;
     }
 
-    Json::Value CMessage::ToJsonObject()
+    string CMessage::ToJsonString()
     {
         Json::Value root;
         root["id"] = m_id;
 		root["type"] = m_type;
 		root["createTime"] = m_createTime;
-
-        return root;
+        return root.toStyledString();
     }
 
     int CMessage::FormJsonString(const string &jsonString)

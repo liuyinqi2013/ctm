@@ -480,7 +480,7 @@ namespace ctm
 		//vec.push_back(card);
 		//vec.push_back(card);
 
-		DEBUG_LOG("card type : %s", CardsTypeToStr(CardsType(vec)).c_str());	
+		DEBUG("card type : %s", CardsTypeToStr(CardsType(vec)).c_str());	
 	}
 
 

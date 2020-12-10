@@ -5,7 +5,7 @@ CSafetyQueue<string> queue1;
 
 void ShowSign(int sign)
 {
-	DEBUG_LOG("Recv a sign : %d", sign);
+	DEBUG("Recv a sign : %d", sign);
 }
 
 void HandleSign()
@@ -202,8 +202,8 @@ DECLARE_FUNC(msg)
 	CMsg msg2("2", 2, "mod");
 	msg1.TestPrint();
 	msg2.TestPrint();
-	DEBUG_LOG("msg1 = %s", msg1.ToString().c_str());
-	DEBUG_LOG("msg2 = %s", msg2.ToString().c_str());
+	DEBUG("msg1 = %s", msg1.ToString().c_str());
+	DEBUG("msg2 = %s", msg2.ToString().c_str());
 	CMsg* p = CreateMsg(0);
 	if (p)
 	{
@@ -251,24 +251,24 @@ DECLARE_FUNC(mmap)
 		if (flag == 1)
 		{
 			p[size] = '\0';
-			DEBUG_LOG("lao.txt : %s", p);
+			DEBUG("lao.txt : %s", p);
 			char c;
 			cin >> c;
 			memset(p, c, size - 1);
-			DEBUG_LOG("lao.txt : %s", p);
+			DEBUG("lao.txt : %s", p);
 		}
 		else
 		{
 			while (1)
 			{
 				sleep(1);
-				DEBUG_LOG("lao.txt : %s", p);
+				DEBUG("lao.txt : %s", p);
 			}
 		}
 	}
 	else
 	{
-		ERROR_LOG("map.Open failed");
+		ERROR("map.Open failed");
 	}
 
 	return 0;
@@ -283,37 +283,37 @@ DECLARE_FUNC(shamem)
 	{
 		if (!mem.Open(100))
 		{
-			ERROR_LOG("mem.Create failed");
+			ERROR("mem.Create failed");
 			return 0;
 		}
 
 		char* p = (char*)mem.Head();
 		int size = mem.Size();
-		DEBUG_LOG("size : %d", size);
+		DEBUG("size : %d", size);
 		p[size] = '\0';
-		DEBUG_LOG("mem : %s", p);
+		DEBUG("mem : %s", p);
 		char c;
 		cin >> c;
 		memset(p, c, size - 1);
-		DEBUG_LOG("mem : %s", p);
+		DEBUG("mem : %s", p);
 	}
 	else
 	{
 		if (!mem.Open(100))
 		{
-			ERROR_LOG("mem.Create failed");
+			ERROR("mem.Create failed");
 			return 0;
 		}
 
 		char* p = (char*)mem.Head();
 		int size = mem.Size();
-		DEBUG_LOG("size : %d", size);
+		DEBUG("size : %d", size);
 
 		int i = 0;
 		while (i++ < 100)
 		{
 			sleep(1);
-			DEBUG_LOG("mem : %s", p);
+			DEBUG("mem : %s", p);
 		}
 		mem.Destroy();
 	}
@@ -332,13 +332,13 @@ DECLARE_FUNC(sem)
 		while (1)
 		{
 			sem.Wait();
-			DEBUG_LOG("Recv a signal");
+			DEBUG("Recv a signal");
 		}
 	}
 	else
 	{
 		sem.Post();
-		DEBUG_LOG("Send a signal");
+		DEBUG("Send a signal");
 	}
 	return 0;
 }
@@ -347,27 +347,27 @@ DECLARE_FUNC(random)
 {
 	for (int i = 0; i < 2000; ++i)
 	{
-		DEBUG_LOG("ddddddddddddddddddddddddddddddddddddddddddddd %f", CRandom::Random0_1());
+		DEBUG("ddddddddddddddddddddddddddddddddddddddddddddd %f", CRandom::Random0_1());
 	}
 
 	for (int i = 0; i < 2000; ++i)
 	{
-		WARN_LOG("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa %d", CRandom::IntRandom(30, 50));
+		WARN("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa %d", CRandom::IntRandom(30, 50));
 	}
 
 	for (int i = 0; i < 2000; ++i)
 	{
-		ERROR_LOG("cccccccccccccccccccccccccccccccccccccccccccccc %f", CRandom::Random0_1());
+		ERROR("cccccccccccccccccccccccccccccccccccccccccccccc %f", CRandom::Random0_1());
 	}
 
 	for (int i = 0; i < 10000; ++i)
 	{
-		INFO_LOG("cccccccccccccccccccccccccccccccccccccccccccccc %u", CRandom::UIntRandom(0, 100));
+		INFO("cccccccccccccccccccccccccccccccccccccccccccccc %u", CRandom::UIntRandom(0, 100));
 	}
 
 	for (int i = 0; i < 300; ++i)
 	{
-		INFO_LOG("xxxxxxxxxxxxxxxxxxxxxxxxxxxxx %f", CRandom::DoubleRandom(0.5, 10.0));
+		INFO("xxxxxxxxxxxxxxxxxxxxxxxxxxxxx %f", CRandom::DoubleRandom(0.5, 10.0));
 	}
 	return 0;
 }
@@ -592,44 +592,44 @@ public:
 
 	void MillSecond_1(unsigned int timerId, unsigned int remindCount, void* param)
 	{
-		printf("MillSecond_1 timerId:%d remindCount:%d\n", timerId, remindCount);
+		DEBUG("MillSecond_1 timerId:%d remindCount:%d", timerId, remindCount);
 	}
 	void MillSecond_3(unsigned int timerId, unsigned int remindCount, void* param)
 	{
-		printf("MillSecond_3 timerId:%d remindCount:%d\n", m_val, timerId, remindCount);
+		DEBUG("MillSecond_3 timerId:%d remindCount:%d", timerId, remindCount);
 	}
 	void MillSecond_5(unsigned int timerId, unsigned int remindCount, void* param)
 	{
-		printf("MillSecond_5 timerId:%d remindCount:%d\n", timerId, remindCount);
+		DEBUG("MillSecond_5 timerId:%d remindCount:%d", timerId, remindCount);
 	}
 	void MillSecond_10(unsigned int timerId, unsigned int remindCount, void* param)
 	{
-		printf("MillSecond_10 timerId:%d remindCount:%d\n", timerId, remindCount);
+		DEBUG("MillSecond_10 timerId:%d remindCount:%d", timerId, remindCount);
 	}
 	void MillSecond_30(unsigned int timerId, unsigned int remindCount, void* param)
 	{
-		printf("MillSecond_30 timerId:%d remindCount:%d\n", timerId, remindCount);
+		DEBUG("MillSecond_30 timerId:%d remindCount:%d", timerId, remindCount);
 	}
 
 	void Second_1(unsigned int timerId, unsigned int remindCount, void* param)
 	{
-		printf("Second_1 m_val = %d timerId:%d remindCount:%d\n", m_val, timerId, remindCount);
+		DEBUG("Second_1 m_val = %d timerId:%d remindCount:%d", m_val, timerId, remindCount);
 	}
 	void Second_5(unsigned int timerId, unsigned int remindCount, void* param)
 	{
-		printf("Second_5 timerId:%d remindCount:%d\n", timerId, remindCount);
+		DEBUG("Second_5 timerId:%d remindCount:%d", timerId, remindCount);
 	}
 	void Second_10(unsigned int timerId, unsigned int remindCount, void* param)
 	{
-		printf("Second_10 timerId:%d remindCount:%d\n", timerId, remindCount);
+		DEBUG("Second_10 timerId:%d remindCount:%d", timerId, remindCount);
 	}
 	void Second_30(unsigned int timerId, unsigned int remindCount, void* param)
 	{
-		printf("Second_30 timerId:%d remindCount:%d\n", timerId, remindCount);
+		DEBUG("Second_30 timerId:%d remindCount:%d", timerId, remindCount);
 	}
 	void Second_60(unsigned int timerId, unsigned int remindCount, void* param)
 	{
-		printf("Second_60 timerId:%d remindCount:%d\n", timerId, remindCount);
+		DEBUG("Second_60 timerId:%d remindCount:%d", timerId, remindCount);
 	}
 
 	int m_val;
@@ -642,7 +642,7 @@ public:
 
 	void Second_3(unsigned int timerId, unsigned int remindCount, void* param)
 	{
-		printf("CTestTimer2 Second_3  A:%d timerId:%d remindCount:%d\n", m_A, timerId, remindCount);
+		DEBUG("CTestTimer2 Second_3  A:%d timerId:%d remindCount:%d", m_A, timerId, remindCount);
 	}
 
 	int m_A;
@@ -655,9 +655,8 @@ DECLARE_FUNC(timer)
 	CTimer timer;
 	timer.Start();
 
-	printf("testTimer %x", &testTimer);
-
 	timer.AddTimer(1,  10, (TimerCallBack)&CTestTimer::MillSecond_1,  &testTimer);
+	/*
 	timer.AddTimer(3,  10,(TimerCallBack)&CTestTimer::MillSecond_3,  &testTimer);
 	timer.AddTimer(5,  2, (TimerCallBack)&CTestTimer::MillSecond_5,  &testTimer);
 	timer.AddTimer(10, 2, (TimerCallBack)&CTestTimer::MillSecond_10, &testTimer);
@@ -676,6 +675,7 @@ DECLARE_FUNC(timer)
 	int t6 = timer.AddTimer(3000, 10, (TimerCallBack)&CTestTimer2::Second_3, &testTimer2);
 
 	timer.StopTimer(t1);
+	*/
 
 	WaitEnd();
 	return 0;

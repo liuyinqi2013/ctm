@@ -8,7 +8,7 @@ namespace ctm
     class CEpollEventMonitor : public CEventMonitor
     {
     public:
-        CEpollEventMonitor(CLog* log = NULL);
+        CEpollEventMonitor();
         virtual ~CEpollEventMonitor();
 
         virtual int Init();

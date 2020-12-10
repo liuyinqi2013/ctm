@@ -36,7 +36,7 @@ namespace ctm
 
 		m_game = new CGame;
 
-		// DEBUG_LOG("bomb count :%d", m_tatolOutBombCount);
+		// DEBUG("bomb count :%d", m_tatolOutBombCount);
 	}
 	
 	CDask::~CDask()
@@ -276,7 +276,7 @@ namespace ctm
 		FUNC_BEG();
 
 		COutCardsS2C outCardsS2C;
-		DEBUG_LOG("curr opt pos : %d, out pos :%d", m_currOptPos, pMsg->m_outPos);
+		DEBUG("curr opt pos : %d, out pos :%d", m_currOptPos, pMsg->m_outPos);
 		outCardsS2C.m_outPos = pMsg->m_outPos;
 		outCardsS2C.m_outOpenId = m_playerArray[pMsg->m_outPos]->m_openId;
 		outCardsS2C.m_outCardVec = pMsg->m_outCardVec;
@@ -334,7 +334,7 @@ namespace ctm
 				if (CARDS_TYPE_BOMB == outCardsType || CARDS_TYPE_KING_BOMB == outCardsType) 
 					++m_tatolOutBombCount;
 
-				DEBUG_LOG("bomb count :%d", m_tatolOutBombCount);
+				DEBUG("bomb count :%d", m_tatolOutBombCount);
 				
 				if (m_handCardsArray[pMsg->m_outPos].size() == 0)  // game over
 				{

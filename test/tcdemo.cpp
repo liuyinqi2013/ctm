@@ -292,7 +292,7 @@ DECLARE_FUNC(echo_ser)
 		return -1;
 	}
 
-	CTM_INFO_LOG(log, "echo_ser init OK");
+	INFO("echo_ser init OK");
 
 	while(echoServ.Execute() == 0);
 
@@ -322,13 +322,13 @@ DECLARE_FUNC(echo_cli)
     pthread_sigmask(SIG_BLOCK, &set, NULL);
 	*/
 
-	CTM_INFO_LOG(&log, "echo_cli init OK");
+	INFO("echo_cli init OK");
 
 	while(echoCli.Execute() == 0);
 
-	CTM_INFO_LOG(&log, "Send Over len = %d", echoCli.m_sendLen);
-	CTM_INFO_LOG(&log, "Recv Over len = %d", echoCli.m_recvLen);
-	CTM_INFO_LOG(&log, "%s", clock.RunInfo().c_str());
+	INFO("Send Over len = %d", echoCli.m_sendLen);
+	INFO("Recv Over len = %d", echoCli.m_recvLen);
+	INFO("%s", clock.RunInfo().c_str());
 
 	return 0;
 }
@@ -340,9 +340,9 @@ DECLARE_FUNC(base_game_ser)
 
 	printf("gameServer %x\n", &gameServer);
 
-	if (gameServer.Init(CLog::GetInstance()) == -1)
+	if (gameServer.Init() == -1)
 	{
-		CTM_ERROR_LOG(CLog::GetInstance(), "base_game init failed\n");
+		ERROR("base_game init failed\n");
 		return -1;
 	}
 
@@ -350,11 +350,11 @@ DECLARE_FUNC(base_game_ser)
 	gameServer.StartListen(8888);
 	gameServer.StartHeartBeats(3);
 
-	CTM_INFO_LOG(CLog::GetInstance(), "gameServer init OK");
+	INFO("gameServer init OK");
 
 	gameServer.Run();
 
-	CTM_INFO_LOG(CLog::GetInstance(), "%s", clock.RunInfo().c_str());
+	INFO("%s", clock.RunInfo().c_str());
 
 	return 0;
 }
@@ -366,13 +366,13 @@ DECLARE_FUNC(base_game_cli)
 
 	printf("gameClient %x\n", &gameClient);
 
-	if (gameClient.Init(CLog::GetInstance()) == -1)
+	if (gameClient.Init() == -1)
 	{
-		CTM_ERROR_LOG(CLog::GetInstance(), "base_game init failed\n");
+		ERROR("base_game init failed\n");
 		return -1;
 	}
 
-	CTM_INFO_LOG(CLog::GetInstance(), "gameClient init OK");
+	INFO("gameClient init OK");
 
 	CConn* conn  = gameClient.Connect("127.0.0.1", 9999);
 	CConn* conn1 = gameClient.Connect("127.0.0.1", 8888);
@@ -380,11 +380,11 @@ DECLARE_FUNC(base_game_cli)
 	gameClient.StartTimer(5, 100, (TimerCallBack)&CBaseGame::TestEchoTimer, conn, (void*)"hello 9999");
 	gameClient.StartTimer(2, 50, (TimerCallBack)&CBaseGame::TestEchoTimer, conn, (void*)"hello 8888");
 	char buf[] = "ggggggggggggggggggggggggggggggggg";
-	gameClient.Send(conn, 100, 10, 12345, 9, buf, sizeof(buf));
+	gameClient.Send(conn, 100, 10, 12345,  buf, sizeof(buf));
 
 	gameClient.Run();
 
-	CTM_INFO_LOG(CLog::GetInstance(), "%s", clock.RunInfo().c_str());
+	INFO("%s", clock.RunInfo().c_str());
 
 	return 0;
 }
@@ -401,7 +401,7 @@ DECLARE_FUNC(mem_queue_send)
 
 	mem.Open(32 * 1024);
 
-	CTM_INFO_LOG(CLog::GetInstance(), "head = %x size = %d", mem.Head(), mem.Size());
+	INFO("head = %x size = %d", mem.Head(), mem.Size());
 
 	CMemoryQueue queue(mem.Head(), mem.Size(), sem.GetSemId(), 0);
 
@@ -427,12 +427,12 @@ DECLARE_FUNC(mem_queue_send)
 			len = sizeof(data1);
 		}
 
-		CTM_INFO_LOG(CLog::GetInstance(), "cnt = %d", queue.Count());
+		INFO("cnt = %d", queue.Count());
 
 		ret = queue.Push(d, len);
 		if (ret == 0)
 		{
-			CTM_INFO_LOG(CLog::GetInstance(), "Send failed");
+			INFO("Send failed");
 		}
 
 		++i;
@@ -440,7 +440,7 @@ DECLARE_FUNC(mem_queue_send)
 		sleep(1);
 	}
 
-	CTM_INFO_LOG(CLog::GetInstance(), "%s", clock.RunInfo().c_str());
+	INFO("%s", clock.RunInfo().c_str());
 
 	return 0;
 }
@@ -465,24 +465,24 @@ DECLARE_FUNC(mem_queue_recv)
 
 	while(1)
 	{
-		CTM_INFO_LOG(CLog::GetInstance(), "cnt = %d", queue.Count());
+		INFO("cnt = %d", queue.Count());
 
 		ret = queue.Get(data, len);
 
 		if (ret == 0)
 		{
-			CTM_INFO_LOG(CLog::GetInstance(), "Get failed");
+			INFO("Get failed");
 		}
 		else
 		{
 			data[ret] = 0;
-			CTM_INFO_LOG(CLog::GetInstance(), "ret=%d, %s", ret, data);
+			INFO("ret=%d, %s", ret, data);
 		}
 
 		sleep(1);
 	}
 
-	CTM_INFO_LOG(CLog::GetInstance(), "%s", clock.RunInfo().c_str());
+	INFO("%s", clock.RunInfo().c_str());
 
 	return 0;
 }

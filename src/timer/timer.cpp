@@ -7,6 +7,7 @@
 #include <string.h>
 #include <errno.h>
 
+#include "common/log.h"
 #include "common/lock.h"
 #include "common/time_tools.h"
 
@@ -90,7 +91,7 @@ namespace ctm
             {
                 error = errno;
                 if (EINTR == error) continue;
-                fprintf(stderr, "%s:%d select error %d:%s\n", __FILE__, __LINE__, errno, strerror(errno));
+                ERROR("select error %d:%s\n", errno, strerror(errno));
                 goto exit;
             }
             else if (ret > 0)
@@ -102,7 +103,7 @@ namespace ctm
                     {
                         error = errno;
                         if (EINTR == error) continue;
-                        fprintf(stderr, "%s:%d read error %d:%s\n", __FILE__, __LINE__, errno, strerror(errno));
+                        ERROR("read error %d:%s\n", errno, strerror(errno));
                         goto exit;
                     }
 
@@ -132,7 +133,7 @@ namespace ctm
             {
                 int error = errno;
                 if (EINTR == error) continue;
-                fprintf(stderr, "%s:%d write error %d:%s\n", __FILE__, __LINE__, errno, strerror(errno));
+                ERROR("write error %d:%s\n", errno, strerror(errno));
                 return -1;
             }
             offset += ret;

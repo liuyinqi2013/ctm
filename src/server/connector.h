@@ -27,7 +27,7 @@ namespace ctm
         CConnector();
         virtual ~CConnector();
 
-        virtual int Init(CLog* log = NULL);
+        virtual int Init();
         virtual int Execute();
 
     public:

@@ -32,6 +32,7 @@ namespace ctm
         int m_totalCount;
         unsigned long m_milliInterval;
         unsigned long m_beginTime;
+        unsigned long m_expried;
         CTimerApi* m_object;
         TimerCallBack m_cbFunction;
         TimerCallBackEx m_cbFunctionEx;
@@ -39,7 +40,9 @@ namespace ctm
         void* m_param1;
         void* m_param2;
         bool  m_post;
-        SafeyMsgQueue *m_queue;
+        SafeyMsgQueue* m_queue;
+        CTimerMessage* m_prev;
+        CTimerMessage* m_next;
     };
 
     class CTimerHandler
@@ -79,6 +82,8 @@ namespace ctm
         unsigned int m_timerMaxCount;
         TimerMap m_timerMap;
         unsigned int m_generateId;
+        CTimerMessage* m_head;
+        CTimerMessage* m_tail;
     };
 };
 

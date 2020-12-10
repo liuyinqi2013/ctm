@@ -36,10 +36,8 @@ namespace ctm
         DELETE(m_semaphore);
     }
 
-    int CConnector::Init(CLog* log)
+    int CConnector::Init()
     {
-        m_log = log;
-
         if (InitBase() == -1)
         {
             return -1;
@@ -61,13 +59,13 @@ namespace ctm
         {
             if (HandleIOEvent() == -1)
             {
-                CTM_DEBUG_LOG(m_log, "Handle conns I/O event failed!");
+                DEBUG("Handle conns I/O event failed!");
                 return -1;
             }
             /*
             if (HandleReadyCConns() == -1)
             {
-                CTM_DEBUG_LOG(m_log, "Handle already Conns I/O event failed!");
+                DEBUG("Handle already Conns I/O event failed!");
                 return -1;
             }
             HandleMemroyConns();
@@ -83,27 +81,27 @@ namespace ctm
         m_connPool = new CConnPool(MAX_CONN_SIZE);
         if (m_connPool == NULL)
         {
-            CTM_ERROR_LOG(m_log, "Create conn pool failed!");
+            ERROR("Create conn pool failed!");
             return -1;
         }
 
-        m_eventMonitor = CrateEventMonitor(CEventMonitor::EPOLL, m_log);
+        m_eventMonitor = CrateEventMonitor(CEventMonitor::EPOLL);
         if (m_eventMonitor == NULL)
         {
-            CTM_ERROR_LOG(m_log, "Create epoll event montior failed!");
+            ERROR("Create epoll event montior failed!");
             return -1;
         }
 
         if (m_eventMonitor->Init() == -1)
         {
-            CTM_ERROR_LOG(m_log, "montior init failed!");
+            ERROR("montior init failed!");
             return -1;
         }
 
         m_eventHandler = new CConnHandler;
         if (m_eventHandler == NULL)
         {
-            CTM_ERROR_LOG(m_log, "Create event handler failed!");
+            ERROR("Create event handler failed!");
             return -1;
         }
 
@@ -126,7 +124,7 @@ namespace ctm
 
     void CConnector::OnReadClose(CConn* conn)
     {
-        CTM_DEBUG_LOG(m_log, "OnReadClose:[%s]", conn->ToString().c_str());
+        DEBUG("OnReadClose:[%s]", conn->ToString().c_str());
 
         if (conn->status == CConn::HANGUP)
         {
@@ -136,7 +134,7 @@ namespace ctm
 
     void CConnector::OnWriteClose(CConn* conn)
     {
-        CTM_DEBUG_LOG(m_log, "OnWriteClose:[%s]", conn->ToString().c_str());
+        DEBUG("OnWriteClose:[%s]", conn->ToString().c_str());
 
         if (conn->status == CConn::HANGUP)
         {
@@ -153,18 +151,18 @@ namespace ctm
     {
         conn->GetLocalAddr();
         conn->GetPeerAddr();
-        CTM_DEBUG_LOG(m_log, "asyn conn ok:[%s]", conn->ToString().c_str());
+        DEBUG("asyn conn ok:[%s]", conn->ToString().c_str());
     }
 
     void CConnector::OnAsynConnTimeOut(CConn* conn)
     {
-        CTM_DEBUG_LOG(m_log, "asyn conn time out:[%s]", conn->ToString().c_str());
+        DEBUG("asyn conn time out:[%s]", conn->ToString().c_str());
         OnClose(conn);
     }
 
     void CConnector::OnHangUp(CConn* conn)
     {
-        CTM_DEBUG_LOG(m_log, "conn hang up:[%s]", conn->ToString().c_str());
+        DEBUG("conn hang up:[%s]", conn->ToString().c_str());
         OnRead(conn);
         if (conn->type == C_SOCK)
         {
@@ -198,7 +196,7 @@ namespace ctm
             OnReadClose(conn);
             break;
         case IO_WR_OK:
-            OnReady(conn);
+            // OnWrite(conn);
             break;
         case IO_WR_AGAIN:
             break;
@@ -220,7 +218,7 @@ namespace ctm
         int ret = m_eventMonitor->WaitProc(m_timeOut);
         if (ret == -1)
         {
-            CTM_ERROR_LOG(m_log, "WaitProc failed!");
+            ERROR("WaitProc failed!");
             return -1;
         }
         else if (ret == 0)
@@ -271,7 +269,7 @@ namespace ctm
                 if (conn->IsConnect())
                 {
                     conn->status = CConn::ACTIVE;
-                    CTM_DEBUG_LOG(m_log, "memConn conn OK!");
+                    DEBUG("memConn conn OK!");
                 }
             }
             else if (conn->status == CConn::ACTIVE)
@@ -303,7 +301,7 @@ namespace ctm
     {
         if (listenConn->isListen == false)
         {
-            CTM_ERROR_LOG(m_log, "Conn not Listen!");
+            ERROR("Conn not Listen!");
             return NULL;
         }
 
@@ -323,15 +321,15 @@ namespace ctm
                 }
                 else if (EAGAIN == err || EWOULDBLOCK == err)
                 {
-                    CTM_ERROR_LOG(m_log, "Accept EAGAIN %d:%s!", err, strerror(err));
+                    ERROR("Accept EAGAIN %d:%s!", err, strerror(err));
                 }
                 else if (ECONNABORTED == err)
                 {
-                    CTM_ERROR_LOG(m_log, "Accept ECONNABORTED %d:%s!", err, strerror(err));
+                    ERROR("Accept ECONNABORTED %d:%s!", err, strerror(err));
                 }
                 else
                 {
-                    CTM_ERROR_LOG(m_log, "Accept other error %d:%s!", err, strerror(err));
+                    ERROR("Accept other error %d:%s!", err, strerror(err));
                 }
                 return NULL;
             }
@@ -346,14 +344,14 @@ namespace ctm
         
         if (conn == NULL)
         {   
-            CTM_ERROR_LOG(m_log, "CreateConn conn failed!");
+            ERROR("CreateConn conn failed!");
             return NULL;
         }
 
         conn->GetLocalAddr();
         memcpy(&conn->peerAddr, &remoteAddr, len);
 
-        CTM_DEBUG_LOG(m_log, "new conn [%s]", conn->ToString().c_str());
+        DEBUG("new conn [%s]", conn->ToString().c_str());
         return conn;
     }
 
@@ -362,14 +360,14 @@ namespace ctm
         int fd = ListenSocket(ip.c_str(), port, MAX_CONN_SIZE);
         if (fd == -1)
         {
-            CTM_ERROR_LOG(m_log, "Listen sock failed!");
+            ERROR("Listen sock failed!");
             return NULL;
         }
 
         CConn* conn = CreateConn(fd, EVENT_READ, CConn::ACTIVE, true, AF_INET);
         if (conn == NULL)
         {   
-            CTM_ERROR_LOG(m_log, "CreateConn conn failed!");
+            ERROR("CreateConn conn failed!");
             return NULL;
         }
 
@@ -381,7 +379,7 @@ namespace ctm
         int fd = socket(AF_INET, SOCK_STREAM, 0);
         if (fd == -1)
         {
-            CTM_ERROR_LOG(m_log, "socket faield!");
+            ERROR("socket faield!");
             return NULL;
         }
 
@@ -393,7 +391,7 @@ namespace ctm
             if (errno != EINPROGRESS)
             {
                 close(fd);
-                CTM_ERROR_LOG(m_log, "Connect faield!");
+                ERROR("Connect faield!");
                 return NULL;
             }
 
@@ -414,13 +412,13 @@ namespace ctm
         CShardMemConn* conn = dynamic_cast<CShardMemConn*>(m_connPool->Create(C_SMEM));
         if (conn == NULL)
         {   
-            CTM_ERROR_LOG(m_log, "Get conn failed!");
+            ERROR("Get conn failed!");
             return NULL;
         }
 
         if (conn->Open(key, size, bServer) == -1)
         {
-            CTM_ERROR_LOG(m_log, "open MemroyConn failed!");
+            ERROR("open MemroyConn failed!");
             return NULL;
         }
 
@@ -444,7 +442,7 @@ namespace ctm
         int ret = pipe(pipefd);
         if (ret == -1)
         {
-            CTM_ERROR_LOG(m_log, "pipe faield %d:%s.", errno, strerror(errno));
+            ERROR("pipe faield %d:%s.", errno, strerror(errno));
             return -1;
         }
 
@@ -452,7 +450,7 @@ namespace ctm
         ConnArr[1] = CreateConn(pipefd[1], EVENT_WRITE | EVENT_PEER_CLOSE /*| EVENT_EPOLL_ET*/);
         if (ConnArr[0] == NULL || ConnArr[1] == NULL)
         {   
-            CTM_ERROR_LOG(m_log, "CreateConn conn failed!");
+            ERROR("CreateConn conn failed!");
             return -1;
         }
 
@@ -469,11 +467,11 @@ namespace ctm
             {
                 m_memConnSet.erase(memConn);
                 m_connPool->Free(memConn);
-                CTM_DEBUG_LOG(m_log, "Release memConn client!");
+                DEBUG("Release memConn client!");
             }
             else
             {
-                CTM_DEBUG_LOG(m_log, "Release memConn server!");
+                DEBUG("Release memConn server!");
                 memConn->status = CConn::CONNING;
             }
         }
@@ -492,26 +490,26 @@ namespace ctm
         m_shareMem = new CShareMemory(key);
         if (m_shareMem == NULL)
         {
-            CTM_ERROR_LOG(m_log, "Create share memory failed!");
+            ERROR("Create share memory failed!");
             return -1;
         }
 
         if (!m_shareMem->Open(memSize))
         {
-            CTM_ERROR_LOG(m_log, "Open share memory failed!");
+            ERROR("Open share memory failed!");
             return -1;
         }
 
         m_semaphore = new CSemaphore(key, ccnt);
         if (m_semaphore == NULL)
         {
-            CTM_ERROR_LOG(m_log, "Create semaphore failed!");
+            ERROR("Create semaphore failed!");
             return -1;
         }
 
         if (!m_semaphore->Open())
         {
-            CTM_ERROR_LOG(m_log, "Open semaphore failed!");
+            ERROR("Open semaphore failed!");
             return -1;
         }
 
@@ -524,7 +522,7 @@ namespace ctm
         if (conn == NULL)
         {   
             close(fd);
-            CTM_ERROR_LOG(m_log, "Get conn failed!");
+            ERROR("Get conn failed!");
             return NULL;
         }
 
@@ -549,7 +547,7 @@ namespace ctm
         int err = m_eventMonitor->AddEvent(&conn->event, events);
         if (err == -1)
         {
-            CTM_ERROR_LOG(m_log, "AddEvent failed!");
+            ERROR("AddEvent failed!");
             Release(conn);
             return NULL;
         }

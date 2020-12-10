@@ -1,8 +1,6 @@
 #ifndef CTM_EVENT_EVENT_H__
 #define CTM_EVENT_EVENT_H__
 
-#include "common/log.h"
-
 namespace ctm
 {
     #define EVENT_READ          0x00000001
@@ -22,7 +20,6 @@ namespace ctm
     #define EVENT_BEGIN EVENT_READ
     #define EVENT_END EVENT_EPOLL_ONESHOT
 
-    // class Clog;
     class CConn;
     class CEventHandler;
     class CEventMonitor;
@@ -56,8 +53,7 @@ namespace ctm
         };
 
         int   m_type;
-        CLog* m_log; 
-        CEventMonitor(int type, CLog* log = NULL) : m_type(type), m_log(log) { }
+        CEventMonitor(int type) : m_type(type) { }
         virtual ~CEventMonitor() { }
         virtual int Init() = 0;
         virtual int Done() = 0;
@@ -68,7 +64,7 @@ namespace ctm
         virtual int DelConn(CConn* conn) = 0;
     };
 
-    CEventMonitor* CrateEventMonitor(int type, CLog* log = NULL);
+    CEventMonitor* CrateEventMonitor(int type);
     void FreeEventMonitor(CEventMonitor* eventMonitor);
 }
 

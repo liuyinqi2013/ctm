@@ -81,12 +81,12 @@ namespace ctm
                     if (WaitReadable(fd, millisec) < 0) return -1;
                     continue;
                 }
-                ERROR_LOG("errno : %d, %s", errnum, strerror(errnum));
+                ERROR("errno : %d, %s", errnum, strerror(errnum));
                 return -1;
             }
             else if (len == 0)
             {
-                ERROR_LOG("len = 0");
+                ERROR("len = 0");
                 return -1;
             }
 
@@ -98,7 +98,7 @@ namespace ctm
                     usleep(1);
                     continue;
                 }
-                ERROR_LOG("offset = %d", offset);
+                ERROR("offset = %d", offset);
                 return -1;
             }
             size = ntohl(size);
@@ -121,12 +121,12 @@ namespace ctm
                     continue;
                 }
                 if (NotFatalError(errnum)) break;
-                ERROR_LOG("errno : %d, %s", errnum, strerror(errnum));
+                ERROR("errno : %d, %s", errnum, strerror(errnum));
                 return -1;
             }
             else if (len == 0)
             {
-                ERROR_LOG("len == 0");
+                ERROR("len == 0");
                 return -1;
             }
 
@@ -155,13 +155,13 @@ namespace ctm
                     if (WaitWritable(fd, millisec) < 0) return -1;
                     continue;
                 }
-                ERROR_LOG("errno : %d, %s", errnum, strerror(errnum));
+                ERROR("errno : %d, %s", errnum, strerror(errnum));
 
                 return -1;
             }
             else if (len == 0)
             {
-                ERROR_LOG("len : %d", len);
+                ERROR("len : %d", len);
                 return -1;
             }
 
@@ -191,7 +191,7 @@ namespace ctm
                 int errnum = errno;
                 if (EINTR == errnum) continue;
                 if (NotFatalError(errnum)) break;
-                ERROR_LOG("errno : %d, %s", errnum, strerror(errnum));
+                ERROR("errno : %d, %s", errnum, strerror(errnum));
                 return -1;
             }
             /*
@@ -266,7 +266,7 @@ namespace ctm
             {
                 int errnum = errno;
                 if (errnum == EINTR) continue;
-                ERROR_LOG("errno : %d, %s", errnum, strerror(errnum));
+                ERROR("errno : %d, %s", errnum, strerror(errnum));
                 return -1;
             }
             else if (ret == 0)
@@ -303,7 +303,7 @@ namespace ctm
             {
                 int errnum = errno;
                 if (errnum == EINTR) continue;
-                ERROR_LOG("errno : %d, %s", errnum, strerror(errnum));
+                ERROR("errno : %d, %s", errnum, strerror(errnum));
                 return -1;
             }
             else if (ret == 0)

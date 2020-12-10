@@ -6,28 +6,33 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <algorithm>
+#include <list>
 
+#include "common/log.h"
 #include "common/time_tools.h"
 
 namespace ctm
 {
     DECLARE_MSG(MSG_SYS_TIMER, CTimerMessage);
 
-    CTimerMessage::CTimerMessage() :
-        CMessage(MSG_SYS_TIMER, Timestamp()),
-        m_timerId(0),
-        m_remindCount(0),
-        m_totalCount(0),
-        m_milliInterval(0),
-        m_beginTime(0),
-        m_object(NULL),
-        m_cbFunction(NULL),
-        m_cbFunctionEx(NULL),
-        m_param(NULL),
-        m_param1(NULL),
-        m_param2(NULL),
-        m_post(false),
-        m_queue(NULL)
+    CTimerMessage::CTimerMessage() : CMessage(MSG_SYS_TIMER, Timestamp()),
+     m_timerId(0),
+     m_remindCount(0),
+     m_totalCount(0),
+     m_milliInterval(0),
+     m_beginTime(0),
+     m_expried(0),
+     m_object(NULL),
+     m_cbFunction(NULL),
+     m_cbFunctionEx(NULL),
+     m_param(NULL),
+     m_param1(NULL),
+     m_param2(NULL),
+     m_post(false),
+     m_queue(NULL),
+     m_prev(NULL),
+     m_next(NULL)
     {
     }
 
@@ -50,26 +55,69 @@ namespace ctm
         m_param2 = NULL;
         m_post = false;
         m_queue = NULL;
+        m_prev = NULL;
+        m_next = NULL;
+    }
+
+    inline void NodeInsertPrev(CTimerMessage* node, CTimerMessage* node1)
+    {
+        node1->m_prev = node->m_prev;
+        node->m_prev->m_next = node1;
+        node->m_prev = node1;
+        node1->m_next = node;
+    }
+
+    inline void NodeInsertNext(CTimerMessage* node, CTimerMessage* node1)
+    {
+        node1->m_next = node->m_next;
+        node->m_next->m_prev = node1;
+        node->m_next = node1;
+        node1->m_prev = node;
+    }
+
+    inline CTimerMessage* NodeRemove(CTimerMessage* node)
+    {
+        CTimerMessage* tmp = node->m_next;
+        node->m_prev->m_next = node->m_next;
+        node->m_next->m_prev = node->m_prev;
+        return tmp;
+    }
+
+    void ShowList(CTimerMessage* head)
+    {
+        DEBUG("--------- begin --------");
+        CTimerMessage* node = head->m_next;
+        while(node != head)
+        {
+            DEBUG("id:%d, remind:%d", node->m_timerId, node->m_remindCount);
+            node = node->m_next;
+        }
+        DEBUG("--------- end --------");
     }
 
     CTimerHandler::CTimerHandler()
     {
         m_timerMaxCount = default_timer_max_count;
-        m_generateId = 1;
+        m_head = new CTimerMessage;
+        m_tail = m_head;
+        m_head->m_next = m_head;
+        m_head->m_prev = m_head;
+        m_generateId = 0;
     }
 
     CTimerHandler::~CTimerHandler()
     {
         Clear();
+        delete m_head;
     }
 
-    int CTimerHandler::AddTimer(unsigned long milliSecond, int count, TimerCallBackEx cbFunc, 
-        TimerCallBack cb, CTimerApi* object, void* param, 
-        void* param1, void* param2, bool post, SafeyMsgQueue* queue)
+    int CTimerHandler::AddTimer(unsigned long milliSecond, int count, TimerCallBackEx cbFunc,
+        TimerCallBack cb, CTimerApi *object, void *param,
+        void *param1, void *param2, bool post, SafeyMsgQueue *queue)
     {
         if (m_timerMaxCount < m_timerMap.size())
         {
-            fprintf(stderr, "%s:%d Timer maximum limit %d\n", __FILE__, __LINE__, m_timerMaxCount);
+            ERROR("Timer maximum limit %d.", m_timerMaxCount);
             return -1;
         }
 
@@ -77,17 +125,19 @@ namespace ctm
         TimerMap::iterator it = m_timerMap.find(timerId);
         if (it != m_timerMap.end())
         {
+            ERROR("Timer %u is alreay exist.", timerId);
             return -1;
         }
-        
-        CTimerMessage* message = new CTimerMessage;
+
+        CTimerMessage *message = new CTimerMessage;
+        message->m_beginTime = MilliTimestamp();
         message->m_milliInterval = milliSecond;
+        message->m_expried = message->m_beginTime + milliSecond;
         message->m_totalCount = count;
         message->m_remindCount = 0;
         message->m_cbFunctionEx = cbFunc;
         message->m_cbFunction = cb;
         message->m_object = object;
-        message->m_beginTime = MilliTimestamp();
         message->m_timerId = timerId;
         message->m_param = param;
         message->m_param1 = param1;
@@ -96,7 +146,14 @@ namespace ctm
         message->m_queue = queue;
 
         m_timerMap[timerId] = message;
-
+        // 根据过期时间排序
+        CTimerMessage *node = m_head->m_next;
+        while (node != m_tail && node->m_expried <= message->m_expried)
+        {
+            node = node->m_next;
+        }
+        NodeInsertPrev(node, message);
+        
         return timerId;
     }
 
@@ -105,11 +162,12 @@ namespace ctm
         TimerMap::iterator it = m_timerMap.find(timerId);
         if (it != m_timerMap.end())
         {
+            NodeRemove(it->second);
             delete it->second;
             m_timerMap.erase(it);
         }
 
-        return 0;  
+        return 0;
     }
 
     void CTimerHandler::StopAllTimer()
@@ -119,70 +177,76 @@ namespace ctm
 
     unsigned long CTimerHandler::HandleTimeOuts()
     {
-        long timeCost = 0;
-        long timeLeft = 0;
         unsigned long sleepTime = 100000;
         unsigned long currTime = MilliTimestamp();
 
-        TimerMap::iterator it = m_timerMap.begin();
-        while(it != m_timerMap.end())
+        CTimerMessage* node = m_head->m_next;
+        while (node != m_tail)
         {
-            timeCost = currTime - it->second->m_beginTime;
-            timeLeft = it->second->m_milliInterval - timeCost;
-            if (timeLeft <= 0) 
+            if (node->m_expried > currTime)
             {
-                it->second->m_remindCount++;
-
-                // 超时通知上层
-                if (it->second->m_post)
+                break;
+            }
+            node->m_remindCount++;
+            // 超时通知上层
+            if (node->m_post)
+            {
+                if (node->m_queue)
                 {
-                    if (it->second->m_queue) it->second->m_queue->PushBack(it->second);
+                    node->m_queue->PushBack(node);
                 }
-                else
+            }
+            else
+            {
+                if (node->m_cbFunctionEx)
                 {
-                    if (it->second->m_cbFunctionEx)
-                    {
-                        TimerCallBackEx func = it->second->m_cbFunctionEx;
-                        func(it->second->m_timerId, it->second->m_remindCount, 
-                            it->second->m_param, it->second->m_param1, it->second->m_param2);
-                    }
-                    else if (it->second->m_object && it->second->m_cbFunction)
-                    {
-                        CTimerApi* object = it->second->m_object;
-                        TimerCallBack func = it->second->m_cbFunction;
-                        (object->*func)(it->second->m_timerId, it->second->m_remindCount, 
-                            it->second->m_param, it->second->m_param1, it->second->m_param2);
-                    }
-                    else if (it->second->m_object && it->second->m_cbFunction == NULL)
-                    {
-                        CTimerApi* object = it->second->m_object;
-                        object->OnTimer(it->second->m_timerId, it->second->m_remindCount, it->second->m_param);
-                    }
+                    TimerCallBackEx func = node->m_cbFunctionEx;
+                    func(node->m_timerId, node->m_remindCount,
+                         node->m_param, node->m_param1, node->m_param2);
                 }
-
-                if (it->second->m_totalCount != -1 && it->second->m_totalCount <= it->second->m_remindCount)
+                else if (node->m_object && node->m_cbFunction)
                 {
-                    if (it->second->m_post == false)
-                        delete it->second;
-                    else
-                        it->second->m_delete = true;
-
-                    m_timerMap.erase(it++);
-                    continue;
+                    CTimerApi *object = node->m_object;
+                    TimerCallBack func = node->m_cbFunction;
+                    (object->*func)(node->m_timerId, node->m_remindCount,
+                        node->m_param, node->m_param1, node->m_param2);
                 }
-                else
+                else if (node->m_object && node->m_cbFunction == NULL)
                 {
-                    timeLeft = it->second->m_milliInterval;
-                    it->second->m_beginTime = currTime;
+                    CTimerApi *object = node->m_object;
+                    object->OnTimer(node->m_timerId, node->m_remindCount, node->m_param);
                 }
             }
 
-            if (timeLeft > 0 && (unsigned long)timeLeft < sleepTime)
+            CTimerMessage* old = node;
+            node = NodeRemove(node);
+            if (old->m_totalCount != -1 && old->m_totalCount <= old->m_remindCount)
             {
-                sleepTime = timeLeft;
+                m_timerMap.erase(old->m_timerId);
+                if (old->m_post == false)
+                    delete old;
+                else
+                    old->m_delete = true;
+                continue;
             }
+            else
+            {
+                old->m_beginTime = currTime;
+                old->m_expried = currTime + old->m_milliInterval;
+                // 根据过期时间排序
+                CTimerMessage* tmp = node;
+                while (tmp != m_tail && tmp->m_expried <= old->m_expried)
+                {
+                    tmp = tmp->m_next;
+                }
+                NodeInsertPrev(tmp, old);
+                if (tmp == node) node = old;
+            }
+        }
 
-            it++; 
+        if (m_head->m_next != m_tail)
+        {
+            sleepTime = m_head->m_next->m_expried - currTime;
         }
 
         return sleepTime;
@@ -190,7 +254,8 @@ namespace ctm
 
     unsigned int CTimerHandler::GenerateId()
     {
-        if (++m_generateId == (unsigned long)-1) m_generateId = 1;
+        if (++m_generateId == (unsigned long)-1)
+            m_generateId = 0;
         return m_generateId;
     }
 
@@ -202,5 +267,7 @@ namespace ctm
             delete it->second;
         }
         m_timerMap.clear();
+        m_head->m_next = m_head;
+        m_head->m_prev = m_head;
     }
-};
+}; // namespace ctm

@@ -13,7 +13,7 @@ HEADERS=headers
 
 SUBDIRS=$(shell find ./* -type d)
 INC_SUBDIRS=$(shell find ./* -type d | awk -F' ' '{print "-I"$$0}')
-INC_PATH=$(INC_SUBDIRS) -I./ -I../third_party/include
+INC_PATH=$(INC_SUBDIRS) -I./ -I../third/include
 LIB_PATH=
 LIB=
 

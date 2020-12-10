@@ -113,6 +113,14 @@ namespace ctm
 
 	int SetNoDelay(SOCKET_T sockfd);
 
+	int SetRcvLowat(SOCKET_T sockfd, int val);
+
+	int SetSndLowat(SOCKET_T sockfd, int val);
+
+	int GetRcvLowat(SOCKET_T sockfd);
+	
+	int GetSndLowat(SOCKET_T sockfd);
+
 	std::string LocalHostName();
 
 	int Hostent2Ips(struct hostent* htent, std::vector<std::string>& vecIps);

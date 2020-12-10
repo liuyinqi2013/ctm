@@ -196,7 +196,7 @@ namespace ctm
         if (flush || 
             m_head->size == 0 || 
             (int)m_head->freeSize < 0 || 
-            (int)m_head->freeSize > size - sizeof(MemQueueHead))
+            (int)m_head->freeSize > (int)(size - sizeof(MemQueueHead)))
         {
             m_head->semId  = semId;
             m_head->semNum = semNum;

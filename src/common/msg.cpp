@@ -100,10 +100,10 @@ namespace ctm
 
 	void CMsg::TestPrint()
 	{
-		DEBUG_LOG("MSG id   = %s", m_strId.c_str());
-		DEBUG_LOG("MSG type = %d", m_iType);
-		DEBUG_LOG("MSG name = %s", m_strName.c_str());
-		DEBUG_LOG("MSG time = %d", m_unixTime);
+		DEBUG("MSG id   = %s", m_strId.c_str());
+		DEBUG("MSG type = %d", m_iType);
+		DEBUG("MSG name = %s", m_strName.c_str());
+		DEBUG("MSG time = %d", m_unixTime);
 	}
 
 	REG_MSG(0, CMsg);
@@ -129,7 +129,7 @@ namespace ctm
 		
 		if (m_msgVec.size() >= m_maxSize)
 		{
-			ERROR_LOG("message queue already full max size : %d", m_maxSize);
+			ERROR("message queue already full max size : %d", m_maxSize);
 			return false;
 		}
 

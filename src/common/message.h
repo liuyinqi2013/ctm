@@ -9,10 +9,11 @@
 #include <atomic>
 #include <unordered_map>
 #include <time.h>
-
-#include "json/json.h"
-#include "json/json-forwards.h"
 #include "queue.h"
+
+namespace Json {
+class Value;
+};
 
 namespace ctm
 {
@@ -53,12 +54,8 @@ namespace ctm
             return "";
         }
 
-        virtual string ToJsonString()
-        {
-            return ToJsonObject().toStyledString();
-        }
-        
-        virtual Json::Value ToJsonObject();
+        virtual string ToJsonString();
+
         virtual int FormJsonString(const string& jsonString);
         virtual int FromJsonObject(const Json::Value& jsonObject);
         virtual void CopyFrom(const CMessage& other);

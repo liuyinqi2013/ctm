@@ -80,12 +80,9 @@ namespace ctm
 		int m_logLevel;
 	};
 
-#define DEBUG_LOG(format, ...) CLog::GetInstance()->Write(CLog::LOG_DEBUG, "[%s:%d]:" format, __FILE__, __LINE__, ##__VA_ARGS__)
-#define ERROR_LOG(format, ...) CLog::GetInstance()->Write(CLog::LOG_ERROR, "[%s:%d]:" format, __FILE__, __LINE__, ##__VA_ARGS__)
-#define WARN_LOG(format, ...)  CLog::GetInstance()->Write(CLog::LOG_WARN, "[%s:%d]:" format, __FILE__, __LINE__, ##__VA_ARGS__)
-#define INFO_LOG(format, ...)  CLog::GetInstance()->Write(CLog::LOG_INFO, "[%s:%d]:" format, __FILE__, __LINE__, ##__VA_ARGS__)
-#define FUNC_BEG() DEBUG_LOG("Begin...")
-#define FUNC_END() DEBUG_LOG("End...")
+	extern CLog* gErrorLog;
+	extern CLog* gDebugLog;
+	extern CLog* gWarnLog;
 
 #define CTM_DEBUG_LOG(log, format, ...) if (log) (log)->Write(CLog::LOG_DEBUG, "[%s:%d]:" format, __FILE__, __LINE__, ##__VA_ARGS__)
 #define CTM_ERROR_LOG(log, format, ...) if (log) (log)->Write(CLog::LOG_ERROR, "[%s:%d]:" format, __FILE__, __LINE__, ##__VA_ARGS__)
@@ -94,6 +91,15 @@ namespace ctm
 
 #define CTM_FUNC_BEG(log) CTM_DEBUG_LOG(log, "Begin...")
 #define CTM_FUNC_END(log) CTM_DEBUG_LOG(log, "End...")
+
+#define DEBUG(format, ...) CTM_DEBUG_LOG(gErrorLog, format, ##__VA_ARGS__)
+#define ERROR(format, ...) CTM_ERROR_LOG(gDebugLog, format, ##__VA_ARGS__)
+#define WARN(format, ...)  CTM_WARN_LOG(gWarnLog, format, ##__VA_ARGS__)
+#define INFO(format, ...)  CTM_INFO_LOG(gWarnLog, format, ##__VA_ARGS__)
+
+#define FUNC_BEG() DEBUG("...BEG...")
+#define FUNC_END() DEBUG("...END...")
+
 };
 
 #endif

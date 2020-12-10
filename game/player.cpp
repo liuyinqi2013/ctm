@@ -40,13 +40,13 @@ namespace ctm
 
 	void CPlayer::Print()
 	{
-		DEBUG_LOG("m_sock = %u", m_sock.GetSock());
-		DEBUG_LOG("m_openId = %s", m_openId.c_str());
-		DEBUG_LOG("m_playerName = %s", m_playerName.c_str());
-		DEBUG_LOG("m_headerImageUrl = %s", m_headerImageUrl.c_str());
-		DEBUG_LOG("m_daskPos = %u", m_daskPos);
-		DEBUG_LOG("m_daskId  = %u", m_daskId);
-		DEBUG_LOG("m_status  = %u", m_status);
+		DEBUG("m_sock = %u", m_sock.GetSock());
+		DEBUG("m_openId = %s", m_openId.c_str());
+		DEBUG("m_playerName = %s", m_playerName.c_str());
+		DEBUG("m_headerImageUrl = %s", m_headerImageUrl.c_str());
+		DEBUG("m_daskPos = %u", m_daskPos);
+		DEBUG("m_daskId  = %u", m_daskId);
+		DEBUG("m_status  = %u", m_status);
 	}
 
 	void CPlayer::Copy(const CPlayer & other)

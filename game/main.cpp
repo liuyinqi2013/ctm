@@ -81,12 +81,12 @@ void Daemon()
 
 void Handle_PIPE(int sign)
 {
-	DEBUG_LOG("--- Recv sign SIGPIPE ---");
+	DEBUG("--- Recv sign SIGPIPE ---");
 }
 
 void Handle_INT(int sign)
 {
-	DEBUG_LOG("--- Recv sign SIGINT ---");
+	DEBUG("--- Recv sign SIGINT ---");
 	exit(1);
 }
 
@@ -105,12 +105,12 @@ int main(int argc, char **argv)
 	CIniFile iniFile("conf.ini");
 	if (!iniFile.Load())
 	{
-		DEBUG_LOG("load conf.ini error");
+		DEBUG("load conf.ini error");
 		return -1;
 	}
 	*/
 
-	//DEBUG_LOG("centont :\n%s", iniFile.ToString().c_str());
+	//DEBUG("centont :\n%s", iniFile.ToString().c_str());
 	
 	//CLog::GetInstance()->SetLogName(iniFile["logfile"].AsString());
 	//CLog::GetInstance()->SetLogPath(iniFile["logpath"].AsString());

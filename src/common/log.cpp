@@ -19,6 +19,10 @@
 
 namespace ctm
 {
+	CLog* gErrorLog = CLog::GetInstance();
+	CLog* gDebugLog = CLog::GetInstance();
+	CLog* gWarnLog  = CLog::GetInstance();
+
 	void CLog::MakePath(const std::string& path)
 	{
 		std::string cmd(MKDIR + std::string("\"") + path + std::string("\""));

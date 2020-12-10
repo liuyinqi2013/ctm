@@ -16,7 +16,6 @@ namespace ctm
         CMsgHeader* head = (CMsgHeader*)buf;
         head->dstId = htonl(head->dstId);
         head->srcId = htonl(head->srcId);
-        head->uid = htonl(head->uid);
         head->msgId = htonl(head->msgId);
         head->dataLen = htonl(head->dataLen);
         
@@ -35,7 +34,6 @@ namespace ctm
         CMsgHeader* head = (CMsgHeader*)buf;
         this->dstId = ntohl(head->dstId);
         this->srcId = ntohl(head->srcId);
-        this->uid = ntohl(head->uid);
         this->msgId = ntohl(head->msgId);
         this->dataLen = ntohl(head->dataLen);
         memcpy(this->expand, head->expand, sizeof(this->expand));
@@ -46,8 +44,8 @@ namespace ctm
     std::string CMsgHeader::ToString() const
     {
         char buf[128] = {0};
-        snprintf(buf, sizeof(buf) - 1, "dstId:%u, srcId:%u, uid:%u, msgId:%d, dataLen:%u", 
-            dstId, srcId, uid, msgId, dataLen);
+        snprintf(buf, sizeof(buf) - 1, "dstId:%u, srcId:%u, msgId:%d, dataLen:%u", 
+            dstId, srcId, msgId, dataLen);
         return std::string(buf);
     }
 }

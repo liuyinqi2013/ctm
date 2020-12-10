@@ -29,20 +29,20 @@ namespace ctm
 		m_tcpNetServer =  new CTcpNetServer(m_ip, m_port);
 		if (!m_tcpNetServer)
 		{
-			DEBUG_LOG("Create CTcpNetServer class failed!");
+			DEBUG("Create CTcpNetServer class failed!");
 			return false;
 		}
 
 		if (!m_tcpNetServer->Init())
 		{
-			DEBUG_LOG("Net server init failed!");
+			DEBUG("Net server init failed!");
 			return false;
 		}
 
 		m_daskArray = new CDask[m_totalDaskNum];
 		if (!m_daskArray)
 		{
-			DEBUG_LOG("Create CDask array failed!");
+			DEBUG("Create CDask array failed!");
 			return false;
 		}
 
@@ -75,7 +75,7 @@ namespace ctm
 			m_tcpNetServer->ShutDown();
 			delete m_tcpNetServer;
 			m_tcpNetServer = NULL;
-			DEBUG_LOG("Destroy Net Server!");
+			DEBUG("Destroy Net Server!");
 		}
 
 		if (m_daskArray)
@@ -97,7 +97,7 @@ namespace ctm
 		while (1)
 		{
 			CNetPack *p = m_tcpNetServer->GetNetPack();
-			DEBUG_LOG("%s:%d recv : %s", p->ip, p->port, p->ibuf);
+			DEBUG("%s:%d recv : %s", p->ip, p->port, p->ibuf);
 			if (p)
 			{
 				Json::Value root;
@@ -115,7 +115,7 @@ namespace ctm
 							it->second->m_status = pNet->m_opt;
 							it->second->Print();
 							it->second->m_manager = true;
-							DEBUG_LOG("player %s off line", it->second->m_openId.c_str());
+							DEBUG("player %s off line", it->second->m_openId.c_str());
 						}
 					} 
 					else 
@@ -224,7 +224,7 @@ namespace ctm
 		msg.m_onlineCount = m_mapOpenidPlayers.size();
 		pPlayer->SendMSG(&msg);
 		
-		DEBUG_LOG("player count : %d", m_mapOpenidPlayers.size());
+		DEBUG("player count : %d", m_mapOpenidPlayers.size());
 
 		FUNC_END();
 	}
@@ -243,7 +243,7 @@ namespace ctm
 		if (m_mapOpenidPlayers[pMsg->m_openId]->m_dask != NULL)
 		{
 			m_mapOpenidPlayers[pMsg->m_openId]->SendGameInfo();
-			DEBUG_LOG("Player %s already in the game", pMsg->m_openId.c_str());
+			DEBUG("Player %s already in the game", pMsg->m_openId.c_str());
 			return;
 		}
 		
