@@ -115,7 +115,7 @@ namespace ctm
         {
             if (sendCache.size() == 0)
             {
-                if (!(event.events & EVENT_EPOLL_ET) && event.monitor) 
+                if ((event.events & EVENT_WRITE) && event.monitor) 
                 {
                     event.monitor->DelEvent(&event, EVENT_WRITE);
                 }

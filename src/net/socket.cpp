@@ -161,7 +161,7 @@ namespace ctm
 	{
 		int val = 0;
 		SOCKETLEN_T len = sizeof(val);
-		if (!getsockopt(sockfd, SOL_SOCKET, SO_RCVLOWAT, &val, &len))
+		if (getsockopt(sockfd, SOL_SOCKET, SO_RCVLOWAT, &val, &len))
 		{
 			return -1;
 		}
@@ -173,7 +173,7 @@ namespace ctm
 	{
 		int val = 0;
 		SOCKETLEN_T len = sizeof(val);
-		if (!getsockopt(sockfd, SOL_SOCKET, SO_SNDLOWAT, &val, &len))
+		if (getsockopt(sockfd, SOL_SOCKET, SO_SNDLOWAT, &val, &len))
 		{
 			return -1;
 		}

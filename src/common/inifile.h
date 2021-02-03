@@ -20,6 +20,7 @@ namespace ctm
 		CIniValue& operator = (int val);
 		CIniValue& operator = (double val);
 		CIniValue& operator = (const string& val);
+		CIniValue& operator = (bool val);
 
 		int AsInt() const
 		{
@@ -36,6 +37,11 @@ namespace ctm
 			return m_value; 
 		}
 
+		bool AsBool() const
+		{ 
+			return S2B(m_value); 
+		}
+
 		string ToString() const;
 
 		CIniValue& operator[] (const string& key);
@@ -47,6 +53,7 @@ namespace ctm
 			EIntType = 1,
 			EDoubleType = 2,
 			EStringType = 3,
+			EBoolType = 4,
 			ECommentType = 100,
 			ESectionType = 101,
 			EOtherType = 102,
@@ -55,6 +62,7 @@ namespace ctm
 		CIniValue(CIniValue* parent = NULL) : m_type(ENodeType), m_parent(parent) {}
 		CIniValue(int val, CIniValue* parent = NULL) : m_type(EIntType), m_value(I2S(val)), m_parent(parent) {}
 		CIniValue(double val, CIniValue* parent = NULL) : m_type(EDoubleType), m_value(D2S(val)), m_parent(parent) {}
+		CIniValue(bool val, CIniValue* parent = NULL) : m_type(EBoolType), m_value(B2S(val)), m_parent(parent) {}
 		CIniValue(const string& key, const string& val, CIniValue* parent = NULL) : m_type(EStringType), m_key(key), m_value(val), m_parent(parent) {}
 		CIniValue(int type, const string& key, const string& val, CIniValue* parent = NULL) : m_type(type), m_key(key), m_value(val), m_parent(parent) {}
 		CIniValue(const CIniValue& other);
@@ -110,9 +118,11 @@ namespace ctm
 		void Get(const string& key, int& val);
 		void Get(const string& key, double& val);
 		void Get(const string& key, string& val);
+		void Get(const string& key, bool& val);
 		void Get(const string& section, const string& key, int& val);
 		void Get(const string& section, const string& key, double& val);
 		void Get(const string& section, const string& key, string& val);
+		void Get(const string& section, const string& key, bool& val);
 
 		void Set(const string& key, const int val)
 		{
@@ -129,6 +139,11 @@ namespace ctm
 			SetComm(key, val);
 		}
 
+		void Set(const string& key, const bool& val)
+		{
+			SetComm(key, val);
+		}
+
 		void Set(const string& section, const string& key, const int val)
 		{
 			SetCommEx(section, key, val);
@@ -140,6 +155,11 @@ namespace ctm
 		}
 
 		void Set(const string& section, const string& key, const string& val)
+		{
+			SetCommEx(section, key, val);
+		}
+
+		void Set(const string& section, const string& key, const bool& val)
 		{
 			SetCommEx(section, key, val);
 		}

@@ -65,7 +65,7 @@ namespace ctm
 
 	inline bool String2Bool(const std::string& val)
 	{
-		return val == "True" ? true : false;
+		return (val == "True" || val == "true") ? true : false;
 	}
 
 	#define S2I(x) Str2Int((x))
@@ -75,7 +75,9 @@ namespace ctm
 	#define S2LL(x) Str2Longlong((x))
 	#define LL2S(x) Longlong2Str((x))
 	#define S2D(x) Str2Double((x))
-	#define D2S(x) Double2Str((x))	
+	#define D2S(x) Double2Str((x))
+	#define S2B(x) String2Bool((x))	
+	#define B2S(x) Bool2String((x))	
 };
 
 #endif

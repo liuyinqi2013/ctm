@@ -35,6 +35,13 @@ namespace ctm
 		return *this;
 	}
 
+	CIniValue& CIniValue::operator = (bool val)
+	{
+		m_type = EBoolType;
+		m_value = B2S(val);
+		return *this;
+	}
+
 	string CIniValue::ToString() const
 	{
 		string centont;
@@ -44,6 +51,7 @@ namespace ctm
 		case EIntType:
 		case EDoubleType:
 		case EStringType:
+		case EBoolType:
 			centont = m_key + "=" + m_value;
 			break;
 		case ECommentType:
@@ -242,6 +250,12 @@ namespace ctm
 		if (p) val = p->AsString();
 	}
 
+	void CIniFile::Get(const string& key, bool& val)
+	{
+		const CIniValue* p = GetIniValue(key);
+		if (p) val = p->AsBool();
+	}
+
 	void CIniFile::Get(const string& section, const string& key, int& val)
 	{
 		const CIniValue* p = GetIniValue(section, key);
@@ -258,6 +272,12 @@ namespace ctm
 	{
 		const CIniValue* p = GetIniValue(section, key);
 		if (p) val = p->AsString();
+	}
+
+	void CIniFile::Get(const string& section, const string& key, bool& val)
+	{
+		const CIniValue* p = GetIniValue(section, key);
+		if (p) val = p->AsBool();
 	}
 
 	CIniValue* CIniFile::GetIniValue(const string& key)

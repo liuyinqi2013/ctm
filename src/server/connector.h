@@ -45,6 +45,7 @@ namespace ctm
     
         CConn* Listen(const string& ip, unsigned int port);
         CConn* Connect(const string& ip, unsigned int port);
+        CConn* AsynConnect(const string& ip, unsigned int port);
         CConn* MemroyConn(unsigned int key, unsigned int size, bool bServer);
 
         CConn* CreateConn(int fd, int events, int status = CConn::ACTIVE, bool listen = false, int family = 0);

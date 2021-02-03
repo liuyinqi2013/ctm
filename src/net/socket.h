@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "common/macro.h"
+using std::string;
 
 #ifdef WIN32
 #include <Winsock2.h>

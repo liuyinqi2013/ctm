@@ -585,6 +585,11 @@ DECLARE_FUNC(ini)
 	return 0;
 }
 
+static void HelloTimer(unsigned int timerId, unsigned int remindCount, void* param)
+{
+	DEBUG("--- HelloTimer timerId:%d, remindCount:%d param:%s", timerId, remindCount, (char*)param);
+}
+
 class CTestTimer : public CTimerApi
 {
 public:
@@ -656,6 +661,7 @@ DECLARE_FUNC(timer)
 	timer.Start();
 
 	timer.AddTimer(1,  10, (TimerCallBack)&CTestTimer::MillSecond_1,  &testTimer);
+	timer.AddTimer(2,  10, (TimerCallBackEx)&HelloTimer, (void*)"my Call Back Ex");
 	/*
 	timer.AddTimer(3,  10,(TimerCallBack)&CTestTimer::MillSecond_3,  &testTimer);
 	timer.AddTimer(5,  2, (TimerCallBack)&CTestTimer::MillSecond_5,  &testTimer);

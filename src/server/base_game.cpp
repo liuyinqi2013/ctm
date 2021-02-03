@@ -1,31 +1,33 @@
 #include "base_game.h"
+#include "link.h"
 #include "net/socket.h"
 #include "net/conn.h"
 #include "common/pack.h"
-#include "manger.h"
+#include "common/log.h"
+#include "common/time_tools.h"
 
 namespace ctm
 {
-    static CFixedPack gFixedPack;
-
-    CBaseGame::CBaseGame() : 
+    CBaseGame::CBaseGame() :
+    m_id(0),
+    m_type(0),
+    m_name(""), 
     m_timerHandler(NULL),
     m_protoMap(NULL),
-    m_pack(NULL),
-    m_echoServConn(NULL),
-    m_connManger(NULL),
+    m_protoMapEx(NULL),
+    m_linkManger(NULL),
     m_HBTimerId(0),
     m_HBInterval(HB_IDLE_SECOND),
     m_maxPackLen(MAX_PACK_LEN)
     {
-
     }
 
     CBaseGame::~CBaseGame()
     {
         DELETE(m_timerHandler);
         DELETE(m_protoMap);
-        DELETE(m_connManger);
+        DELETE(m_protoMapEx);
+        DELETE(m_linkManger);
     }
 
     int CBaseGame::Init()
@@ -50,20 +52,24 @@ namespace ctm
             return -1;
         }
 
-        m_connManger = new CConnManger;
-        if (m_connManger == NULL)
+        m_protoMapEx = new ProtoMap;
+        if (m_protoMapEx == NULL)
         {
-            ERROR("Create connManger failed");
+            ERROR("Create protoMapEx failed");
             return -1;
         }
 
-        m_pack = &gFixedPack;
+        m_linkManger = new CLinkManger;
+        if (m_linkManger == NULL)
+        {
+            ERROR("Create linkManger failed");
+            return -1;
+        }
 
         RegProtoHandle(ECHO_PROTO_REQ_ID, &CBaseGame::EchoReq, this);
         RegProtoHandle(ECHO_PROTO_RSP_ID, &CBaseGame::EchoRsp, this);
         RegProtoHandle(HB_PROTO_REQ_ID, &CBaseGame::HeartBeatReq, this);
         RegProtoHandle(HB_PROTO_RSP_ID, &CBaseGame::HeartBeatRsp, this);
-        RegProtoHandle(COM_MSG_PROTO_ID, &CBaseGame::OnCommonMsg, this);
 
         return 0;
     }
@@ -138,19 +144,7 @@ namespace ctm
         ret = conn->Recv(buf);
         if (ret == IO_RD_OK)
         {
-            unsigned int protoId = 0;
-            int ret = m_pack->UnPack(buf, protoId, buf);
-            if (ret != -1 )
-            {
-                buf->data[buf->len] = 0;
-
-                HandleProtoMSG(conn, protoId, buf->data, buf->len);
-            }
-            else
-            {
-                DEBUG("Recv can not UnPack data");
-            }
-
+            HandleRecvData(conn, buf->data, buf->len);
             delete buf;
         }
         else if (ret == IO_RD_AGAIN)
@@ -201,7 +195,7 @@ namespace ctm
         return 0;
     }
 
-    int CBaseGame::TestEcho(const string& ip, unsigned int port, char* buf)
+    int CBaseGame::TestEcho(const string& ip, uint32 port, char* buf)
     {
         CConn* conn = Connect(ip, port);
         if (conn == NULL)
@@ -210,24 +204,66 @@ namespace ctm
             return -1;
         }
 
-        Send(conn, ECHO_PROTO_REQ_ID, buf, strlen(buf));
+        Send(conn, 0, 0, ECHO_PROTO_REQ_ID, buf, strlen(buf));
 
         return 0;
     }
 
-    void CBaseGame::Dispatch(CConn* conn, const CMsgHeader& head, const void* data, unsigned int len)
+    void CBaseGame::HandleRecvData(CConn* conn, void* buf, uint32 len)
     {
-
+        static struct CMsgHeader headinfo;
+        headinfo.Decode((char*)buf, len);
+        headinfo.recvTime = MilliTimestamp();
+        char* pData = (char*)buf + sizeof(headinfo);
+        DEBUG("Recv common msg conn=[%s], len=%d", conn->ToString().c_str(), len);
+        DEBUG("headinfo:[%s]", headinfo.ToString().c_str());
+        Dispatch(conn, headinfo, pData, headinfo.dataLen);
     }
 
-    void CBaseGame::RegProtoHandle(unsigned int protoId, ProtoHandle handle, CBaseGame* object)
+    uint32 CBaseGame::Uid() const
+    {
+        return UUID(m_id, m_type);
+    }
+
+    void CBaseGame::Dispatch(CConn* conn, const CMsgHeader& head, const void* data, uint32 len)
+    {
+        if (head.duid == 0 || head.duid == Uid() || (GET_TYPE(head.duid) == Type() && GET_ID(head.duid) == 0))
+        {
+            HandleProtoMSG(conn, head, (char*)data, len);
+        }
+        else if (GET_TYPE(head.duid) && GET_ID(head.duid))
+        {
+            // 转发
+            CLinkConn* link = m_linkManger->GetLink(head.duid);
+            if (link)
+            {
+                Send(link->conn, head.duid, head.suid, head.protoId, (char*)data, len);
+            }
+            else
+            {
+                DEBUG("Not find link uid:%u", head.duid);
+            }
+        }
+        else if (GET_TYPE(head.duid) && GET_ID(head.duid) == 0)
+        {   
+            // 广播
+            LinkIdMAP& linkMap = m_linkManger->GetLinkIdMap(GET_TYPE(head.duid));
+            LinkIdMAP::iterator it = linkMap.begin();
+            for (; it != linkMap.end(); it++)
+            {
+                Send(it->second->conn, head.duid, head.suid, head.protoId, (char*)data, len);
+            }
+        }
+    }
+
+    void CBaseGame::RegProtoHandle(uint32 protoId, ProtoHandle handle, CBaseGame* object)
     {
         (*m_protoMap)[protoId].handle = handle;
         (*m_protoMap)[protoId].object = object;
         (*m_protoMap)[protoId].func = NULL;
     }
 
-    void CBaseGame::RegProtoHandle(unsigned int protoId, CallBackFunc func, void* param)
+    void CBaseGame::RegProtoHandle(uint32 protoId, CallBackFunc func, void* param)
     {
         (*m_protoMap)[protoId].handle = NULL;
         (*m_protoMap)[protoId].object = NULL;
@@ -235,7 +271,7 @@ namespace ctm
         (*m_protoMap)[protoId].param = param;
     }
 
-    int CBaseGame::Send(CConn* conn, char* buf, unsigned int len)
+    int CBaseGame::Send(CConn* conn, const char* buf, uint32 len)
     {
         if (conn->status != CConn::ACTIVE)
         {
@@ -250,28 +286,12 @@ namespace ctm
         return conn->AsynSend(dst);
     }
 
-    int CBaseGame::Send(CConn* conn, unsigned int protoId, char* buf, unsigned int len)
+    int CBaseGame::Send(CConn* conn, uint32 duid, uint32 protoId, const char* buf, uint32 len)
     {
-        if (conn == NULL || conn->status != CConn::ACTIVE)
-        {
-            return -1;
-        }
-
-        unsigned int retlen = 0;
-        retlen = m_pack->Pack(protoId, buf, len, (void*)NULL, retlen);
-
-        Buffer* dst = new Buffer(retlen + 4);
-        retlen = htonl(retlen);
-        memmove(dst->data, &retlen, 4);
-
-        retlen = dst->len - 4;
-        m_pack->Pack(protoId, buf, len, dst->data + 4, retlen);
-        dst->offset = 0;
-
-        return conn->AsynSend(dst);
+        return Send(conn, duid, Uid(), protoId, buf, len);
     }
 
-    int CBaseGame::Send(CConn* conn, unsigned int dstId, unsigned int srcId, unsigned int protoId, char* buf, unsigned int len)
+    int CBaseGame::Send(CConn* conn, uint32 duid, uint32 suid, uint32 protoId, const char* buf, uint32 len)
     {
         static struct CMsgHeader head;
         static char tmpBuf[MAX_PACK_LEN];
@@ -288,16 +308,22 @@ namespace ctm
             return -1;
         }
 
-        head.dstId = dstId;
-        head.srcId = srcId;
-        head.msgId = protoId;
+        head.duid = duid;
+        head.suid = suid;
+        head.protoId = protoId;
+        head.sendTime = MilliTimestamp();
         head.dataLen = len;
 
-        unsigned int tmplen = MAX_PACK_LEN;
+        uint32 tmplen = MAX_PACK_LEN;
         head.Encode(tmpBuf, tmplen);
         memmove(tmpBuf + sizeof(head), buf, len);
 
-        return this->Send(conn, COM_MSG_PROTO_ID, tmpBuf, len + sizeof(head));
+        return this->Send(conn, tmpBuf, len + sizeof(head));
+    }
+
+    int CBaseGame::Send(CLinkConn* link, uint32 protoId, const char* buf, uint32 len)
+    {
+        return this->Send(link->conn, link->Uid(), Uid(), protoId, buf, len);
     }
 
     int CBaseGame::StartTimer(int milliSecond, int count, TimerCallBack cb, void* param, void* param1, void* param2)
@@ -315,7 +341,7 @@ namespace ctm
         return m_timerHandler->StopTimer(timerId);
     }
 
-    void CBaseGame::StartHeartBeats(unsigned int interval)
+    void CBaseGame::StartHeartBeats(uint32 interval)
     {
         m_HBInterval = interval;
         m_HBTimerId = StartTimer(interval * 1000, -1, (TimerCallBack)&CBaseGame::HandleHeartBeat);
@@ -327,79 +353,63 @@ namespace ctm
         m_HBTimerId = 0;
     }
 
-    void CBaseGame::TestEchoTimer(unsigned int timerId, unsigned int remindCount, void* param, void* param1)
+    void CBaseGame::TestEchoTimer(uint32 timerId, uint32 remindCount, void* param, void* param1)
     {
         DEBUG("CBaseGame::TestEchoTimer timerId:%d remindCount:%d", timerId, remindCount);
         
-        CConn* conn = (CConn*)param;
-        Send(conn, ECHO_PROTO_REQ_ID, (char*)param1, strlen((const char*)param1));
+        Send((CConn*)param, 0, Uid(), ECHO_PROTO_REQ_ID, (char*)param1, strlen((const char*)param1));
     }
 
-    void CBaseGame::EchoReq(void* data, char* buf, int len)
+    void CBaseGame::EchoReq(CConn* conn, const CMsgHeader& head, char* buf, int len)
     {
-        CConn* conn = (CConn*)data;
-        Send(conn, ECHO_PROTO_RSP_ID, buf, len);
+        Send(conn, 0, Uid(), ECHO_PROTO_RSP_ID, buf, len);
     }
 
-    void CBaseGame::EchoRsp(void* data, char* buf, int len)
+    void CBaseGame::EchoRsp(CConn* conn, const CMsgHeader& head, char* buf, int len)
     {
         DEBUG("%s", buf);
     }
 
-    void CBaseGame::Unknown(void* data, char* buf, int len)
+    void CBaseGame::Unknown(CConn* conn, const CMsgHeader& head, char* buf, int len)
     {
-        CConn* conn = (CConn*)data;
         DEBUG("Recv un known data [%s]", conn->ToString().c_str());
     }
 
-    void CBaseGame::HeartBeatReq(void* data, char* buf, int len)
+    void CBaseGame::HeartBeatReq(CConn* conn, const CMsgHeader& head, char* buf, int len)
     {
-        CConn* conn = (CConn*)data;
-        Send(conn, HB_PROTO_RSP_ID, buf, len);
+        Send(conn, 0, Uid(), HB_PROTO_RSP_ID, buf, len);
     }
 
-    void CBaseGame::HeartBeatRsp(void* data, char* buf, int len)
+    void CBaseGame::HeartBeatRsp(CConn* conn, const CMsgHeader& head, char* buf, int len)
     {
-        CConn* conn = (CConn*)data;
         DEBUG("Recv heart beat [%s]", conn->ToString().c_str());
     }
 
-    void CBaseGame::OnCommonMsg(void* data, char* buf, int len)
+    void CBaseGame::HandleProtoMSG(CConn* conn, const CMsgHeader& head, char* buf, int len)
     {
-        CConn* conn = (CConn*)data;
-        static struct CMsgHeader headinfo;
-        headinfo.Decode(buf, len);
-        char* pData = buf + sizeof(headinfo);
-        DEBUG("Recv common msg conn=[%s], len=%d", conn->ToString().c_str(), len);
-        DEBUG("headinfo:[%s]", headinfo.ToString().c_str());
-        Dispatch(conn, headinfo, pData, headinfo.dataLen);
-    }
-
-    void CBaseGame::HandleProtoMSG(CConn* conn, unsigned int protoId, char* buf, int len)
-    {
-        if (m_protoMap->find(protoId) != m_protoMap->end())
+        if (m_protoMap->find(head.protoId) != m_protoMap->end())
         {
-            if ((*m_protoMap)[protoId].func)
+            if ((*m_protoMap)[head.protoId].func)
             {
-                CallBackFunc func = (*m_protoMap)[protoId].func;
-                func((*m_protoMap)[protoId].param, conn, buf, len);
+                CallBackFunc func = (*m_protoMap)[head.protoId].func;
+                func((*m_protoMap)[head.protoId].param, conn, head, buf, len);
             }
             else
             {
-                CBaseGame* object  = (*m_protoMap)[protoId].object;
-                ProtoHandle handle = (*m_protoMap)[protoId].handle;
+                CBaseGame* object  = (*m_protoMap)[head.protoId].object;
+                ProtoHandle handle = (*m_protoMap)[head.protoId].handle;
 
                 if (object == NULL) object = this;
-                (object->*handle)(conn, buf, len);
+                (object->*handle)(conn, head, buf, len);
             }
         }
         else
         {
-            Unknown(conn, buf, len);
+            Unknown(conn, head, buf, len);
         }
     }
 
-    void CBaseGame::HandleHeartBeat(unsigned int timerId, unsigned int remindCount, void* param)
+    void CBaseGame::HandleHeartBeat(uint32 timerId, uint32 remindCount, void* param)
     {
         time_t now = time(NULL);
         set<CConn*>::iterator it = m_connPool->m_connSet.begin();
@@ -415,7 +425,7 @@ namespace ctm
                 }
                 else if (now - (*it1)->lastActive >= m_HBInterval)
                 {
-                    Send(*it1, HB_PROTO_REQ_ID, (char*)&now, sizeof(time_t));
+                    Send(*it1, 0, Uid(), HB_PROTO_REQ_ID, (char*)&now, sizeof(time_t));
                 }
             }
         }

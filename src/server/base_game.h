@@ -4,17 +4,19 @@
 #include "units.h"
 #include "connector.h"
 #include "timer/timerhandler.h"
+#include "common/macro.h"
 
 #define HB_IDLE_SECOND 30
 
 namespace ctm
 {
-    class CPack;
+    class CLinkConn;
+    class CLinkManger;
     class CBaseGame;
-    class CConnManger;
+    class CTimerHandler;
 
-    typedef void (CBaseGame::*ProtoHandle)(void* data, char* buf, int len);
-    typedef void (*CallBackFunc)(void* param, void* data, char* buf, int len);
+    typedef void (CBaseGame::*ProtoHandle)(CConn* conn, const CMsgHeader& head, char* data, int len);
+    typedef void (*CallBackFunc)(void* param, CConn* conn, const CMsgHeader& head, char* data, int len);
 
     class CBaseGame : public CTimerApi, public CConnector
     {
@@ -26,7 +28,7 @@ namespace ctm
             void* param;
         };
 
-        typedef std::unordered_map<unsigned int, ProtoInfo> ProtoMap;
+        typedef std::unordered_map<uint32, ProtoInfo> ProtoMap;
 
     public:
 
@@ -51,53 +53,64 @@ namespace ctm
         virtual void OnWriteClose(CConn* conn);
         virtual void OnClose(CConn* conn);
         
+        uint32 Uid() const;
+        uint32 Id() { return m_id; } const
+        uint32 Type() { return m_type; } const
+        string Name() { return m_name; } const
+
+        void SetId(uint32 id) { m_id = id; } 
+        void SetType(uint32 type) { m_type = type; }
+        void SetName(const string& name) { m_name = name; }
+        void SetMaxPackLen(uint32 maxLen) { m_maxPackLen = maxLen; }
+
         int StartListen(int port);
-        int TestEcho(const string& ip, unsigned int port, char* buf);
+        int TestEcho(const string& ip, uint32 port, char* buf);
 
-        void SetPacker(CPack* pack) { m_pack = pack; }
-        void SetMaxPackLen(unsigned int maxLen) { m_maxPackLen = maxLen; }
-
-        virtual void Dispatch(CConn* conn, const CMsgHeader& head, const void* data, unsigned int len);
+        virtual void HandleRecvData(CConn* conn, void* buf, uint32 len);
+        virtual void Dispatch(CConn* conn, const CMsgHeader& head, const void* data, uint32 len);
 
     public:
 
-        void RegProtoHandle(unsigned int protoId, ProtoHandle handle, CBaseGame* object = NULL);
-        void RegProtoHandle(unsigned int protoId, CallBackFunc func, void* param = NULL);
+        void RegProtoHandle(uint32 protoId, ProtoHandle handle, CBaseGame* object = NULL);
+        void RegProtoHandle(uint32 protoId, CallBackFunc func, void* param = NULL);
 
         int StartTimer(int milliSecond, int count, TimerCallBack cb, void* param = NULL, void* param1 = NULL, void* param2 = NULL);
         int StartTimer(int milliSecond, int count, TimerCallBackEx cb, void* param = NULL, void* param1 = NULL, void* param2 = NULL);
         int StopTimer(int timerId);
 
-        void StartHeartBeats(unsigned int interval);
+        void StartHeartBeats(uint32 interval);
         void StopHeartBeats();
 
-        int Send(CConn* conn, char* buf, unsigned int len);
-        int Send(CConn* conn, unsigned int protoId, char* buf, unsigned int len);
-        int Send(CConn* conn, unsigned int dstId, unsigned int srcId, unsigned int protoId, char* buf, unsigned int len);
+        int Send(CConn* conn, const char* buf, uint32 len);
+        int Send(CConn* conn, uint32 duid, uint32 protoId, const char* buf, uint32 len);
+        int Send(CConn* conn, uint32 duid, uint32 suid, uint32 protoId, const char* buf, uint32 len);
+        int Send(CLinkConn* link, uint32 protoId, const char* buf, uint32 len);
+        int Send(uint32 duid, uint32 suid, uint32 protoId, const char* buf, uint32 len);
 
-        void TestEchoTimer(unsigned int timerId, unsigned int remindCount, void* param, void* param1);
-
-    protected:
-        void EchoReq(void* data, char* buf, int len);
-        void EchoRsp(void* data, char* buf, int len);
-        void Unknown(void* data, char* buf, int len);
-
-        void HeartBeatReq(void* data, char* buf, int len);
-        void HeartBeatRsp(void* data, char* buf, int len);
-        void OnCommonMsg(void* data, char* buf, int len);
-
-        void HandleProtoMSG(CConn* conn, unsigned int protoId, char* buf, int len);
-        void HandleHeartBeat(unsigned int timerId, unsigned int remindCount, void* param);
+        void TestEchoTimer(uint32 timerId, uint32 remindCount, void* param, void* param1);
 
     protected:
+        void EchoReq(CConn* conn, const CMsgHeader& head, char* buf, int len);
+        void EchoRsp(CConn* conn, const CMsgHeader& head, char* buf, int len);
+        void Unknown(CConn* conn, const CMsgHeader& head, char* buf, int len);
+
+        void HeartBeatReq(CConn* conn, const CMsgHeader& head, char* buf, int len);
+        void HeartBeatRsp(CConn* conn, const CMsgHeader& head, char* buf, int len);
+
+        void HandleProtoMSG(CConn* conn, const CMsgHeader& head, char* buf, int len);
+        void HandleHeartBeat(uint32 timerId, uint32 remindCount, void* param);
+
+    protected:
+        uint32 m_id;
+        uint32 m_type;
+        string m_name;
         CTimerHandler* m_timerHandler;
         ProtoMap* m_protoMap;
-        CPack* m_pack;
-        CConn* m_echoServConn;
-        CConnManger* m_connManger;
+        ProtoMap* m_protoMapEx;
+        CLinkManger* m_linkManger;
         int m_HBTimerId;
-        unsigned int m_HBInterval;
-        unsigned int m_maxPackLen;
+        uint32 m_HBInterval;
+        uint32 m_maxPackLen;
     };
 }
 

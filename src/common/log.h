@@ -59,6 +59,7 @@ namespace ctm
 		void AssignMaxSize(unsigned int fileMaxSize);
 
 		// 前缀格式[datatime][pid][level]
+		std::string LogDateFmt();
 		std::string LinePrefix(enum LogLevel level);
 		long long GetFileSize(const std::string& fileName);
 		void ToNextFile();
@@ -79,27 +80,26 @@ namespace ctm
 		unsigned long m_logFileSize;
 		int m_logLevel;
 	};
+};
 
-	extern CLog* gErrorLog;
-	extern CLog* gDebugLog;
-	extern CLog* gWarnLog;
+extern ctm::CLog* gErrorLog;
+extern ctm::CLog* gDebugLog;
+extern ctm::CLog* gWarnLog;
 
-#define CTM_DEBUG_LOG(log, format, ...) if (log) (log)->Write(CLog::LOG_DEBUG, "[%s:%d]:" format, __FILE__, __LINE__, ##__VA_ARGS__)
-#define CTM_ERROR_LOG(log, format, ...) if (log) (log)->Write(CLog::LOG_ERROR, "[%s:%d]:" format, __FILE__, __LINE__, ##__VA_ARGS__)
-#define CTM_WARN_LOG(log, format, ...)  if (log) (log)->Write(CLog::LOG_WARN,  "[%s:%d]:" format, __FILE__, __LINE__, ##__VA_ARGS__)
-#define CTM_INFO_LOG(log, format, ...)  if (log) (log)->Write(CLog::LOG_INFO,  "[%s:%d]:" format, __FILE__, __LINE__, ##__VA_ARGS__)
+#define CTM_DEBUG_LOG(log, format, ...) if (log) (log)->Write(ctm::CLog::LOG_DEBUG, "[%s:%d]:" format, __FILE__, __LINE__, ##__VA_ARGS__)
+#define CTM_ERROR_LOG(log, format, ...) if (log) (log)->Write(ctm::CLog::LOG_ERROR, "[%s:%d]:" format, __FILE__, __LINE__, ##__VA_ARGS__)
+#define CTM_WARN_LOG(log, format, ...)  if (log) (log)->Write(ctm::CLog::LOG_WARN,  "[%s:%d]:" format, __FILE__, __LINE__, ##__VA_ARGS__)
+#define CTM_INFO_LOG(log, format, ...)  if (log) (log)->Write(ctm::CLog::LOG_INFO,  "[%s:%d]:" format, __FILE__, __LINE__, ##__VA_ARGS__)
 
 #define CTM_FUNC_BEG(log) CTM_DEBUG_LOG(log, "Begin...")
 #define CTM_FUNC_END(log) CTM_DEBUG_LOG(log, "End...")
 
-#define DEBUG(format, ...) CTM_DEBUG_LOG(gErrorLog, format, ##__VA_ARGS__)
-#define ERROR(format, ...) CTM_ERROR_LOG(gDebugLog, format, ##__VA_ARGS__)
+#define DEBUG(format, ...) CTM_DEBUG_LOG(gDebugLog, format, ##__VA_ARGS__)
+#define ERROR(format, ...) CTM_ERROR_LOG(gErrorLog, format, ##__VA_ARGS__)
 #define WARN(format, ...)  CTM_WARN_LOG(gWarnLog, format, ##__VA_ARGS__)
 #define INFO(format, ...)  CTM_INFO_LOG(gWarnLog, format, ##__VA_ARGS__)
 
 #define FUNC_BEG() DEBUG("...BEG...")
 #define FUNC_END() DEBUG("...END...")
-
-};
 
 #endif

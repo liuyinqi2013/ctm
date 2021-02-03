@@ -4,21 +4,16 @@
 #include <string>
 #include <vector>
 #include <map>
-
-#include "mysql.h"
-
-using namespace std;
+#include <mysql.h>
 
 typedef std::vector<std::map<std::string, std::string> > CStrMapArr;
 
 class CMySQLDB
 {
 public:
-
 	CMySQLDB() :
 		m_Host(""),
 		m_Port(0),
-		m_DBName(""),
 		m_UserName(""),
 		m_PassWord(""),
         m_DBHandle(NULL),
@@ -31,12 +26,10 @@ public:
 	CMySQLDB(
 		const char* hostName, 
 		const int port, 
-		const char* DbName,
 		const char* userName,
 		const char* passWord):
 		m_Host(hostName),
 		m_Port(port),
-		m_DBName(DbName),
 		m_UserName(userName),
 		m_PassWord(passWord),
         m_DBHandle(NULL),
@@ -56,14 +49,12 @@ public:
 	bool Connect();
 
 	bool Connect(const char* hostName, 
-		const int port, 
-		const char* DbName,
+		const int port,
 		const char* userName,
 		const char* passWord)
 	{
 		m_Host = hostName;
 		m_Port = port;
-		m_DBName = DbName;
 		m_UserName = userName;
 		m_PassWord = passWord;
 		return Connect();
@@ -99,19 +90,19 @@ public:
 
 	int StmtBindParamInt(int iparamNum, int iVal);
 
-	int StmtBindParamStr(int iparamNum, const string& strVal);
+	int StmtBindParamStr(int iparamNum, const std::string& strVal);
 
 	int StmtBind(MYSQL_BIND* bind);
 
-	string StmtSQLStatus();
+	std::string StmtSQLStatus();
 
 	int StmtExecute();
 
-	int GetTabRowCount(const string& tableName);
+	int GetTabRowCount(const std::string& tableName);
 
-	int ClearTable(const string& tableName);
+	int ClearTable(const std::string& tableName);
 
-	int Export(const string& tableName, string& strOutSQL, int rowOffset = 0, int rowCount = -1);
+	int Export(const std::string& tableName, std::string& strOutSQL, int rowOffset = 0, int rowCount = -1);
 
 	void DisConnect()
 	{
@@ -121,7 +112,7 @@ public:
         }
 	}
 
-	string GetLastErr();
+	std::string GetLastErr();
 
 	MYSQL* GetMySQLHandle() const ;
 
@@ -142,9 +133,9 @@ public:
 		return (!mysql_ping(m_DBHandle));
 	}
 
-	static string EscapeString(const string& strIn);
+	static std::string EscapeString(const std::string& strIn);
 
-	bool SelectDB(const string& db);
+	bool SelectDB(const std::string& db);
 
 	unsigned long InsertId() const
 	{
@@ -159,20 +150,19 @@ public:
 private:
 	bool IsStringType(int columnType);
 
-	string AddFlag(const char* value);
+	std::string AddFlag(const char* value);
 
 	void ConvertInsertSQL(MYSQL_RES* result, std::vector<std::string>& outSQLVec);
 
 	void ConvertUpdateSQL(MYSQL_RES* result, std::vector<std::string>& outSQLVec);
 
-	int GetRowCount(const string& SQL);
+	int GetRowCount(const std::string& SQL);
 	
 private:
-	string m_Host;
+	std::string m_Host;
 	int    m_Port;
-	string m_DBName;
-	string m_UserName;
-	string m_PassWord;
+	std::string m_UserName;
+	std::string m_PassWord;
 	MYSQL* m_DBHandle;
 	MYSQL_STMT* m_DBStmt;
 	MYSQL_RES*  m_DBRes;

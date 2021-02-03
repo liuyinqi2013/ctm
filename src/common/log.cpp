@@ -5,6 +5,7 @@
 #include "platform.h"
 
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <stdarg.h>
 #include <assert.h>
 #include <stdlib.h>
@@ -17,12 +18,12 @@
 	#define MKDIR "mkdir -p "
 #endif
 
+ctm::CLog* gErrorLog = ctm::CLog::GetInstance();
+ctm::CLog* gDebugLog = ctm::CLog::GetInstance();
+ctm::CLog* gWarnLog  = ctm::CLog::GetInstance();
+
 namespace ctm
 {
-	CLog* gErrorLog = CLog::GetInstance();
-	CLog* gDebugLog = CLog::GetInstance();
-	CLog* gWarnLog  = CLog::GetInstance();
-
 	void CLog::MakePath(const std::string& path)
 	{
 		std::string cmd(MKDIR + std::string("\"") + path + std::string("\""));
@@ -163,10 +164,19 @@ namespace ctm
 
 		MakePath(m_logPath);
 	}
+	
+	std::string CLog::LogDateFmt()
+	{
+		struct timeval val = {0};
+		gettimeofday(&val, NULL);
+		char buf[64] = { 0 };
+		snprintf(buf, sizeof(buf), "%s.%06d", Timestamp2FormatDateTime(val.tv_sec).c_str(), (int)val.tv_usec);
+		return string(buf);
+	}
 
 	std::string CLog::LinePrefix(enum LogLevel level)
 	{
-		std::string prefix = "[" + DateTime() + "." + MilliSecondStr() +"][" + I2S(GetPid()) + "][";
+		std::string prefix = "[" + LogDateFmt() +"][" + I2S(GetPid()) + "][";
 		switch (level)
 		{
 		case LOG_DEBUG:

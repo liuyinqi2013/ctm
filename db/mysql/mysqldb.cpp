@@ -1,10 +1,11 @@
-﻿#include "MySQLDB.h"
-#include <stdio.h>
+﻿#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
+#include "mysqldb.h"
 
 #define MS2C(str) ((str).c_str())
-#define MC2S(ptr) ((!(ptr))?string(""):string((ptr)))
+#define MC2S(ptr) ((!(ptr))?std::string(""):std::string((ptr)))
 
 bool CMySQLDB::Connect()
 {
@@ -23,7 +24,7 @@ bool CMySQLDB::Connect()
 	}
 
 	mysql_options(m_DBHandle, MYSQL_SET_CHARSET_NAME, "utf8");
-	if (!mysql_real_connect(m_DBHandle, m_Host.c_str(), m_UserName.c_str(), m_PassWord.c_str(), m_DBName.c_str(), m_Port, NULL, 0))
+	if (!mysql_real_connect(m_DBHandle, m_Host.c_str(), m_UserName.c_str(), m_PassWord.c_str(), NULL, m_Port, NULL, 0))
 	{
 		return false;
 	}
@@ -85,7 +86,7 @@ int CMySQLDB::StmtBindParamInt(int iparamNum, int iVal)
 	return iRet;
 }
 
-int CMySQLDB::StmtBindParamStr(int iparamNum, const string& strVal)
+int CMySQLDB::StmtBindParamStr(int iparamNum, const std::string& strVal)
 {
 	MYSQL_BIND buf = { 0 };
 	memset(&buf, 0, sizeof(buf));
@@ -112,18 +113,18 @@ int CMySQLDB::StmtExecute()
 	return iRet;
 }
 
-string CMySQLDB::StmtSQLStatus()
+std::string CMySQLDB::StmtSQLStatus()
 {
-	return string(mysql_stmt_sqlstate(m_DBStmt));
+	return std::string(mysql_stmt_sqlstate(m_DBStmt));
 }
 
-int CMySQLDB::GetTabRowCount(const string& tableName)
+int CMySQLDB::GetTabRowCount(const std:: string& tableName)
 {
-	string SQL = "SELECT COUNT(*) FROM " + tableName;
+	std::string SQL = "SELECT COUNT(*) FROM " + tableName;
 	return GetRowCount(SQL);
 }
 
-int CMySQLDB::GetRowCount(const string& SQL)
+int CMySQLDB::GetRowCount(const std::string& SQL)
 {
 	if (!Query(SQL.c_str()))
 	{
@@ -139,14 +140,14 @@ int CMySQLDB::GetRowCount(const string& SQL)
 	return ret;
 }
 
-int CMySQLDB::ClearTable(const string& tableName)
+int CMySQLDB::ClearTable(const std::string& tableName)
 {
 	std::string SQL = "DELETE FROM " + tableName;
 	return (Excute(SQL.c_str()) ? 0 : -1);
 }
 
 
-int CMySQLDB::Export(const string& tableName, string& strOutSQL, int rowOffset, int rowCount)
+int CMySQLDB::Export(const std::string& tableName, std::string& strOutSQL, int rowOffset, int rowCount)
 {
 	char SQL[128] = { 0 };
 	if (rowCount > 0)
@@ -163,9 +164,9 @@ int CMySQLDB::Export(const string& tableName, string& strOutSQL, int rowOffset, 
 		return -1;
 	}
 
-	vector<string> vecSQL;
+	std::vector<std::string> vecSQL;
 	ConvertInsertSQL(m_DBRes, vecSQL);
-	for (int i = 0; i < vecSQL.size(); ++i)
+	for (size_t i = 0; i < vecSQL.size(); ++i)
 	{
 		strOutSQL += vecSQL[i] + "\n";
 	}
@@ -184,7 +185,7 @@ bool  CMySQLDB::Excute(const char* sql)
 	return true;
 }
 
-string CMySQLDB::GetLastErr()
+std::string CMySQLDB::GetLastErr()
 {
 	char buf[1024] = { 0 };
 #ifndef WIN32
@@ -372,35 +373,33 @@ void CMySQLDB::GetValues(MYSQL_RES* result, CStrMapArr& outVaulesVec)
 
 		outVaulesVec.push_back(keyMap);
 	}
-
-	// mysql_data_seek(m_DBRes, 0);
 }
 
-string CMySQLDB::EscapeString(const string& strIn)
+std::string CMySQLDB::EscapeString(const std::string& strIn)
 {
 	int len = strIn.size() * 2;
 	char* buf = new char[len];
-	if (!buf) return string("");
+	if (!buf) return std::string("");
 
 	memset(buf, 0, len);
 	len = mysql_escape_string(buf, strIn.data(), strIn.size());
 	if (len < 0)
 	{
 		delete[] buf;
-		return string("");
+		return std::string("");
 	}
-	string strRet(buf, len);
+	std::string strRet(buf, len);
 	delete[] buf;
 	return strRet;
 }
 
-bool CMySQLDB::SelectDB(const string& db)
+bool CMySQLDB::SelectDB(const std::string& db)
 {
 	return !mysql_select_db(m_DBHandle, MS2C(db));
 }
 
-string CMySQLDB::AddFlag(const char* value)
+std::string CMySQLDB::AddFlag(const char* value)
 {
-	if (!value) return string("''");
-	return (string("'") + value + string("'"));
+	if (!value) return std::string("''");
+	return (std::string("'") + value + std::string("'"));
 }

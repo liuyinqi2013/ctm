@@ -6,6 +6,7 @@
 #include "connector.h"
 #include "net/memconn.h"
 #include "common/mem_queue.h"
+#include "common/log.h"
 
 #define MAX_CONN_SIZE (1024 * 100)
 #define MEM_GAP (32)
@@ -221,15 +222,6 @@ namespace ctm
             ERROR("WaitProc failed!");
             return -1;
         }
-        else if (ret == 0)
-        {
-            m_timeOut = 0;
-        }
-        else
-        {
-            m_timeOut = 1;
-        }
-
         return 0;
     }
 
@@ -382,6 +374,41 @@ namespace ctm
             ERROR("socket faield!");
             return NULL;
         }
+
+        CConn* conn = NULL;
+        
+        int ret = ctm::Connect(fd, ip, port);
+        if (ret < 0)
+        {
+            if (errno != EINPROGRESS)
+            {
+                close(fd);
+                ERROR("Connect faield!");
+                return NULL;
+            }
+
+            conn = CreateConn(fd, EVENT_READ | EVENT_WRITE | EVENT_PEER_CLOSE /*| EVENT_EPOLL_ET*/, CConn::CONNING, false, AF_INET);
+        }
+        else
+        {
+            conn = CreateConn(fd, EVENT_READ | EVENT_WRITE | EVENT_PEER_CLOSE /*| EVENT_EPOLL_ET*/, CConn::ACTIVE, false, AF_INET);
+            conn->GetLocalAddr();
+            conn->GetPeerAddr();
+        }
+
+        return conn;
+    }
+
+    CConn* CConnector::AsynConnect(const string& ip, unsigned int port)
+    {
+        int fd = socket(AF_INET, SOCK_STREAM, 0);
+        if (fd == -1)
+        {
+            ERROR("socket faield!");
+            return NULL;
+        }
+
+        SetNonBlock(fd);
 
         CConn* conn = NULL;
         

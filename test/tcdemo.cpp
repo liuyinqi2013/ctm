@@ -346,6 +346,8 @@ DECLARE_FUNC(base_game_ser)
 		return -1;
 	}
 
+	gameServer.SetId(1);
+	gameServer.SetType(1);
 	gameServer.StartListen(9999);
 	gameServer.StartListen(8888);
 	gameServer.StartHeartBeats(3);
@@ -376,11 +378,16 @@ DECLARE_FUNC(base_game_cli)
 
 	CConn* conn  = gameClient.Connect("127.0.0.1", 9999);
 	CConn* conn1 = gameClient.Connect("127.0.0.1", 8888);
+	DEBUG("conn revlowat:%d", GetRcvLowat(conn->fd));
+	DEBUG("conn sndlowat:%d", GetSndLowat(conn->fd));
+
+	gameClient.SetId(1);
+	gameClient.SetType(999);
 
 	gameClient.StartTimer(5, 100, (TimerCallBack)&CBaseGame::TestEchoTimer, conn, (void*)"hello 9999");
 	gameClient.StartTimer(2, 50, (TimerCallBack)&CBaseGame::TestEchoTimer, conn, (void*)"hello 8888");
 	char buf[] = "ggggggggggggggggggggggggggggggggg";
-	gameClient.Send(conn, 100, 10, 12345,  buf, sizeof(buf));
+	gameClient.Send(conn, 0, 0,  buf, sizeof(buf));
 
 	gameClient.Run();
 
