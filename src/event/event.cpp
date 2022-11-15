@@ -1,30 +1,33 @@
 #include "event.h"
-#include "epoll_monitor.h"
-#include "conn_handler.h"
+#include "common/time_tools.h"
 
 namespace ctm
 {
-    CEventMonitor* CrateEventMonitor(int type)
+
+    Event::Event(uint32_t id, int fd, int events, EventCallBack cb, void* param, uint64_t interval, uint32_t count)
     {
-        switch (type)
-        {
-        case CEventMonitor::SELECT:
-        case CEventMonitor::POLL:
-            return NULL;
-        case CEventMonitor::EPOLL:
-            return new CEpollEventMonitor();
-        default:
-            break;
-        }
-        return NULL;
+        Clear();
+        m_id = id;
+        m_fd = fd;
+        m_events = events;
+        m_cb = cb,
+        m_param = param;
+        m_interval = interval;
+        m_total = count;
+        m_begin = MilliTimestamp();
     }
 
-    void FreeEventMonitor(CEventMonitor* eventMonitor)
+    void Event::Clear()
     {
-        if (eventMonitor)
-        {
-            delete eventMonitor;
-        }
+        m_id = 0;
+        m_fd = -1;
+        m_remind = 0;
+        m_events = EventNull;
+        m_total = 0;
+        m_interval = 0;
+        m_begin = 0;
+        m_cb = NULL;
+        m_param = NULL;
     }
 
 }

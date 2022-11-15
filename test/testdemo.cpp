@@ -1,3 +1,6 @@
+#include <unistd.h>
+#include <arpa/inet.h>
+
 #include "testdef.h"
 #include <algorithm>
 
@@ -39,18 +42,14 @@ int TestThread::Run()
 		while(1)
 		{
 			int ret = queue1.GetPopFront(a, 1000);
-			if (ret == queue1.ERR_TIME_OUT)
-			{
+			if (ret == queue1.ERR_TIME_OUT) {
 				cout << m_strName << "GetPopFront time out" << endl;
 				break;
-			}
-			else if(ret == queue1.ERR_OK)
-			{
+			} else if(ret == queue1.ERR_OK) {
 				cnt += 1;
-				//cout << m_strName <<" recv : " << a << endl;
-				//cout << m_strName <<" cnt : " << cnt << endl;
 			}
 		}
+
 		cout << m_strName <<" cnt : " << cnt << endl;
 		cout << clock.RunInfo() << endl;
 	}
@@ -155,9 +154,11 @@ DECLARE_FUNC(addrinfo)
 	addr.ai_family = AF_UNSPEC;
 	addr.ai_socktype = SOCK_STREAM;
 	addr.ai_flags = AI_NUMERICHOST;
-	struct addrinfo* res, * p;
-	if (0 != getaddrinfo("localhost", NULL, &addr, &res))
-	{
+	struct addrinfo* res, *p;
+	char portstr[6];
+	snprintf(portstr, sizeof(portstr), "%d", 80);
+
+	if (getaddrinfo("www.sina.com", portstr, &addr, &res) < 0) {
 		cout << "getaddrinfo failed" << endl;
 	}
 
@@ -169,26 +170,25 @@ DECLARE_FUNC(addrinfo)
 			cout << "type AF_INET" << endl;
 			struct sockaddr_in* sa = (struct sockaddr_in*)p->ai_addr;
 			inet_ntop(AF_INET, &(sa->sin_addr), ipbuf, 128);
-		}
-		else if (p->ai_family == AF_INET6)
-		{
+		} else if (p->ai_family == AF_INET6) {
 			cout << "type AF_INET6" << endl;
 			struct sockaddr_in* sa = (struct sockaddr_in*)p->ai_addr;
 			inet_ntop(AF_INET6, &(sa->sin_addr), ipbuf, 128);
 		}
-		cout << "ip : " << ipbuf << endl;
 
+		cout << "ip : " << ipbuf << endl;
 		cout << "canonname : " << p->ai_canonname << endl;
 	}
+
 	freeaddrinfo(res);
 	return 0;
 }
 
 DECLARE_FUNC(hostip)
 {
-	printf("hostname:%s\n", LocalHostName().c_str());
+	printf("hostname:%s\n", HostName().c_str());
 	std::vector<std::string> vecIps;
-	GetHostIps("www.baidu.com", vecIps);
+	GetHostIPs("www.sina.com", vecIps);
 	for(size_t i = 0; i < vecIps.size(); ++i)
 	{
 		printf("ip%d:%s\n", i + 1, vecIps[i].c_str());
@@ -196,24 +196,6 @@ DECLARE_FUNC(hostip)
 	return 0;
 }
 
-DECLARE_FUNC(msg)
-{
-	CMsg msg1("1", 1, "net");
-	CMsg msg2("2", 2, "mod");
-	msg1.TestPrint();
-	msg2.TestPrint();
-	DEBUG("msg1 = %s", msg1.ToString().c_str());
-	DEBUG("msg2 = %s", msg2.ToString().c_str());
-	CMsg* p = CreateMsg(0);
-	if (p)
-	{
-		p->FromString(msg2.ToString());
-		p->TestPrint();
-	}
-	msg1.TestPrint();
-	msg2.TestPrint();
-	return 0;
-}
 
 DECLARE_FUNC(message)
 {
@@ -585,105 +567,9 @@ DECLARE_FUNC(ini)
 	return 0;
 }
 
-static void HelloTimer(unsigned int timerId, unsigned int remindCount, void* param)
-{
-	DEBUG("--- HelloTimer timerId:%d, remindCount:%d param:%s", timerId, remindCount, (char*)param);
-}
-
-class CTestTimer : public CTimerApi
-{
-public:
-	CTestTimer(int val) : m_val(val) {}
-
-	void MillSecond_1(unsigned int timerId, unsigned int remindCount, void* param)
-	{
-		DEBUG("MillSecond_1 timerId:%d remindCount:%d", timerId, remindCount);
-	}
-	void MillSecond_3(unsigned int timerId, unsigned int remindCount, void* param)
-	{
-		DEBUG("MillSecond_3 timerId:%d remindCount:%d", timerId, remindCount);
-	}
-	void MillSecond_5(unsigned int timerId, unsigned int remindCount, void* param)
-	{
-		DEBUG("MillSecond_5 timerId:%d remindCount:%d", timerId, remindCount);
-	}
-	void MillSecond_10(unsigned int timerId, unsigned int remindCount, void* param)
-	{
-		DEBUG("MillSecond_10 timerId:%d remindCount:%d", timerId, remindCount);
-	}
-	void MillSecond_30(unsigned int timerId, unsigned int remindCount, void* param)
-	{
-		DEBUG("MillSecond_30 timerId:%d remindCount:%d", timerId, remindCount);
-	}
-
-	void Second_1(unsigned int timerId, unsigned int remindCount, void* param)
-	{
-		DEBUG("Second_1 m_val = %d timerId:%d remindCount:%d", m_val, timerId, remindCount);
-	}
-	void Second_5(unsigned int timerId, unsigned int remindCount, void* param)
-	{
-		DEBUG("Second_5 timerId:%d remindCount:%d", timerId, remindCount);
-	}
-	void Second_10(unsigned int timerId, unsigned int remindCount, void* param)
-	{
-		DEBUG("Second_10 timerId:%d remindCount:%d", timerId, remindCount);
-	}
-	void Second_30(unsigned int timerId, unsigned int remindCount, void* param)
-	{
-		DEBUG("Second_30 timerId:%d remindCount:%d", timerId, remindCount);
-	}
-	void Second_60(unsigned int timerId, unsigned int remindCount, void* param)
-	{
-		DEBUG("Second_60 timerId:%d remindCount:%d", timerId, remindCount);
-	}
-
-	int m_val;
-};
-
-class CTestTimer2 : public CTestTimer
-{
-public:
-	CTestTimer2(int a): CTestTimer(a), m_A(a) {}
-
-	void Second_3(unsigned int timerId, unsigned int remindCount, void* param)
-	{
-		DEBUG("CTestTimer2 Second_3  A:%d timerId:%d remindCount:%d", m_A, timerId, remindCount);
-	}
-
-	int m_A;
-};
-
 DECLARE_FUNC(timer)
 {
-	CTestTimer testTimer(6);
-	CTestTimer2 testTimer2(10);
-	CTimer timer;
-	timer.Start();
-
-	timer.AddTimer(1,  10, (TimerCallBack)&CTestTimer::MillSecond_1,  &testTimer);
-	timer.AddTimer(2,  10, (TimerCallBackEx)&HelloTimer, (void*)"my Call Back Ex");
-	/*
-	timer.AddTimer(3,  10,(TimerCallBack)&CTestTimer::MillSecond_3,  &testTimer);
-	timer.AddTimer(5,  2, (TimerCallBack)&CTestTimer::MillSecond_5,  &testTimer);
-	timer.AddTimer(10, 2, (TimerCallBack)&CTestTimer::MillSecond_10, &testTimer);
-	timer.AddTimer(30, 1, (TimerCallBack)&CTestTimer::MillSecond_30, &testTimer);
-
-	int t1 = timer.AddTimer(1000,  10, (TimerCallBack)&CTestTimer::Second_1, &testTimer);
-	int t2 = timer.AddTimer(5000,  6, (TimerCallBack)&CTestTimer::Second_5,  &testTimer);
-	int t3 = timer.AddTimer(10000, 2, (TimerCallBack)&CTestTimer::Second_10, &testTimer);
-	int t4 = timer.AddTimer(30000, 2, (TimerCallBack)&CTestTimer::Second_30, &testTimer);
-	int t5 = timer.AddTimer(60000, 2, (TimerCallBack)&CTestTimer::Second_60, &testTimer);
-
-	// timer.StopTimer(timerId1);
-
-	sleep(6);
-
-	int t6 = timer.AddTimer(3000, 10, (TimerCallBack)&CTestTimer2::Second_3, &testTimer2);
-
-	timer.StopTimer(t1);
-	*/
-
-	WaitEnd();
+	TestTimerEvent();
 	return 0;
 }
 

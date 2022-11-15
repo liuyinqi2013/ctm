@@ -71,17 +71,17 @@ namespace ctm
 
 #ifdef WIN32
 	DWORD CThread::ThreadEnterFun(LPVOID arg)
+	{
 #else
 	void* CThread::ThreadEnterFun(void* arg)
-#endif
 	{
 		sigset_t sig_mask;
 		sigfillset(&sig_mask);
 		sigdelset(&sig_mask, SIGILL);
-    		sigdelset(&sig_mask, SIGFPE);
-    		sigdelset(&sig_mask, SIGSEGV);
+    	sigdelset(&sig_mask, SIGFPE);
+    	sigdelset(&sig_mask, SIGSEGV);
 		pthread_sigmask(SIG_BLOCK, &sig_mask, NULL);
-
+#endif
 		CThread *pThread = static_cast<CThread *>(arg);
 		if(pThread)
 		{

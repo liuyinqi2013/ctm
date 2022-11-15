@@ -27,12 +27,6 @@ int Usage(int argc, char** argv)
     for(; it != pTestFunctionMap->end(); it++) 
     {
         sortVec.push_back(it->first);
-        /*
-        if (IsCharDevice(stdout))
-            printf("    %s\n", ColorString(it->first, SKYBLUE).c_str());
-        else
-            printf("    %s\n", it->first.c_str());
-        */
     }
 
     sort(sortVec.begin(), sortVec.end());

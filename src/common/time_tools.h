@@ -1,6 +1,7 @@
 #ifndef CTM_COMMON_TIME_TOOLS_H__
 #define CTM_COMMON_TIME_TOOLS_H__
 
+#include <stddef.h>
 #include <time.h>
 #include <string>
 
@@ -12,10 +13,10 @@ namespace ctm
 	inline time_t Timestamp() { return time(NULL); }
 	
 	// 获取当前时间戳（毫秒）
-	unsigned long MilliTimestamp();
+	uint64_t MilliTimestamp();
 
 	// 获取当前时间的毫秒数
-	unsigned int MilliSeconds();
+	uint32_t MilliSeconds();
 
 	enum TimeFmt
 	{
@@ -85,7 +86,7 @@ namespace ctm
 	// 下一天结束时间
 	time_t NextDayEndTime(time_t time = time(NULL), int day = 1);
 	// 毫秒时间戳转换为日期时间
-	string MilliTimestamp2DateTime(unsigned long time);
+	string MilliTimestamp2DateTime(uint64_t time);
 	
 	// 计时器
 	class CClock
@@ -101,12 +102,12 @@ namespace ctm
 		{
 		}
 
-		unsigned long RunTimes() 
+		uint64_t RunTimes() 
 		{
 			return MilliTimestamp() - m_begin;
 		}
 
-		unsigned long BeginTime() const
+		uint64_t BeginTime() const
 		{
 			return m_begin;
 		}
@@ -115,7 +116,7 @@ namespace ctm
 		
 	private:
 		string m_tips;
-		unsigned long m_begin;
+		uint64_t m_begin;
 	};
 };
 

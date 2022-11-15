@@ -8,9 +8,6 @@
 #include <cassert>
 #include <termios.h>
 #include <sys/sysmacros.h>
-#include "echo_client.h"
-#include "echo_server.h"
-
 #include "testdef.h"
 
 using namespace std;
@@ -62,8 +59,6 @@ DECLARE_FUNC(tcdemo)
 	tcsetattr(0, TCSANOW, &tnew);
 
 	printf("\e[0;0H\e[2J");
-	//printf("\e[%d;%dH", 20, 10);
-	
 	DrawRectangle(10, 10, 40, 20);
 
 	Move(30, 20);
@@ -141,8 +136,6 @@ DECLARE_FUNC(chartable)
 	}
 
 	tab.Print();
-	//cout << tab.TopLine() << endl;
-	//cout << StrNum('*', 10) << endl;
 	return 0;
 }
 
@@ -278,219 +271,6 @@ DECLARE_FUNC(testqueue)
 		}
 		
 	}
-	return 0;
-}
-
-DECLARE_FUNC(echo_ser)
-{
-	CHECK_PARAM(argc, 3, "echo_ser [ip] [port].");
-	CLog* log = CLog::GetInstance();
-	CEchoServer echoServ;
-	if (echoServ.Init(argv[1], atoi(argv[2]), log) == -1)
-	{
-		fprintf(stderr, "echo server init failed\n");
-		return -1;
-	}
-
-	INFO("echo_ser init OK");
-
-	while(echoServ.Execute() == 0);
-
-	return 0;
-}
-
-DECLARE_FUNC(echo_cli)
-{
-	CHECK_PARAM(argc, 3, "echo_cli [ip] [port].");
-
-	CLog log("echo_cli");
-	CEchoClient echoCli;
-	CClock clock;
-	if (echoCli.Init(argv[1], atoi(argv[2]), &log) == -1)
-	{
-		fprintf(stderr, "echo client init failed\n");
-		return -1;
-	}
-
-	/*
-	sigset_t set;
-	sigemptyset(&set);
-    sigaddset(&set, SIGQUIT);
-    sigaddset(&set, SIGPIPE);
-	sigaddset(&set, SIGSEGV);
-	sigaddset(&set, SIGFPE);
-    pthread_sigmask(SIG_BLOCK, &set, NULL);
-	*/
-
-	INFO("echo_cli init OK");
-
-	while(echoCli.Execute() == 0);
-
-	INFO("Send Over len = %d", echoCli.m_sendLen);
-	INFO("Recv Over len = %d", echoCli.m_recvLen);
-	INFO("%s", clock.RunInfo().c_str());
-
-	return 0;
-}
-
-DECLARE_FUNC(base_game_ser)
-{
-	CClock clock;
-	CBaseGame gameServer;
-
-	printf("gameServer %x\n", &gameServer);
-
-	if (gameServer.Init() == -1)
-	{
-		ERROR("base_game init failed\n");
-		return -1;
-	}
-
-	gameServer.SetId(1);
-	gameServer.SetType(1);
-	gameServer.StartListen(9999);
-	gameServer.StartListen(8888);
-	gameServer.StartHeartBeats(3);
-
-	INFO("gameServer init OK");
-
-	gameServer.Run();
-
-	INFO("%s", clock.RunInfo().c_str());
-
-	return 0;
-}
-
-DECLARE_FUNC(base_game_cli)
-{
-	CClock clock;
-	CBaseGame gameClient;
-
-	printf("gameClient %x\n", &gameClient);
-
-	if (gameClient.Init() == -1)
-	{
-		ERROR("base_game init failed\n");
-		return -1;
-	}
-
-	INFO("gameClient init OK");
-
-	CConn* conn  = gameClient.Connect("127.0.0.1", 9999);
-	CConn* conn1 = gameClient.Connect("127.0.0.1", 8888);
-	DEBUG("conn revlowat:%d", GetRcvLowat(conn->fd));
-	DEBUG("conn sndlowat:%d", GetSndLowat(conn->fd));
-
-	gameClient.SetId(1);
-	gameClient.SetType(999);
-
-	gameClient.StartTimer(5, 100, (TimerCallBack)&CBaseGame::TestEchoTimer, conn, (void*)"hello 9999");
-	gameClient.StartTimer(2, 50, (TimerCallBack)&CBaseGame::TestEchoTimer, conn, (void*)"hello 8888");
-	char buf[] = "ggggggggggggggggggggggggggggggggg";
-	gameClient.Send(conn, 0, 0,  buf, sizeof(buf));
-
-	gameClient.Run();
-
-	INFO("%s", clock.RunInfo().c_str());
-
-	return 0;
-}
-
-DECLARE_FUNC(mem_queue_send)
-{
-	CClock clock;
-
-	CSemaphore sem(1024);
-	sem.Open();
-	sem.SetVal(1);
-
-	CShareMemory mem(1024);
-
-	mem.Open(32 * 1024);
-
-	INFO("head = %x size = %d", mem.Head(), mem.Size());
-
-	CMemoryQueue queue(mem.Head(), mem.Size(), sem.GetSemId(), 0);
-
-	char data[]  = "hello world";
-	char data1[] = "I am liu yin qi hello world";
-
-	char* d = data;
-	int len = 0;
-
-	int i = 0;
-	int ret = 0;
-
-	while(1)
-	{
-		if ((i % 2) == 0)
-		{
-			d = data;
-			len = sizeof(data);
-		}
-		else
-		{
-			d = data1;
-			len = sizeof(data1);
-		}
-
-		INFO("cnt = %d", queue.Count());
-
-		ret = queue.Push(d, len);
-		if (ret == 0)
-		{
-			INFO("Send failed");
-		}
-
-		++i;
-		
-		sleep(1);
-	}
-
-	INFO("%s", clock.RunInfo().c_str());
-
-	return 0;
-}
-
-DECLARE_FUNC(mem_queue_recv)
-{
-	CClock clock;
-
-	CSemaphore sem(1024);
-	sem.Open();
-
-	CShareMemory mem(1024);
-
-	mem.Open(32 * 1024);
-
-	CMemoryQueue queue(mem.Head(), mem.Size(), sem.GetSemId(), 0);
-
-	char data[64] = {0};
-	uint32_t len  = 64;
-
-	int ret = 0;
-
-	while(1)
-	{
-		INFO("cnt = %d", queue.Count());
-
-		ret = queue.Get(data, len);
-
-		if (ret == 0)
-		{
-			INFO("Get failed");
-		}
-		else
-		{
-			data[ret] = 0;
-			INFO("ret=%d, %s", ret, data);
-		}
-
-		sleep(1);
-	}
-
-	INFO("%s", clock.RunInfo().c_str());
-
 	return 0;
 }
 

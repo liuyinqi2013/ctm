@@ -6,6 +6,7 @@ CFLAGS= -c -Wall -g -fPIC -std=c++11
 
 STATIC_LIB=libctm.a
 DYNAMIC_LIB=libctm.so
+
 BIN_PATH=../bin
 INSTALL=../lib
 INSTALL_INC=

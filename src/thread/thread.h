@@ -65,11 +65,9 @@ namespace ctm
 		}
 		
 		virtual int Start();
-		
 		virtual int Stop();
 
 		int Join();
-
 		int Detach();
 
 		int GetStatus() const 

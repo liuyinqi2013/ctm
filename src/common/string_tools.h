@@ -4,10 +4,16 @@
 #include <vector>
 #include <string>
 
-#define BLANK_SET "\t\f\v\n\r "
-
 namespace ctm
 {
+	#ifdef WIN32
+		#define SEP '\\'
+	#else
+		#define SEP '/'
+	#endif
+
+	#define BLANK_SET "\t\f\v\n\r "
+	
 	std::string TrimLeft(std::string& strInOut);
 
 	std::string TrimRight(std::string& strInOut);

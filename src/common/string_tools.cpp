@@ -9,8 +9,7 @@ namespace ctm
 	{
 		size_t pos = 0;
 		for (; pos < strInOut.size() && isspace(strInOut[pos]); ++pos);
-		if (pos < strInOut.size()) 
-		{
+		if (pos < strInOut.size()) {
 			return strInOut.substr(pos);
 		}		
 		return strInOut;
@@ -97,12 +96,9 @@ namespace ctm
 	{
 		bool bRet = true;
 		size_t i = 0;
-		if(bCase)
-		{
+		if(bCase){
 			for(;i < strIn.size() && i < substr.size() && toupper(strIn[i]) == toupper(substr[i]); i++);
-		}
-		else
-		{
+		} else {
 			for(;i < strIn.size() && i < substr.size() && strIn[i] == substr[i]; i++);
 		}
 
@@ -402,12 +398,7 @@ namespace ctm
 
 	std::string BaseFileName(const std::string& strPathFileName)
 	{
-	#ifdef WIN32
-		char sep = '\\';
-	#else
-		char sep = '/';
-	#endif
-		size_t pos = strPathFileName.rfind(sep);
+		size_t pos = strPathFileName.rfind(SEP);
 		if (pos != strPathFileName.npos)
 		{
 			return strPathFileName.substr(pos + 1);
@@ -418,17 +409,12 @@ namespace ctm
 
 	std::string PathName(const std::string& strPathFileName)
 	{
-	#ifdef WIN32
-		char sep = '\\';
-	#else
-		char sep = '/';
-	#endif
-		size_t pos = strPathFileName.rfind(sep);
+		size_t pos = strPathFileName.rfind(SEP);
 		if (pos != strPathFileName.npos)
 		{
 			return strPathFileName.substr(0, pos + 1);
 		}
 
-		return std::string(".") + sep;
+		return std::string(".") + SEP;
 	}
 }

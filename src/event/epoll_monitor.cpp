@@ -1,284 +1,334 @@
-#include <sys/epoll.h>
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/epoll.h>
 
-#include "net/conn.h"
+#include "io/io.h"
 #include "common/log.h"
+#include "common/time_tools.h"
+
 #include "epoll_monitor.h"
+
 
 namespace ctm
 {
     #define MAX_WAIT_EVENTS 1024
 
-    static struct epoll_event eventList[MAX_WAIT_EVENTS];
-
     CEpollEventMonitor::CEpollEventMonitor() 
-    : CEventMonitor(CEventMonitor::EPOLL), 
-      m_epollFd(0),
-      m_eventCnt(0)
+    : CEventMonitor()
     {
+        m_epollFd = 0;
+        m_pipe[0] = 0;
+        m_pipe[1] = 0;
     }
 
     CEpollEventMonitor::~CEpollEventMonitor()
     {
-        Done();
+        if (m_epollFd > 0 ) {
+            close(m_epollFd);
+            m_epollFd = 0;
+        }
+
+        if (m_pipe[0] > 0) {
+            close(m_pipe[0]);
+            close(m_pipe[1]);
+        }
     }
 
     int CEpollEventMonitor::Init()
     {
-        m_epollFd = epoll_create(1024 * 10);
-		if (-1 == m_epollFd)
-		{
+        m_epollFd = epoll_create1(0);
+		if (-1 == m_epollFd) {
             int err = errno;
             ERROR("epoll_create failed %d:%s", err, strerror(err));
 			return -1;
 		}
 
-        return 0;
-    }
+        int ret = pipe(m_pipe);
+        if (ret < 0) {
+            int err = errno;
+            ERROR("pipe failed %d:%s", err, strerror(err));
+			return -1;
+        }
 
-    int CEpollEventMonitor::Done()
-    {
-        if (m_epollFd > 0 )
-        {
-            close(m_epollFd);
-            m_epollFd = 0;
+        SetNonBlock(m_pipe[0]);
+        SetNonBlock(m_pipe[1]);
+
+        Event* ev = AddEvent(m_pipe[0], EventRead, CEpollEventMonitor::RecvBreak, this);
+        if (ev == NULL) {
+            ERROR("add pipe read event failed. fd:%d", m_pipe[0]);
+			return -1;
         }
 
         return 0;
     }
 
-    int CEpollEventMonitor::WaitProc(unsigned int msec)
+    int CEpollEventMonitor::Dispatch()
     {
-        if (m_eventCnt <= 0)
-        {
-           return 1; 
-        }
-
         int n = 0;
-        
-        while (1)
-        {
-            n = epoll_wait(m_epollFd, eventList, MAX_WAIT_EVENTS, msec);
+        struct epoll_event eventList[MAX_WAIT_EVENTS];
+        int sleep = HandlerTimeOutEvent();
 
-            if (n == -1)
-            {
+        while (1) {
+            n = epoll_wait(m_epollFd, eventList, MAX_WAIT_EVENTS, sleep);
+            if (n == -1) {
                 int err = errno;
                 if (EINTR == err) continue;
+
                 ERROR("epoll_wait failed %d:%s", err, strerror(err));
                 return -1;
-            }
-            else if (n == 0)
-            {
-                return 1;
             }
 
             break;
         }
 
         struct Event* ev = NULL;
-        for (int i = 0; i < n; ++i)
-        {
+        for (int i = 0; i < n; ++i) {
             ev = (struct Event*)eventList[i].data.ptr;
-            if (ev == NULL || ev->handler == NULL) 
-            {
+
+            if (ev == NULL) {
                 ERROR("epoll_wait event is null.");
                 continue;
+            } 
+
+            if (ev->m_cb) {
+                ev->m_cb(ev->Fd(), ToEvent(eventList[i].events), ev->m_param, ev->m_remind);
+            }
+        }
+
+        return 0;
+    }
+
+    Event* CEpollEventMonitor::AddEvent(int fd, int events, EventCallBack cb, void* param)
+    {
+        int op = 0 ;
+        Event* ev = NULL;
+
+        auto it = m_eventFdSet.find(fd);
+        if (it != m_eventFdSet.end()) {
+            op = EPOLL_CTL_MOD;
+            ev = it->second;
+            ev->m_events |= events;
+        } else {
+            op = EPOLL_CTL_ADD;
+            ev = new Event(GetUid(), fd, events, cb, param);
+            m_eventFdSet[fd] = ev;
+        }
+
+        struct epoll_event ee;
+        ee.data.ptr = ev;
+        ee.events = ToEpollEvent(ev->m_events);
+        int iRet = epoll_ctl(m_epollFd, op, fd, &ee);
+        if (iRet == -1) {
+            int err = errno;
+            ERROR("epoll_ctl failed %d:%s", err, strerror(err));
+            return NULL;
+        }
+
+        return ev;
+    }
+
+    Event* CEpollEventMonitor::AddTimer(uint64_t milliSecond, int count, EventCallBack cb, void* param)
+    {
+        uint32_t timerId = GetUid();
+        auto it = m_timerSet.find(timerId);
+        if (it != m_timerSet.end()) {
+            ERROR("timer %u is already exist.", timerId);
+            return NULL;
+        }
+
+        Event *ev = new Event(timerId, -1, EventTimeOut, cb, param, milliSecond, count);
+        m_timerSet[timerId] = ev;
+        m_eventHeap.Push(ev);
+
+        SendBreak();
+
+        return ev;
+    }
+
+    int CEpollEventMonitor::Update(Event* ev, int events) 
+    {
+        return 0;
+    }
+
+    int CEpollEventMonitor::Remove(Event* ev) 
+    {
+        if (ev->Fd() > 0) {
+            return RemoveEvent(ev->Fd());
+        } 
+        return RemoveTimer(ev->Id());
+    }
+
+
+    uint32_t CEpollEventMonitor::GetUid() 
+    {
+        if (++m_uid == (uint32_t)-1) m_uid = 0;
+        return m_uid;
+    }
+
+    int CEpollEventMonitor::SendBreak()
+    {
+        char cmd = 'x';
+        return write(m_pipe[1], &cmd, 1);
+    }
+
+    void CEpollEventMonitor::RecvBreak(int fd, int events, void* param, uint32_t count)
+    {
+        DEBUG("pipe read fd:%d, events:%d, remind:%d", fd, events, count);
+        char buf[1024];
+        read(fd, &buf, 1024);
+    }
+
+    int CEpollEventMonitor::RemoveEvent(int fd)
+    {
+        auto it = m_eventFdSet.find(fd);
+        if (it == m_eventFdSet.end()) {
+            ERROR("not found fd:%d", fd);
+            return -1;
+        }
+
+        int ret = epoll_ctl(m_epollFd, EPOLL_CTL_DEL, fd, NULL);
+        if (ret == -1) {
+            int err = errno;
+            ERROR("epoll_ctl failed. fd:%d, %d:%s", fd, err, strerror(err));
+            return -1;
+        }
+
+        delete it->second;
+        m_eventFdSet.erase(it);
+
+        return 0;
+    }
+
+    int CEpollEventMonitor::RemoveTimer(int timerId)
+    {
+        auto it = m_timerSet.find(timerId);
+        if (it == m_timerSet.end()) {
+            ERROR("not found timer:%d", timerId);
+            return -1;
+        }
+
+        delete it->second;
+        m_timerSet.erase(it);
+        m_eventHeap.Remove(it->second->Index());
+
+        return 0;
+    }
+
+    uint64_t CEpollEventMonitor::HandlerTimeOutEvent() 
+    {
+        uint64_t sleepTime = 100000;
+        uint64_t currTime = MilliTimestamp();
+
+        while(m_eventHeap.Len()) 
+        {
+            auto ev = dynamic_cast<Event*>(m_eventHeap.Top());
+            if (ev->Expired() > currTime) {
+                sleepTime = ev->Expired() - currTime;
+                break;
             }
 
-            ev->handler->OnProcessEvent(ev, ev->events & ToCtmEvent(eventList[i].events));
+            ev->m_remind++;
+            if (ev->m_cb) {
+                ev->m_cb(ev->m_id, EventTimeOut, ev->m_param, ev->m_remind);
+            }
+
+            if (ev->m_remind >= ev->m_total) {
+                RemoveTimer(ev->m_id);
+            } else {
+                ev->ResetBegin();
+            }
         }
 
-        return 0;
+        return sleepTime;
     }
 
-    int CEpollEventMonitor::AddEvent(Event* ev, int events)
-    {
-        int op = 0;
-        struct epoll_event ee;
-
-        if (ev->handler == NULL)
-        {
-            ERROR("Event handler is null");
-            return -1;
-        }
-
-        if (ev->active)
-        {
-            op = EPOLL_CTL_MOD;
-            ee.events = ToEpollEvent(ev->events) | ToEpollEvent(events);
-        }
-        else
-        {
-            op = EPOLL_CTL_ADD;
-            ee.events = ToEpollEvent(events);
-        }
-
-        ee.data.ptr = ev;
-        int iRet = epoll_ctl(m_epollFd, op, ev->fd, &ee);
-        if (iRet == -1)
-        {
-            int err = errno;
-            ERROR("epoll_ctl failed %d:%s", err, strerror(err));
-            return -1;
-        }
-
-        ev->events |= events;
-        ev->active = 1;
-
-        if (op == EPOLL_CTL_ADD) ++m_eventCnt;
-
-        return 0;
-    }
-
-    int CEpollEventMonitor::DelEvent(Event* ev, int events)
-    {
-        if (ev->active == 0)
-        {
-            ERROR("Event active is 0 fd:%d", ev->fd);
-            return -1;
-        }
-
-        int op = 0;
-        struct epoll_event ee;
-
-        if (ev->active && (ev->events & ~events))
-        {
-            op = EPOLL_CTL_MOD;
-            ee.events = ToEpollEvent(ev->events) & ~ToEpollEvent(events);
-            ee.data.ptr = ev;
-        }
-        else
-        {
-            DEBUG("Delete ev fd : %d", ev->fd);
-
-            op = EPOLL_CTL_DEL;
-            ee.events = 0;
-            ee.data.ptr = NULL;
-        }
-
-        int iRet = epoll_ctl(m_epollFd, op, ev->fd, &ee);
-        if (iRet == -1)
-        {
-            int err = errno;
-            ERROR("epoll_ctl failed %d:%s", err, strerror(err));
-            return -1;
-        }
-
-        ev->events &= ~events;
-        if (op == EPOLL_CTL_DEL)
-        {
-            --m_eventCnt;
-            ev->active = 0; 
-        }
-            
-        return 0;
-    }
-
-    int CEpollEventMonitor::AddConn(CConn* conn)
-    {
-        if (conn->event.active)
-        {
-            //do someting
-        }
-    
-        conn->event.data = conn;
-        conn->event.fd = conn->fd;
-        conn->event.monitor = this;
-
-        return AddEvent(&conn->event, EVENT_READ | EVENT_WRITE | EVENT_PEER_CLOSE);
-    }
-
-    int CEpollEventMonitor::DelConn(CConn* conn)
-    {
-        if (conn->event.active == 0)
-        {
-            ERROR("Conn event active is 0 : [%s]", conn->ToString().c_str());
-            return -1;
-        }
-
-        int iRet = epoll_ctl(m_epollFd, EPOLL_CTL_DEL, conn->fd, NULL);
-        if (iRet == -1)
-        {
-            int err = errno;
-            ERROR("epoll_ctl failed %d:%s [%s]", err, strerror(err), conn->ToString().c_str());
-            return -1;
-        }
-
-        DEBUG("Del conn :[%s]", conn->ToString().c_str());
-        
-        conn->event.events  = 0;
-        conn->event.active  = 0;
-        --m_eventCnt;
-
-        return 0;
-    }
 
     int CEpollEventMonitor::ToEpollEvent(int events)
     {
-        int epollEvents = 0;
+        int epollEvents = EPOLLRDHUP | EPOLLHUP; 
 
-        if (events & EVENT_READ)
-        {
+        if (events & EventRead) {
             epollEvents |= EPOLLIN;
         }
-
-        if (events & EVENT_WRITE)
-        {
+        
+        if (events & EventWrite) {
             epollEvents |= EPOLLOUT;
-        }
-
-        if (events & EVENT_EPOLL_RDHUP)
-        {
-            epollEvents |= EPOLLRDHUP;
-        }
-
-        if (events & EVENT_EPOLL_ET)
-        {
-            epollEvents |= EPOLLET;
-        }
-
-        if (events & EVENT_EPOLL_ONESHOT)
-        {
-            epollEvents |= EPOLLONESHOT;
         }
 
         return epollEvents;
     }
 
-    int CEpollEventMonitor::ToCtmEvent(int events)
+    int CEpollEventMonitor::ToEvent(int events)
     {
         int ctmEvent = 0;
 
-        if (events & EPOLLIN)
-        {
-            ctmEvent |= EVENT_READ;
+        if (events & EPOLLIN) {
+            ctmEvent |= EventRead;
         }
         
-        if (events & EPOLLOUT)
-        {
-            ctmEvent |= EVENT_WRITE;
+        if (events & EPOLLOUT) {
+            ctmEvent |= EventWrite;
         }
 
-        if (events & EPOLLHUP)
-        {
-            // ctmEvent |= EVENT_EPOLL_LLHUP;
-            ctmEvent |= EVENT_WRITE | EVENT_READ;
+        if (events & EPOLLHUP) {
+            ctmEvent |= EventRead | EventWrite;
         }
 
-        if (events & EPOLLRDHUP)
-        {
-            // ctmEvent |= EVENT_PEER_CLOSE;
-            ctmEvent |= EVENT_READ | EVENT_WRITE;
-        }
-
-        if (events & EPOLLERR)
-        {
-            // ctmEvent |= EVENT_ERROR(;
-            ctmEvent |= EVENT_WRITE | EVENT_READ;
+        if (events & EPOLLRDHUP) {
+            ctmEvent |=  EventRead | EventWrite;
         }
 
         return ctmEvent;
+    }
+
+    static void Milli1(int timerId, int events, void* param, uint32_t remind)
+    {
+        DEBUG("Milli 1 id:%d, events:%d, remind:%d", timerId, events, remind);
+    }
+
+    static void Milli10(int timerId, int events, void* param, uint32_t remind)
+    {
+        DEBUG("Milli 10 id:%d, events:%d, remind:%d", timerId, events, remind);
+    }
+
+    static void Second(int timerId, int events, void* param, uint32_t remind)
+    {
+        DEBUG("Second 1 id:%d, events:%d, remind:%d", timerId, events, remind);
+    }
+
+    static void Second5(int timerId, int events, void* param, uint32_t remind)
+    {
+        DEBUG("Second 5 id:%d, events:%d, remind:%d", timerId, events, remind);
+    }
+
+    static void Second10(int timerId, int events, void* param, uint32_t remind)
+    {
+        DEBUG("Second 10 id:%d, events:%d, remind:%d", timerId, events, remind);
+    }
+
+    void TestTimerEvent()
+    {
+        CEpollEventMonitor m;
+        if (m.Init() < 0) {
+            ERROR("CEpollEventMonitor init failed.");
+            return;
+        }
+
+        m.AddTimer(10, 10, Milli10, NULL);
+        m.AddTimer(1000, 10, Second, NULL);
+        m.AddTimer(10000, 1, Second10, NULL);
+        m.AddTimer(1, 10, Milli1, NULL);
+
+        bool b;
+        while (1)
+        {
+            m.Dispatch();
+            if (!b) {
+                m.AddTimer(5000, 10, Second5, NULL); 
+                b = true;
+            }
+        } 
+
     }
 }

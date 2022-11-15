@@ -46,6 +46,4 @@ inline void WaitEnd()
 	cin >> a;
 }
 
-
-
 #endif

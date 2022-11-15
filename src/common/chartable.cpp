@@ -117,7 +117,6 @@ namespace ctm
 
     void CCharTable::ClearText()
     {
-
     }
 
     string CCharTable::ToString(bool bandColor) const
@@ -243,12 +242,6 @@ namespace ctm
         }
 
         endLine = min(hight, beginLine + cnt);
-
-        /*
-        printf("m_text:%s\n", m_text.c_str());
-        printf("hight:%d, width:%d, cnt:%d, line:%d\n", hight, width, cnt, line);
-        printf("beginLine:%d, endLine:%d\n", beginLine, endLine);
-        */
 
         if ((int)line < (int)beginLine || (int)line >= (int)endLine) 
         {

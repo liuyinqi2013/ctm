@@ -20,6 +20,42 @@ namespace ctm
     bool IsCharDevice(FILE* file);
 
     std::string ColorString(const std::string& strIn, int color);
+
+    inline std::string Red(const std::string& strIn) 
+    {
+        return ColorString(strIn, CharColor::RED);
+    }
+
+    inline std::string Black(const std::string& strIn) 
+    {
+        return ColorString(strIn, CharColor::BLACK);
+    }
+
+    inline std::string Green(const std::string& strIn) 
+    {
+        return ColorString(strIn, CharColor::GREEN);
+    }
+
+    inline std::string Yellow(const std::string& strIn) 
+    {
+        return ColorString(strIn, CharColor::YELLOW);
+    }
+
+    inline std::string Blue(const std::string& strIn) 
+    {
+        return ColorString(strIn, CharColor::BLUE);
+    }
+
+    inline std::string SkyeBlue(const std::string& strIn) 
+    {
+        return ColorString(strIn, CharColor::SKYBLUE);
+    }
+
+    inline std::string White(const std::string& strIn) 
+    {
+        return ColorString(strIn, CharColor::WHITE);
+    }
+
 }
 
 #endif

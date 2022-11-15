@@ -1,71 +1,82 @@
 #ifndef CTM_EVENT_EVENT_H__
 #define CTM_EVENT_EVENT_H__
 
+#include <stdint.h>
+#include "common/heap.h"
+
+
 namespace ctm
 {
-    #define EVENT_READ          0x00000001
-    #define EVENT_WRITE         0x00000002
-    #define EVENT_TIMEOUT       0x00000004
-    #define EVENT_PEER_CLOSE    0x00000008
-    #define EVENT_WRITE_EPIPE   0x00000010
-    #define EVENT_ERROR         0x00000020
+    #define  EventNull  0x0000
+    #define  EventRead  0x0001
+    #define  EventWrite 0x0002
+    #define  EventTimeOut 0x0004
 
-    #define EVENT_EPOLL_RDHUP   EVENT_PEER_CLOSE
-    #define EVENT_EPOLL_ERROR   EVENT_ERROR
-
-    #define EVENT_EPOLL_ET      0x00010000
-    #define EVENT_EPOLL_ONESHOT 0x00020000
-    #define EVENT_EPOLL_LLHUP   0x00040000
-    
-    #define EVENT_BEGIN EVENT_READ
-    #define EVENT_END EVENT_EPOLL_ONESHOT
-
-    class CConn;
-    class CEventHandler;
     class CEventMonitor;
+    class CEpollEventMonitor;
 
-    struct Event
-    {
-        void* data;
-        int fd;
-        int events;
-        int timeOut;
-        int active;
-        CEventHandler* handler;
-        CEventMonitor* monitor;
-    };
+    typedef void (*EventCallBack)(int fd, int events, void* param, uint32_t count);
 
-    class CEventHandler
+    class Event : public HeapItem
     {
     public:
-        virtual ~CEventHandler() {}
-        virtual int OnProcessEvent(Event* ev, int events) = 0;
+        virtual ~Event() {}
+
+        bool Less(const HeapItem* other) 
+        {
+            return Expired() < dynamic_cast<const Event*>(other)->Expired();
+        }
+
+        uint64_t Expired() const
+        {
+            return m_begin + m_interval;
+        }
+
+        int Fd() { return m_fd; }
+        uint32_t Id() { return m_id; }
+
+
+    private:
+        Event(uint32_t id, int fd, int events, EventCallBack cb, void* param, uint64_t interval = -1, uint32_t count = -1);
+        
+        void Clear();
+
+        void ResetBegin() 
+        {
+            m_begin += m_interval;
+            Fix();
+        }
+
+    private:
+        int m_fd;
+        uint32_t m_id;
+        int  m_events;
+
+        EventCallBack m_cb;
+        void* m_param;
+
+        uint32_t m_remind;
+        uint32_t m_total;
+        uint64_t m_interval;
+        uint64_t m_begin;
+
+        friend class CEpollEventMonitor;
     };
 
     class CEventMonitor
     {
     public:
-        enum 
-        {
-            SELECT = 1,
-            POLL = 2,
-            EPOLL = 3,
-        };
-
-        int   m_type;
-        CEventMonitor(int type) : m_type(type) { }
         virtual ~CEventMonitor() { }
-        virtual int Init() = 0;
-        virtual int Done() = 0;
-        virtual int WaitProc(unsigned int msec) = 0;
-        virtual int AddEvent(Event* ev, int events) = 0;
-        virtual int DelEvent(Event* ev, int events) = 0;
-        virtual int AddConn(CConn* conn) = 0;
-        virtual int DelConn(CConn* conn) = 0;
-    };
 
-    CEventMonitor* CrateEventMonitor(int type);
-    void FreeEventMonitor(CEventMonitor* eventMonitor);
+        virtual int Init() = 0;
+        virtual int Dispatch() = 0;
+
+        virtual Event* AddEvent(int fd, int events, EventCallBack cb, void* param) = 0;
+        virtual Event* AddTimer(uint64_t milliSecond, int count, EventCallBack cb, void* param) = 0;
+
+        virtual int Update(Event* ev, int events) = 0;
+        virtual int Remove(Event* ev) = 0;
+    };
 }
 
 #endif

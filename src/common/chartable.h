@@ -9,6 +9,10 @@
 
 namespace ctm
 {
+    #define min_hight ((size_t)1)
+    #define max_hight ((size_t)16)
+    #define default_hight ((size_t)1)
+
     class CCell;
     class CRow;
     class CColumn;
@@ -84,9 +88,6 @@ namespace ctm
         friend class CCell;
         friend class CCharTable;
     public:
-        #define min_hight ((size_t)1)
-        #define max_hight ((size_t)16)
-        #define default_hight ((size_t)1)
 
         ~CRow() {}
 

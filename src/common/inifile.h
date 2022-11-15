@@ -85,10 +85,7 @@ namespace ctm
 	public:
 		CIniFile() {}
 		
-		CIniFile(const string& fileName) :
-			m_fileName(fileName)
-		{
-		}
+		CIniFile(const string& fileName) : m_fileName(fileName) { }
 		
 		~CIniFile()
 		{

@@ -36,18 +36,22 @@ namespace ctm
 		{
 			mutex_destroy(m_mutex);
 		}
+
 		bool Lock()
 		{
 			return !mutex_lock(m_mutex);
 		}
+
 		bool TryLock()
 		{
 			return !mutex_trylock(m_mutex);
 		}
+
 		bool UnLock()
 		{
 			return !mutex_unlock(m_mutex);
 		}
+		
 	private:
 		mutex_t m_mutex;
 	};

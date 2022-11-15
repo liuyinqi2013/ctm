@@ -1,5 +1,6 @@
 #ifndef CTM_COMMON_MACRO_H__
 #define CTM_COMMON_MACRO_H__
+
 #include "log.h"
 #include "com.h"
 

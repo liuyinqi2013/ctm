@@ -12,7 +12,7 @@
 
 namespace ctm
 {
-	unsigned long MilliTimestamp()
+	uint64_t MilliTimestamp()
 	{
 #ifdef WIN32
 		SYSTEMTIME sys_time;
@@ -26,7 +26,7 @@ namespace ctm
 		return 0;
 	}
 
-	unsigned int MilliSeconds()
+	uint32_t MilliSeconds()
 	{
 #ifdef WIN32
 		SYSTEMTIME sys_time;
@@ -149,16 +149,16 @@ namespace ctm
 		return NextDayBeginTime(time, day) +  24 * 3600 - 1;
 	}
 
-	string MilliTimestamp2DateTime(unsigned long time)
+	string MilliTimestamp2DateTime(uint64_t time)
 	{
 		char buf[64] = {0};
-		snprintf(buf, sizeof(buf), "%s.%03u", Timestamp2FormatDateTime(time / 1000).c_str(), (unsigned int)time % 1000);
+		snprintf(buf, sizeof(buf), "%s.%03u", Timestamp2FormatDateTime(time / 1000).c_str(), (uint32_t)time % 1000);
 		return string(buf);
 	}
 
 	string CClock::RunInfo() const
 	{
-		unsigned long currentTime = MilliTimestamp();
+		uint64_t currentTime = MilliTimestamp();
 		string head = "[" + m_tips + "]";
 		string info = head + "Begin time : " + MilliTimestamp2DateTime(m_begin);
 		info += "\n" + head + "End time : " + MilliTimestamp2DateTime(currentTime);

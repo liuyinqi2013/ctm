@@ -1,7 +1,7 @@
 RM=rm -rf
 CP=cp -rf
 CC=g++
-CFLAGS= -c -Wall -g -std=c++11
+CFLAGS= -c -Wall -g -std=c++11 -fno-elide-constructors
 
 TARGET=tbin
 
@@ -14,9 +14,9 @@ INC_SUBDIRS=$(shell find ./* -type d | awk -F' ' '{print "-I"$$0}')
 INC_SRCDIS=$(shell find ../src -type d | awk -F' ' '{print "-I"$$0}')
 INC_PATH=$(INC_SUBDIRS) $(INC_SRCDIS) -I./ -I../third/include
 LIB_PATH=-L../third/lib/
-STATIC_LIB=../third/lib/libjsoncpp.a ../third/lib/libmd5.a ../src/libctm.a
+STATIC_LIB=../third/lib/libmd5.a ../src/libctm.a ../third/lib/libjsoncpp.a
 DYNAMIC_LIB=-lpthread -ldl
-LIB=$(STATIC_LIB) $(DYNAMIC_LIB)
+LIB=$(STATIC_LIB) $(LIB_PATH) $(DYNAMIC_LIB)
 
 C_SRC=$(shell find . -type f | grep "\.c$$" | grep -v grep)
 C_OBJ=$(patsubst %.c, %.o, $(C_SRC))
@@ -34,7 +34,7 @@ VPATH=$(SUBDIRS)
 all:$(TARGET)
 	
 $(TARGET):$(CPP_OBJ)
-	$(CC) -o $@ $(CPP_OBJ) $(LIB_PATH) $(LIB)
+	$(CC) -o $@ $(CPP_OBJ) $(LIB)
 $(CPP_OBJ):%.o:%.cpp
 	$(CC) $(CFLAGS) $< -o $@ $(INC_PATH)
 $(C_OBJ):%.o:%.c
