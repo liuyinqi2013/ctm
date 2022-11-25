@@ -17,6 +17,7 @@ namespace ctm
     CEpollEventMonitor::CEpollEventMonitor() 
     : CEventMonitor()
     {
+        m_uid = 0;
         m_epollFd = 0;
         m_pipe[0] = 0;
         m_pipe[1] = 0;
@@ -54,7 +55,7 @@ namespace ctm
         SetNonBlock(m_pipe[0]);
         SetNonBlock(m_pipe[1]);
 
-        Event* ev = AddEvent(m_pipe[0], EventRead, CEpollEventMonitor::RecvBreak, this);
+        Event* ev = AddIOEvent(m_pipe[0], EVENT_READ, CEpollEventMonitor::RecvNotify, this);
         if (ev == NULL) {
             ERROR("add pipe read event failed. fd:%d", m_pipe[0]);
 			return -1;
@@ -66,8 +67,8 @@ namespace ctm
     int CEpollEventMonitor::Dispatch()
     {
         int n = 0;
+        int sleep = ProcessTimerEvent();
         struct epoll_event eventList[MAX_WAIT_EVENTS];
-        int sleep = HandlerTimeOutEvent();
 
         while (1) {
             n = epoll_wait(m_epollFd, eventList, MAX_WAIT_EVENTS, sleep);
@@ -92,14 +93,14 @@ namespace ctm
             } 
 
             if (ev->m_cb) {
-                ev->m_cb(ev->Fd(), ToEvent(eventList[i].events), ev->m_param, ev->m_remind);
+                ev->m_cb(ev, ToEvent(eventList[i].events), ev->m_data);
             }
         }
 
         return 0;
     }
 
-    Event* CEpollEventMonitor::AddEvent(int fd, int events, EventCallBack cb, void* param)
+    Event* CEpollEventMonitor::AddIOEvent(int fd, int events, EventCallBack cb, void* param)
     {
         int op = 0 ;
         Event* ev = NULL;
@@ -108,27 +109,32 @@ namespace ctm
         if (it != m_eventFdSet.end()) {
             op = EPOLL_CTL_MOD;
             ev = it->second;
-            ev->m_events |= events;
         } else {
             op = EPOLL_CTL_ADD;
-            ev = new Event(GetUid(), fd, events, cb, param);
+            ev = new Event(this, GetUid(), fd, events, cb, param);
             m_eventFdSet[fd] = ev;
         }
 
         struct epoll_event ee;
         ee.data.ptr = ev;
-        ee.events = ToEpollEvent(ev->m_events);
-        int iRet = epoll_ctl(m_epollFd, op, fd, &ee);
-        if (iRet == -1) {
+        ee.events = ToEpollEvent(ev->m_events | events);
+
+        int ret = epoll_ctl(m_epollFd, op, fd, &ee);
+        if (ret == -1) {
+            m_eventFdSet.erase(fd);
+            delete ev;
+
             int err = errno;
             ERROR("epoll_ctl failed %d:%s", err, strerror(err));
             return NULL;
         }
 
+        ev->m_events |= events;
+
         return ev;
     }
 
-    Event* CEpollEventMonitor::AddTimer(uint64_t milliSecond, int count, EventCallBack cb, void* param)
+    Event* CEpollEventMonitor::AddTimerEvent(uint64_t milliSecond, int count, EventCallBack cb, void* param)
     {
         uint32_t timerId = GetUid();
         auto it = m_timerSet.find(timerId);
@@ -137,49 +143,74 @@ namespace ctm
             return NULL;
         }
 
-        Event *ev = new Event(timerId, -1, EventTimeOut, cb, param, milliSecond, count);
+        Event *ev = new Event(this, timerId, -1, EVENT_TIMEOUT, cb, param, milliSecond, count);
         m_timerSet[timerId] = ev;
         m_eventHeap.Push(ev);
 
-        SendBreak();
+        SendNotify();
 
         return ev;
     }
 
-    int CEpollEventMonitor::Update(Event* ev, int events) 
+    int CEpollEventMonitor::UpdateIOEvent(Event* ev, int events) 
     {
+        if (ev->Fd() == -1) return 0;
+
+        auto it = m_eventFdSet.find(ev->Fd());
+        if (it == m_eventFdSet.end() || ev != it->second) {
+            ERROR("not found fd:%d", ev->Fd());
+            return -1;
+        } 
+
+        struct epoll_event ee;
+        ee.data.ptr = ev;
+        ee.events = ToEpollEvent(events);
+
+        int ret = epoll_ctl(m_epollFd, EPOLL_CTL_MOD, ev->Fd(), &ee);
+        if (ret == -1) {
+            int err = errno;
+            ERROR("epoll_ctl failed %d:%s", err, strerror(err));
+            return -1;
+        }
+
+        ev->m_events = events;
+
         return 0;
     }
 
-    int CEpollEventMonitor::Remove(Event* ev) 
+    int CEpollEventMonitor::RemoveEvent(Event* ev) 
     {
-        if (ev->Fd() > 0) {
-            return RemoveEvent(ev->Fd());
-        } 
-        return RemoveTimer(ev->Id());
+        if (ev->Fd() > 0) 
+            return RemoveIOEvent(ev->Fd());
+
+        return RemoveTimerEvent(ev->Uid());
     }
 
-
-    uint32_t CEpollEventMonitor::GetUid() 
-    {
-        if (++m_uid == (uint32_t)-1) m_uid = 0;
-        return m_uid;
-    }
-
-    int CEpollEventMonitor::SendBreak()
+    int CEpollEventMonitor::SendNotify()
     {
         char cmd = 'x';
-        return write(m_pipe[1], &cmd, 1);
+        int n = Write(m_pipe[1], &cmd, 1);
+        if (n < 0) {
+            int err = errno;
+            ERROR("write failed. fd:%d, %d:%s", m_pipe[1], err, strerror(err));
+        }
+        
+        return n;
     }
 
-    void CEpollEventMonitor::RecvBreak(int fd, int events, void* param, uint32_t count)
+    void CEpollEventMonitor::RecvNotify(Event* ev, int events, void* data)
     {
-        DEBUG("pipe read fd:%d, events:%d, remind:%d", fd, events, count);
         char buf[1024];
-        read(fd, &buf, 1024);
+        int n = Read(ev->Fd(), &buf, 1024);
+        if (n < 0) {
+            int err = errno;
+            ERROR("read failed. fd:%d, %d:%s", ev->Fd(), err, strerror(err));
+        }
+
+        DEBUG("pipe read fd:%d, events:%d, remind:%d, len:%d", ev->Fd(), events, ev->Remind(), n);
     }
 
-    int CEpollEventMonitor::RemoveEvent(int fd)
+    int CEpollEventMonitor::RemoveIOEvent(int fd)
     {
         auto it = m_eventFdSet.find(fd);
         if (it == m_eventFdSet.end()) {
@@ -187,24 +218,23 @@ namespace ctm
             return -1;
         }
 
+        delete it->second;
+        m_eventFdSet.erase(it);
+
         int ret = epoll_ctl(m_epollFd, EPOLL_CTL_DEL, fd, NULL);
         if (ret == -1) {
             int err = errno;
             ERROR("epoll_ctl failed. fd:%d, %d:%s", fd, err, strerror(err));
             return -1;
         }
-
-        delete it->second;
-        m_eventFdSet.erase(it);
-
         return 0;
     }
 
-    int CEpollEventMonitor::RemoveTimer(int timerId)
+    int CEpollEventMonitor::RemoveTimerEvent(uint64_t uid)
     {
-        auto it = m_timerSet.find(timerId);
+        auto it = m_timerSet.find(uid);
         if (it == m_timerSet.end()) {
-            ERROR("not found timer:%d", timerId);
+            ERROR("not found timer:%d", uid);
             return -1;
         }
 
@@ -215,7 +245,7 @@ namespace ctm
         return 0;
     }
 
-    uint64_t CEpollEventMonitor::HandlerTimeOutEvent() 
+    uint64_t CEpollEventMonitor::ProcessTimerEvent() 
     {
         uint64_t sleepTime = 100000;
         uint64_t currTime = MilliTimestamp();
@@ -230,11 +260,11 @@ namespace ctm
 
             ev->m_remind++;
             if (ev->m_cb) {
-                ev->m_cb(ev->m_id, EventTimeOut, ev->m_param, ev->m_remind);
+                ev->m_cb(ev, EVENT_TIMEOUT, ev->Data());
             }
 
             if (ev->m_remind >= ev->m_total) {
-                RemoveTimer(ev->m_id);
+                RemoveTimerEvent(ev->m_uid);
             } else {
                 ev->ResetBegin();
             }
@@ -243,16 +273,15 @@ namespace ctm
         return sleepTime;
     }
 
-
     int CEpollEventMonitor::ToEpollEvent(int events)
     {
         int epollEvents = EPOLLRDHUP | EPOLLHUP; 
 
-        if (events & EventRead) {
+        if (events & EVENT_READ) {
             epollEvents |= EPOLLIN;
         }
         
-        if (events & EventWrite) {
+        if (events & EVENT_WRITE) {
             epollEvents |= EPOLLOUT;
         }
 
@@ -264,47 +293,47 @@ namespace ctm
         int ctmEvent = 0;
 
         if (events & EPOLLIN) {
-            ctmEvent |= EventRead;
+            ctmEvent |= EVENT_READ;
         }
         
         if (events & EPOLLOUT) {
-            ctmEvent |= EventWrite;
+            ctmEvent |= EVENT_WRITE;
         }
 
         if (events & EPOLLHUP) {
-            ctmEvent |= EventRead | EventWrite;
+            ctmEvent |= EVENT_READ | EVENT_WRITE;
         }
 
         if (events & EPOLLRDHUP) {
-            ctmEvent |=  EventRead | EventWrite;
+            ctmEvent |=  EVENT_READ | EVENT_WRITE;
         }
 
         return ctmEvent;
     }
 
-    static void Milli1(int timerId, int events, void* param, uint32_t remind)
+    static void Milli1(Event* ev, int events, void* param)
     {
-        DEBUG("Milli 1 id:%d, events:%d, remind:%d", timerId, events, remind);
+        DEBUG("Milli 1 id:%d, events:%d, remind:%d", ev->Uid(), events, ev->Remind());
     }
 
-    static void Milli10(int timerId, int events, void* param, uint32_t remind)
+    static void Milli10(Event* ev, int events, void* param)
     {
-        DEBUG("Milli 10 id:%d, events:%d, remind:%d", timerId, events, remind);
+        DEBUG("Milli 10 id:%d, events:%d, remind:%d", ev->Uid(), events, ev->Remind());
     }
 
-    static void Second(int timerId, int events, void* param, uint32_t remind)
+    static void Second(Event* ev, int events, void* param)
     {
-        DEBUG("Second 1 id:%d, events:%d, remind:%d", timerId, events, remind);
+        DEBUG("Second 1 id:%d, events:%d, remind:%d", ev->Uid(), events, ev->Remind());
     }
 
-    static void Second5(int timerId, int events, void* param, uint32_t remind)
+    static void Second5(Event* ev, int events, void* param)
     {
-        DEBUG("Second 5 id:%d, events:%d, remind:%d", timerId, events, remind);
+        DEBUG("Second 5 id:%d, events:%d, remind:%d", ev->Uid(), events, ev->Remind());
     }
 
-    static void Second10(int timerId, int events, void* param, uint32_t remind)
+    static void Second10(Event* ev, int events, void* param)
     {
-        DEBUG("Second 10 id:%d, events:%d, remind:%d", timerId, events, remind);
+        DEBUG("Second 10 id:%d, events:%d, remind:%d", ev->Uid(), events, ev->Remind());
     }
 
     void TestTimerEvent()
@@ -315,17 +344,17 @@ namespace ctm
             return;
         }
 
-        m.AddTimer(10, 10, Milli10, NULL);
-        m.AddTimer(1000, 10, Second, NULL);
-        m.AddTimer(10000, 1, Second10, NULL);
-        m.AddTimer(1, 10, Milli1, NULL);
+        m.AddTimerEvent(10, 10, Milli10, NULL);
+        m.AddTimerEvent(1000, 10, Second, NULL);
+        m.AddTimerEvent(10000, 1, Second10, NULL);
+        m.AddTimerEvent(1, 10, Milli1, NULL);
 
         bool b;
         while (1)
         {
             m.Dispatch();
             if (!b) {
-                m.AddTimer(5000, 10, Second5, NULL); 
+                m.AddTimerEvent(5000, 10, Second5, NULL); 
                 b = true;
             }
         } 

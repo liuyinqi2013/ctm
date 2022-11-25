@@ -1,12 +1,6 @@
 #ifndef CTM_NET_SOCKET_H__
 #define CTM_NET_SOCKET_H__
 
-#include <stdio.h>
-#include <errno.h>
-#include <string.h>
-
-
-#include <map>
 #include <vector>
 #include <string>
 
@@ -17,7 +11,7 @@
 namespace ctm {
 	using namespace std;
 
-	int Accept(int sockfd, struct sockaddr *addr);
+	int Accept(int sockfd, struct sockaddr_in *addr);
 
 	int BindIPv4(int sockfd, const char *ip, int port);
 	int BindIPv6(int sockfd, const char *ip, int port);
@@ -30,6 +24,7 @@ namespace ctm {
 	int ConnectIPv4(int sockfd, const char *ip, int port);
 	int ConnectIPv6(int sockfd, const char *ip, int port);
 	int Connect(int sockfd, int family, const char *ip, int port);
+	int Connect(const char* endpoint, uint16_t port);
 
 	int ToStrIP(struct sockaddr & addr, string & outIp, int & outPort);
 
@@ -57,10 +52,11 @@ namespace ctm {
 	int SetKeepAlive(int sockfd, int interval);
 
 	bool IsIPv4(const string& strIp);
+	bool IsIPv6(const string& strIp);
 	string HostName();
 	
 	int Hostent2IPs(struct hostent* htent, vector<string>& vecIps);
-	int GetHostIPs(char* hostName, vector<string>& vecIps);
+	int GetHostIPs(const char* hostName, vector<string>& vecIps);
 	int LocalHostIps(vector<string>& vecIps);
 }
 

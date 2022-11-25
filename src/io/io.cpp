@@ -4,6 +4,7 @@
 #include <fcntl.h>
 #include <errno.h>
 
+#include "common/log.h"
 #include "buffer.h"
 
 namespace ctm {
@@ -43,13 +44,46 @@ namespace ctm {
 		return fcntl(fd, F_SETFL, flags);
 	}
 
+	int Close(int fd)
+	{
+		return close(fd);
+	}
+
+	int Read(int fd, void* buf,  size_t len)
+	{
+		int n = 0;
+		while(1) 
+		{
+			n = read(fd, buf, len);
+			if (n < 0 && errno == EINTR) {
+				continue;
+			} 
+			break;
+		}
+		return n;
+	}
+
+    int Write(int fd, void* buf, size_t len)
+	{
+		int n = 0;
+		while(1) 
+		{
+			n = write(fd, buf, len);
+			if (n < 0 && errno == EINTR) {
+				continue;
+			}
+			break;
+		}
+		return n;
+	}
+
 	int Read(int fd, Buffer* buf)
 	{
 		int n = 0;
 		int err = 0;
 		while(1) 
 		{
-			n = read(fd, buf->Begin(), buf->FreeLen());
+			n = read(fd, buf->WrBegin(), buf->FreeLen());
 			err = ToIOErrCode(n, errno);
 			if (err == IO_EINTR) {
 				continue;
@@ -57,7 +91,7 @@ namespace ctm {
 				return err;
 			}
 
-			buf->Consume(n);
+			buf->Use(n);
 			break;
 		}
 
@@ -70,7 +104,7 @@ namespace ctm {
 		int err = 0;
 		while(1) 
 		{
-			n = write(fd, buf->Begin(), buf->FreeLen());
+			n = write(fd, buf->RdBegin(), buf->Len());
 			err = ToIOErrCode(n, errno);
 			if (err == IO_EINTR) {
 				continue;
@@ -78,7 +112,7 @@ namespace ctm {
 				return err;
 			}
 			
-			buf->Consume(n);
+			buf->Free(n);
 			break;
 		}
 
@@ -90,21 +124,17 @@ namespace ctm {
 	{
 		int n = 0;
 		int err = 0;
-		while(1) 
+		while(buf->IsFull()) 
 		{
-			if (buf->IsFull()) {
-				break;
-			}
-
-			n = read(fd, buf->Begin(), buf->FreeLen());
+			n = read(fd, buf->WrBegin(), buf->FreeLen());
 			err = ToIOErrCode(n, errno);
 			if (err == IO_EINTR) {
 				continue;
 			} else if (err != IO_OK) {
 				return err;
 			}
-
-			buf->Consume(n);
+			
+			buf->Use(n);
 		}
 
 		return IO_OK;
@@ -114,13 +144,9 @@ namespace ctm {
 	{
 		int n = 0;
 		int err = 0;
-		while(1) 
+		while(!buf->IsEmpty()) 
 		{
-			if (buf->IsFull()) {
-				break;
-			}
-
-			n = write(fd, buf->Begin(), buf->FreeLen());
+			n = write(fd, buf->RdBegin(), buf->Len());
 			err = ToIOErrCode(n, errno);
 			if (err == IO_EINTR) {
 				continue;
@@ -128,13 +154,13 @@ namespace ctm {
 				return err;
 			}
 
-			buf->Consume(n);
+			buf->Free(n);
 		}
 
 		return IO_OK;
 	}
 
-	int ReadAll(int fd, string & out) 
+	int ReadAll(int fd, std::string & out) 
 	{
 		Buffer buf(4096);
 		int err = 0;

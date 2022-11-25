@@ -1,5 +1,3 @@
-#include "socket.h"
-
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,13 +15,16 @@
 #include <sys/time.h>
 #include <sys/stat.h>
 
+#include "common/log.h"
+#include "socket.h"
+
 
 namespace ctm {
 
-	int Accept(int sockfd, struct sockaddr *addr)
+	int Accept(int sockfd, struct sockaddr_in *addr)
 	{
 		int fd;
-		socklen_t len = sizeof(*addr);
+		socklen_t len = sizeof(struct sockaddr_in);
 		while(1) {
 			fd = accept(sockfd, (struct sockaddr *)&addr, &len);
 			if (fd < 0 && errno == EINTR) {
@@ -132,22 +133,69 @@ namespace ctm {
 		return ConnectIPv4(sockfd, ip, port);
 	}
 
+	int Connect(const char* endpoint, uint16_t port) 
+	{
+		int ret = 0;
+		char buf[2048] = {0};
+		struct hostent tmp, *h;
+		gethostbyname_r(endpoint, &tmp, buf, sizeof(buf), &h, &ret);
+		if (ret != 0) {
+			DEBUG("resolve failed. endpoint:%s, port:%d", endpoint, port);
+			return -1;
+		}
+
+		if (h->h_addrtype != AF_INET) {
+			DEBUG("addr type error. endpoint:%s, port:%d", endpoint, port);
+			return -1;
+		}
+
+		char** head = h->h_addr_list;
+		for(; *head; head++)
+		{
+			int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+			struct sockaddr_in sockAddrIn = {0};
+			sockAddrIn.sin_family = AF_INET;
+			sockAddrIn.sin_port = htons(port);
+			sockAddrIn.sin_addr.s_addr = *((unsigned long *)*head);
+
+			while(1) {
+				ret = connect(sockfd, (struct sockaddr*)&sockAddrIn, sizeof(sockAddrIn));
+				if (ret == 0) {
+					DEBUG("connect ok. endpoint:%s, port:%d", endpoint, port);
+					return sockfd;
+				}
+
+				int errcode = errno;
+				if (errcode == EINTR) {
+					continue;
+				}
+
+				ERROR("connect failed. endpoint:%s, port:%d, code:%d, msg:%s", endpoint, port, errcode, strerror(errcode));
+				close(sockfd);
+				break;
+			}
+		}
+
+		ERROR("connect failed. endpoint:%s, port:%d", endpoint, port);
+		return -1;
+	}
+
 	int ToStrIP(struct sockaddr & addr, string & outIp, int & outPort) 
 	{
 		char buf[128] = {0};
 		if (addr.sa_family == AF_INET6) {
-			struct sockaddr_in6 *addr = (struct sockaddr_in6*)&addr;
-			if (inet_ntop(AF_INET6, (const void*)&addr->sin6_addr, buf, sizeof(buf)) < 0) {
+			struct sockaddr_in6 *addr6 = (struct sockaddr_in6*)&addr;
+			if (inet_ntop(AF_INET6, (const void*)&addr6->sin6_addr, buf, sizeof(buf)) < 0) {
 				return -1;
 			}
-			outPort = ntohs(addr->sin6_port);
+			outPort = ntohs(addr6->sin6_port);
 			outIp = string(buf);
 		} else {
-			struct sockaddr_in *addr = (struct sockaddr_in*)&addr;
-			if (inet_ntop(AF_INET, (const void*)&addr->sin_addr, buf, sizeof(buf)) < 0) {
+			struct sockaddr_in *addr4 = (struct sockaddr_in*)&addr;
+			if (inet_ntop(AF_INET, (const void*)&addr4->sin_addr, buf, sizeof(buf)) < 0) {
 				return -1;
 			}
-			outPort = ntohs(addr->sin_port);
+			outPort = ntohs(addr4->sin_port);
 			outIp = string(buf);
 		}
 
@@ -284,7 +332,7 @@ namespace ctm {
 		return string(hostName);
 	}
 
-	int GetHostIPs(char* hostName, vector<string>& vecIps)
+	int GetHostIPs(const char* hostName, vector<string>& vecIps)
 	{
 		return Hostent2IPs(gethostbyname(hostName), vecIps);
 	}

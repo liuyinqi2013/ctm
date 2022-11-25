@@ -5,11 +5,12 @@
 
 namespace ctm
 {
-    struct Buffer
+    class Buffer
     {
-        Buffer(size_t size) : len(0), size(size), data(new char[size + 1]) 
+    public:
+
+        Buffer(size_t size) : r(0), w(0), cap(size), data(new char[size + 1]) 
         {
-            memset(data, 0, size);
         }
 
         ~Buffer() 
@@ -19,17 +20,22 @@ namespace ctm
 
         size_t Len() 
         {
-            return len; 
+            return w - r; 
         }
 
-        size_t Size() 
+        size_t Cap() 
         { 
-            return size; 
+            return cap; 
         }
 
-        char* Begin() 
+        char* WrBegin() 
         {
-            return data + len;
+            return data + w;
+        }
+
+        char* RdBegin() 
+        {
+            return data + r;
         }
 
         char* Raw() 
@@ -38,38 +44,57 @@ namespace ctm
         }
 
         char* Data() {
+            data[Len()] = '\0';
             return data;
         }
 
-        bool Consume(size_t n) 
+        bool Use(size_t n) 
         {
             if (n > FreeLen()) return false;
 
-            len += n;
+            w += n;
+            return true;
+        }
+
+        bool Free(size_t n) 
+        {
+            if (n > Len()) return false;
+
+            r += n;
+            if (r == w) {
+                Reset();
+            }
             return true;
         }
 
         bool IsFull() {
-            return size == len;
+            return bool(cap == w);
+        }
+
+        bool IsEmpty() {
+            return bool(r == w);
         }
 
         void Reset() 
         { 
-            len = 0; 
+            r = 0; 
+            w = 0;
         }
 
         void Clean() {
-            len = 0;
-            memset(data, 0, size);
+            Reset();
+            memset(data, 0, cap);
         }
 
         size_t FreeLen() 
         { 
-           return size - len; 
+           return cap - w; 
         }
 
-        size_t len;
-        size_t size;
+    private:
+        size_t r;
+        size_t w;
+        size_t cap;
         char *data;
     };
 }

@@ -21,6 +21,7 @@
 #include "./common/message.h"
 #include "./common/defer.h"
 #include "./common/heap.h"
+#include "./common/list.h"
 #include "./event/epoll_monitor.h"
 #include "./event/event.h"
 #include "./event/timer.h"
@@ -29,12 +30,14 @@
 #include "./ipc/semaphore.h"
 #include "./ipc/sharememory.h"
 #include "./net/socket.h"
+#include "./net/conn.h"
+#include "./net/tcpconn.h"
+#include "./net/resolve.h"
 #include "./thread/mutex.h"
 #include "./thread/rwlock.h"
 #include "./thread/sem.h"
 #include "./thread/thread.h"
 #include "./io/io.h"
 #include "./io/buffer.h"
-#include "./io/defer.h"
 
 #endif

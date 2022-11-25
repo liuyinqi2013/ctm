@@ -2,6 +2,7 @@
 #define CTM_COMMON_LOG_H__
 #include <stdio.h>
 #include <string>
+
 #include "thread/mutex.h"
 #include "singleton.h"
 

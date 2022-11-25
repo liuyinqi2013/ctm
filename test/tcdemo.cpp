@@ -290,3 +290,162 @@ DECLARE_FUNC(sum_e)
 	cout << "e = " << SumN(100000) << endl;
 	return 0;
 }
+
+DECLARE_FUNC(io_rw)
+{
+	TestReadFull(argv[1]);
+	return 0;
+}
+
+
+DECLARE_FUNC(echo_svr)
+{
+	int fd = Listen(AF_INET, argv[1], atoi(argv[2]));
+	if (fd < 0) {
+		ERROR("listen failed. host:%s, port:%d", argv[1], argv[2]);
+		return -1;
+	}
+
+	auto conn = Accept(fd);
+	if (!conn.get()) {
+		ERROR("accept failed. host:%s, port:%d", argv[1], argv[2]);
+		return -1;
+	}
+
+	conn->Show();
+
+	int n;
+	Buffer buf(512);
+	while(1) {
+		n = conn->Read(&buf);
+		if (n != 0) {
+			ERROR("read failed. n:%d", buf.Len());
+			return -1;
+		}
+		DEBUG("read len:%d, buf:%s", buf.Len(), buf.Data());
+
+		n = conn->WriteFull(&buf);
+		if (n != 0) {
+			ERROR("write failed. n:%d", n);
+			return -1;
+		}
+
+		DEBUG("buf freelen:%d, len:%d", buf.FreeLen(), buf.Len());
+	}
+
+	return 0;
+}
+
+void OnConnCallBack(int code, const char* message, std::shared_ptr<TcpConn> conn) {
+	if (code == -1 ) {
+		ERROR("conn failed. code:%d, message:%s", code, message);
+		return;
+	}
+	
+	conn->Show();
+	int n;
+	char buf[512];
+	
+	while(1) {
+		string tmp;
+		cin>>tmp;
+		if (tmp.length() == 0) {
+			ERROR("end");
+			return;
+		}
+
+		n = conn->Write((void*)tmp.data(), tmp.length());
+		if (n <= 0) {
+			ERROR("write failed. n:%d", n);
+			return;
+		}
+
+		n = conn->Read(buf, 512);
+		if (n <= 0) {
+			ERROR("read failed. n:%d", n);
+			return;
+		}
+		buf[n] = '\0';
+		DEBUG("read len:%d, buf:%s", n, buf);
+	}
+
+	return;
+}
+
+DECLARE_FUNC(asyn_conn)
+{
+	CEpollEventMonitor m;
+	m.Init();
+	AsynTcpConnector connector(argv[1], atoi(argv[2]), OnConnCallBack, &m, 160);
+
+	while(1) {
+		m.Dispatch();
+	}
+
+	return 0;
+}
+
+DECLARE_FUNC(echo_cli)
+{
+	auto conn = TcpConnect(argv[1], atoi(argv[2]));
+	if (!conn.get()) {
+		ERROR("accept failed. host:%s, port:%d", argv[1], argv[2]);
+		return -1;
+	}
+
+	conn->Show();
+
+	int n;
+	char buf[512];
+	
+	while(1) {
+		string tmp;
+		cin>>tmp;
+		if (tmp.length() == 0) {
+			ERROR("end");
+			return -1;
+		}
+
+		n = conn->Write((void*)tmp.data(), tmp.length());
+		if (n <= 0) {
+			ERROR("write failed. n:%d", n);
+			return -1;
+		}
+
+		n = conn->Read(buf, 512);
+		if (n <= 0) {
+			ERROR("read failed. n:%d", n);
+			return -1;
+		}
+		buf[n] = '\0';
+		DEBUG("read len:%d, buf:%s", n, buf);
+	}
+
+	return 0;
+}
+
+DECLARE_FUNC(ip_addr)
+{
+	IP ip4("125.10.96.68");
+    DEBUG("ip string:%s", ip4.String().c_str());
+    DEBUG("is ip v4:%d", ip4.IsIPv4());
+
+    IP ip6("fc01::716a");
+    DEBUG("ip string:%s", ip6.String().c_str());
+    DEBUG("is ip v6:%d", ip6.IsIPv6());
+
+    IP ip2(ip6);
+    DEBUG("ip string:%s", ip2.String().c_str());
+    DEBUG("is ip v4:%d", ip2.IsIPv4());
+
+	vector<IP> out;
+	if (Resolve(argv[1], out) < 0) {
+		return -1;
+	}
+
+	for (int i = 0; i < out.size(); i++) {
+		DEBUG("ip string:%s", out[i].String().c_str());
+	}
+	
+	return 0;
+}

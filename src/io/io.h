@@ -4,18 +4,21 @@
 #include <string>
 
 namespace ctm {
+    
     #define IO_OK        0
-    #define IO_EINTR     1
-    #define IO_EOF       2
-    #define IO_AGAIN     3
-    #define IO_ERROR     4
+    #define IO_EINTR     (-1)
+    #define IO_EOF       (-2)
+    #define IO_AGAIN     (-3)
+    #define IO_ERROR     (-4)
 
-    using std::string;
-
-    struct Buffer;
+    class Buffer;
 
     int SetBlock(int fd);
 	int SetNonBlock(int fd);
+    int Close(int fd);
+
+    int Read(int fd, void* buf,  size_t len);
+    int Write(int fd, void* buf, size_t len);
 
     int Read(int fd, Buffer* buf);
     int Write(int fd, Buffer* buf);
@@ -23,7 +26,10 @@ namespace ctm {
     int ReadFull(int fd, Buffer* buf);
     int WriteFull(int fd, Buffer* buf);
 
-    int ReadAll(int fd, string & out);
+    int ReadAll(int fd, std::string & out);
 }
+
+void TestReadAll(const char* fileName);
+void TestReadFull(const char* fileName);
 
 #endif

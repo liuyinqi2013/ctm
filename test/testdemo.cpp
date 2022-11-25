@@ -34,7 +34,6 @@ protected:
 
 int TestThread::Run()
 {
-	int i = 0;
 	string a;
 	int cnt = 0;
 	{
@@ -150,19 +149,20 @@ DECLARE_FUNC_EX(timetool)
 
 DECLARE_FUNC(addrinfo)
 {
-	struct addrinfo addr = { 0 };
-	addr.ai_family = AF_UNSPEC;
-	addr.ai_socktype = SOCK_STREAM;
-	addr.ai_flags = AI_NUMERICHOST;
+	struct addrinfo hints = { 0 };
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_INET;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_protocol = IPPROTO_TCP;
 	struct addrinfo* res, *p;
 	char portstr[6];
 	snprintf(portstr, sizeof(portstr), "%d", 80);
 
-	if (getaddrinfo("www.sina.com", portstr, &addr, &res) < 0) {
+	if (getaddrinfo(argv[1], NULL, &hints, &res) < 0) {
 		cout << "getaddrinfo failed" << endl;
 	}
 
-	for (p = res; p != NULL; p = p->ai_next)
+	for (p = res; p; p = p->ai_next)
 	{
 		char ipbuf[128] = { 0 };
 		if (p->ai_family == AF_INET)
@@ -191,7 +191,7 @@ DECLARE_FUNC(hostip)
 	GetHostIPs("www.sina.com", vecIps);
 	for(size_t i = 0; i < vecIps.size(); ++i)
 	{
-		printf("ip%d:%s\n", i + 1, vecIps[i].c_str());
+		printf("ip%ld:%s\n", i + 1, vecIps[i].c_str());
 	}
 	return 0;
 }
@@ -207,7 +207,6 @@ DECLARE_FUNC(message)
 	t1.Start();
 
 	string a("main");
-	int cnt = 0;
 	for (int i = 0; i < 100000; i++)
 	{
 		int ret = queue1.PushBack(a + I2S(i));
@@ -467,8 +466,8 @@ DECLARE_FUNC(tencent)
 	cout<< "sizeof(TestA) = " <<sizeof(TestA) << endl;
 	cout<< "sizeof(p) = " <<sizeof(p) << endl;
 
-	long a = (long)((void*)p + 10);
-	printf("a=%x\n", a);
+	long a = (long)((char*)p + 10);
+	printf("a=%ld\n", a);
 
 	int n[] = {1, 2, 3, 4, 5};
 	int* ptr = (int*)(&n+1);
@@ -627,7 +626,6 @@ class Panda
 public:
 	Panda(int val) : b(val)
 	{
-
 	}
 
 	static void TestA()

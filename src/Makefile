@@ -2,7 +2,7 @@ RM=rm -rf
 CP=cp -rf
 CC=g++
 MKDIR=mkdir -p
-CFLAGS= -c -Wall -g -fPIC -std=c++11
+CFLAGS= -c -Wall -g -fPIC -std=c++11 -fno-elide-constructors
 
 STATIC_LIB=libctm.a
 DYNAMIC_LIB=libctm.so
