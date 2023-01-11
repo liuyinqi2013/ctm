@@ -15,7 +15,7 @@
 
 namespace ctm
 {
-    CTimerItem::CTimerItem(uint32_t id, uint64_t milliSecond, int count, TimerCallBack cb, void* param)
+    CTimerMgr::CTimerItem::CTimerItem(uint64_t id, uint64_t milliSecond, int count, TimerCallBack cb, void* param)
     {
         Clean();
         m_id = id;
@@ -26,7 +26,7 @@ namespace ctm
         m_begin = MilliTimestamp();
     }
 
-    void CTimerItem::Clean()
+    void CTimerMgr::CTimerItem::CTimerItem::Clean()
     {
         m_id = 0;
         m_remind = 0;
@@ -39,22 +39,14 @@ namespace ctm
 
     CTimerMgr::CTimerMgr()
     {
-        m_timerMaxCount = default_timer_max_count;
-        m_timerId = 0;
+        m_id = 0;
     }
 
-    uint32_t CTimerMgr::Add(uint64_t milliSecond, int count, TimerCallBack cb, void *param)
+    uint64_t CTimerMgr::AddTimer(uint64_t milliSecond, int count, TimerCallBack cb, void *param)
     {
-        if (m_timerMaxCount < m_timerMap.size())
-        {
-            ERROR("timer maximum limit %d.", m_timerMaxCount);
-            return -1;
-        }
-
-        uint32_t timerId = GetTimerId();
+        uint64_t timerId = GetUid();
         auto it = m_timerMap.find(timerId);
-        if (it != m_timerMap.end())
-        {
+        if (it != m_timerMap.end()) {
             ERROR("timer %u is already exist.", timerId);
             return -1;
         }
@@ -66,13 +58,11 @@ namespace ctm
         return timerId;
     }
 
-    int CTimerMgr::Stop(uint32_t timerId)
+    int CTimerMgr::StopTimer(uint64_t timerId)
     {
         auto it = m_timerMap.find(timerId);
-        if (it != m_timerMap.end())
-        {
+        if (it != m_timerMap.end()){
             delete it->second;
-
             m_timerMap.erase(it);
             m_timerHeap.Remove(it->second->Index());
         }
@@ -80,7 +70,7 @@ namespace ctm
         return 0;
     }
 
-    uint64_t CTimerMgr::Run()
+    uint64_t CTimerMgr::Execute()
     {
         uint64_t sleepTime = 100000;
         uint64_t currTime = MilliTimestamp();
@@ -109,10 +99,9 @@ namespace ctm
         return sleepTime;
     }
 
-    uint32_t CTimerMgr::GetTimerId()
+    uint64_t CTimerMgr::GetUid()
     {
-        if (++m_timerId == (uint32_t)-1) m_timerId = 0;
-        return m_timerId;
+        return ++m_id;
     }
 
     void CTimerMgr::Clear()
@@ -125,49 +114,4 @@ namespace ctm
         m_timerHeap.Clear();
         m_timerMap.clear();
     }
-
-    void Milli1(uint32_t timerId, uint32_t remind, void* param)
-    {
-        DEBUG("Milli 1 id:%d, remind:%d", timerId, remind);
-    }
-
-    void Milli10(uint32_t timerId, uint32_t remind, void* param)
-    {
-        DEBUG("Milli 10 id:%d, remind:%d", timerId, remind);
-    }
-
-    void Second(uint32_t timerId, uint32_t remind, void* param)
-    {
-        DEBUG("Second 1 id:%d, remind:%d", timerId, remind);
-    }
-
-    void Second5(uint32_t timerId, uint32_t remind, void* param)
-    {
-        DEBUG("Second 5 id:%d, remind:%d", timerId, remind);
-    }
-
-    void Second10(uint32_t timerId, uint32_t remind, void* param)
-    {
-        DEBUG("Second 10 id:%d, remind:%d", timerId, remind);
-    }
-
-    void TestTimer()
-    {
-        CTimerMgr mgr;
-        mgr.Add(10, 10, Milli10, NULL);
-        mgr.Add(1000, 10, Second, NULL);
-        mgr.Add(10000, 1, Second10, NULL);
-        mgr.Add(1, 10, Milli1, NULL);
-
-        bool b;
-        while (1)
-        {
-            usleep(mgr.Run()*1000);
-            if (!b) {
-                mgr.Add(5000, 10, Second5, NULL); 
-                b = true;
-            }
-        } 
-    }
-
 }; 

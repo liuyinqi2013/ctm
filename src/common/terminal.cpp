@@ -8,20 +8,17 @@ namespace ctm
 {
     bool IsCharDevice(FILE* file)
     {
-        if (file == NULL) 
-        {
+        if (file == NULL) {
             return false;
         }
 
         int fd = fileno(file);
         struct stat sb;
-        if (fstat(fd, &sb) == -1) 
-        {
+        if (fstat(fd, &sb) == -1) {
             return false;
         }
 
-        if (S_IFCHR == (sb.st_mode & S_IFMT)) 
-        {
+        if (S_IFCHR == (sb.st_mode & S_IFMT)) {
             return true;
         }
 

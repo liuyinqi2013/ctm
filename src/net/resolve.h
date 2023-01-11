@@ -6,86 +6,76 @@
 #include <string>
 
 #include <netinet/in.h>
+#include <arpa/inet.h>
+#include <sys/un.h>
 
 namespace ctm 
 {
-    class IP
+    class CAddr
     {
     public:
-        IP(const char* ip)
-        {
-            Copy(ip);
-        }
+        CAddr() { Clear(); }
+        CAddr(const sockaddr& addr) { Copy(addr, addr.sa_family); }
+        CAddr(const sockaddr_un& addr) { Copy(addr, AF_UNIX); }
+        CAddr(const sockaddr_in& addr) { Copy(addr, AF_INET);}
+        CAddr(const sockaddr_in6& addr) { Copy(addr, AF_INET6); }
 
-        IP(struct in_addr& addr)
-        {
-            Copy(addr);
-        }
+        CAddr(const std::string & ip, uint16_t port);
+        CAddr(const char* path);
+        CAddr(const CAddr& other) { Copy(other.m_addr, other.SaFamily()); }
 
-        IP(struct in6_addr& addr)
-        {
-            Copy(addr);
-        }
+        void Clear() { memset(&m_addr, 0, sizeof(addr_t)); }
+        uint16_t SaFamily() const { return m_addr.addr.sa_family; }
 
-        IP(const IP& addr)
-        {
-            Copy(addr);
-        }
+        CAddr& operator= (const sockaddr& addr) { Copy(addr, addr.sa_family); return *this; }
+        CAddr& operator= (const sockaddr_un& addr) { Copy(addr, AF_UNIX); return *this; }
+        CAddr& operator= (const sockaddr_in& addr) { Copy(addr, AF_INET); return *this; }
+        CAddr& operator= (const sockaddr_in6& addr) { Copy(addr, AF_INET6); return *this; }
+        CAddr& operator= (const CAddr& other) { Copy(other.m_addr, other.SaFamily()); return *this; }
+        CAddr& operator= (const char* path);
 
         std::string String() const;
+        void SetPort(uint16_t port);
 
-        IP& operator=(const char* ip)
+        const sockaddr* GetAddr() const { return &m_addr.addr; }
+        socklen_t GetLen() const  
         {
-            Copy(ip);
-            return *this;
+            switch (SaFamily())
+            {
+            case AF_INET:
+                return sizeof(sockaddr_in);
+            case AF_INET6:
+                return sizeof(sockaddr_in6);
+            }
+            return sizeof(sockaddr_un);
         }
 
-        IP& operator=(struct in_addr& other)
+    protected:
+
+        template<typename T>
+        void Copy(const T& addr, uint16_t family = AF_INET)
         {
-            Copy(other);
-            return *this;
+            Clear();
+            memcpy(&m_addr, &addr, sizeof(addr)); 
+            m_addr.addr.sa_family = family;
         }
 
-        IP& operator=(struct in6_addr& other)
+        typedef union
         {
-            Copy(other);
-            return *this;
-        }
+            sockaddr     addr;
+            sockaddr_un  unAddr;   
+            sockaddr_in  ipAddr;
+            sockaddr_in6 ipAddr6;
+        } addr_t;
 
-        IP& operator=(const IP& other)
-        {
-            Copy(other);
-            return *this;
-        }
-
-        bool IsIPv4() const
-        {
-            return m_type == 1;
-        }
-
-        bool IsIPv6() const
-        {
-            return m_type == 2;
-        }
-
-        struct in6_addr IPv6() const;
-        struct in_addr IPv4() const;
-    
-    public:
-        void Copy(const char* ip);
-        void Copy(struct in_addr& other);
-        void Copy(struct in6_addr& other);
-        void Copy(const IP& other);
-
-        void CopyTo(struct in6_addr& other) const;
-        void CopyTo(struct in_addr& other) const;
-
-    private:
-        int m_type;
-        uint32_t m_addr[4];
+        addr_t m_addr;
     };
-
-    int Resolve(const char* endpoint, std::vector<IP>& out);
+    
+    class CResolve {
+    public:
+        static int LookupIPAddr(const char* domain, std::vector<CAddr>& out);
+        static std::string LookupCNAME(const char* domain);
+    };
 }
 
 #endif

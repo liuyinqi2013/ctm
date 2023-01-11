@@ -1,16 +1,8 @@
-#include <stdio.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <algorithm>
 
-#include "io.h"
-#include "buffer.h"
-
-using namespace ctm;
-
-int TestIO(int argc, char** argv) 
-{
-    TestReadAll(argv[1]);
-    TestReadFull(argv[1]);
-    return 0;
-}
+#include "define.h"
 
 void TestReadAll(const char* fileName) 
 {
@@ -28,7 +20,6 @@ void TestReadAll(const char* fileName)
     }
 
     printf("read all ok. size:%ld\n", out.size());
-
 }
 
 void TestWrite(const char* fileName, Buffer* buf) 
@@ -69,4 +60,11 @@ void TestReadFull(const char* fileName)
 
     std::string outFileName = std::string(fileName) + ".bak";
     TestWrite(outFileName.c_str(), &buf);
+}
+
+DECLARE_FUNC(iotest) 
+{
+    TestReadAll(argv[1]);
+    TestReadFull(argv[1]);
+    return 0;
 }

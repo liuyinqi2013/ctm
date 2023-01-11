@@ -1,4 +1,4 @@
-#include "testdef.h"
+#include "define.h"
 #include <algorithm>
 
 static unordered_map<string, TestFuncion>* pTestFunctionMap = NULL;

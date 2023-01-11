@@ -120,7 +120,7 @@ namespace ctm {
 		addr6.sin6_family = AF_INET6;
 		addr6.sin6_port = htons(port);
 		if (inet_pton(AF_INET6, ip, &addr6.sin6_addr.s6_addr) < 0) {
-				return -1;
+			return -1;
 		}
 		return connect(sockfd, (struct sockaddr*)&addr6, sizeof(addr6));
 	}
@@ -388,6 +388,11 @@ namespace ctm {
 			return false;
 
 		return true;
+	}
+
+	bool IsIPv6(const string& strIp)
+	{
+		return strIp.find(":") != strIp.npos;
 	}
 }
 

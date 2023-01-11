@@ -2,97 +2,120 @@
 #include <arpa/inet.h>
 #include "socket.h"
 
+#include "common/log.h"
+#include "common/defer.h"
+#include "common/com.h"
 #include "resolve.h"
 
 
 namespace ctm 
 {
-    void IP::Copy(const char* ip)
+    CAddr::CAddr(const std::string & ip, uint16_t port)
     {
-        memset(m_addr, 0, sizeof(m_addr));
-        if (ctm::IsIPv4(ip)) {
-            m_type = 1;
-            inet_pton(AF_INET, ip, &m_addr);
+        Clear();
+        if (IsIPv4(ip)) {
+            m_addr.ipAddr.sin_family = AF_INET;
+            m_addr.ipAddr.sin_port = htons(port);
+            inet_pton(AF_INET, ip.c_str(), &m_addr.ipAddr.sin_addr);
         } else {
-            m_type = 2;
-            inet_pton(AF_INET6, ip, &m_addr);
+            m_addr.ipAddr6.sin6_family = AF_INET6;
+            m_addr.ipAddr6.sin6_port = htons(port);
+            inet_pton(AF_INET6, ip.c_str(), &m_addr.ipAddr6.sin6_addr);
         }
     }
 
-    void IP::Copy(struct in_addr& addr)
+    CAddr::CAddr(const char* path) 
     {
-        memset(m_addr, 0, sizeof(m_addr));
-        m_type = 1;
-        memcpy(m_addr, &addr.s_addr, sizeof(addr.s_addr));
+        Clear();
+        m_addr.unAddr.sun_family = AF_UNIX;
+        memcpy(m_addr.unAddr.sun_path, path, strlen(path));
     }
 
-    void IP::Copy(struct in6_addr& addr)
+    CAddr& CAddr::operator= (const char* path) 
     {
-        memset(m_addr, 0, sizeof(m_addr));
-        m_type = 2;
-        memcpy(m_addr, &addr.s6_addr, sizeof(addr.s6_addr));
+        Clear();
+        m_addr.unAddr.sun_family = AF_UNIX;
+        memcpy(m_addr.unAddr.sun_path, path, strlen(path));
+        return *this;
     }
 
-    void IP::Copy(const IP& addr)
+    std::string CAddr::String() const
     {
-        m_type = addr.m_type;
-        memcpy(m_addr, &addr.m_addr, sizeof(addr.m_addr));
-    }
-
-    std::string IP::String() const
-    {
-        char buf[64]= {0};
-        if (IsIPv4()) {
-            inet_ntop(AF_INET, &m_addr, buf, sizeof(buf));
-        } else {
-            inet_ntop(AF_INET6, &m_addr, buf, sizeof(buf));
+        char buf[128] = {0};
+        switch (SaFamily())
+        {
+        case AF_INET:
+            inet_ntop(AF_INET, &m_addr.ipAddr.sin_addr, buf, sizeof(buf));
+            return string(buf) + ":" + I2S(ntohs(m_addr.ipAddr.sin_port));
+        case AF_INET6:
+            inet_ntop(AF_INET6, &m_addr.ipAddr6.sin6_addr, buf, sizeof(buf));
+            return string(buf) + ":" + I2S(ntohs(m_addr.ipAddr6.sin6_port));
         }
-        return std::string(buf);
+        return string(m_addr.unAddr.sun_path);
     }
 
-    struct in6_addr IP::IPv6() const
+    void CAddr::SetPort(uint16_t port)
     {
-        struct in6_addr addr = {0};
-        CopyTo(addr);
-        return addr;
+        switch (SaFamily())
+        {
+        case AF_INET:
+            m_addr.ipAddr.sin_port = htons(port);
+            break;
+        case AF_INET6:
+            m_addr.ipAddr6.sin6_port = htons(port);
+            break;
+        }
     }
 
-    struct in_addr IP::IPv4() const
+    int CResolve::LookupIPAddr(const char* domain, std::vector<CAddr>& out) 
     {
-        struct in_addr addr = {0};
-        CopyTo(addr);
-        return addr;
-    }
+        if (IsIPv4(domain) || IsIPv6(domain)) {
+            out.push_back(CAddr(domain, 0));
+            return 0;
+        }
 
-    void IP::CopyTo(struct in6_addr& addr) const
-    {
-        memcpy(&addr.s6_addr, m_addr, sizeof(addr));
-    }
+        struct addrinfo hints;
+        memset(&hints, 0, sizeof(hints));
+        hints.ai_family = AF_INET;
+        hints.ai_socktype = SOCK_STREAM;
+        struct addrinfo* res, *p;
 
-    void IP::CopyTo(struct in_addr& addr) const
-    {
-        memcpy(&addr.s_addr, m_addr, sizeof(addr));
-    }
+        if (getaddrinfo(domain, NULL, &hints, &res) < 0) {
+            return -1;
+        }
 
-    int Resolve(const char* endpoint, std::vector<IP>& out)
-    {
-        int ret = 0;
-		char buf[2048] = {0};
-		struct hostent tmp, *h;
-		gethostbyname_r(endpoint, &tmp, buf, sizeof(buf), &h, &ret);
-		if (ret != 0) {
-			return -1;
-		}
+        defer([&res](){ freeaddrinfo(res);});
 
-		if (h->h_addrtype != AF_INET) {
-			return -1;
-		}
+        for (p = res; p; p = p->ai_next){
+            if (p->ai_family == AF_INET) {
+                auto sa = reinterpret_cast<struct sockaddr_in*>(p->ai_addr);
+                out.push_back(*sa);
+            } else if (p->ai_family == AF_INET6) {
+                auto sa = reinterpret_cast<struct sockaddr_in6*>(p->ai_addr);
+                out.push_back(*sa);
+            }
+        }
 
-		char** head = h->h_addr_list;
-		for(; *head; head++) {
-            out.push_back(IP(*((struct in_addr*)*head)));
-		}
-        
         return 0;
+    }
+
+    std::string CResolve::LookupCNAME(const char* domain)
+    {
+        struct addrinfo hints;
+        memset(&hints, 0, sizeof(hints));
+        hints.ai_family = AF_INET;
+        hints.ai_flags = AI_CANONNAME;
+        struct addrinfo* res;
+
+        if (getaddrinfo(domain, NULL, &hints, &res) < 0) {
+            return string("");
+        }
+        defer([res](){ freeaddrinfo(res);});
+
+        std::string cname;
+        if (res->ai_canonname){
+            cname = res->ai_canonname;
+        }
+        return cname;
     }
 }

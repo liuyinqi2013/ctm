@@ -3,8 +3,8 @@
 
 #include <string>
 
-namespace ctm {
-    
+namespace ctm 
+{
     #define IO_OK        0
     #define IO_EINTR     (-1)
     #define IO_EOF       (-2)
@@ -17,8 +17,8 @@ namespace ctm {
 	int SetNonBlock(int fd);
     int Close(int fd);
 
-    int Read(int fd, void* buf,  size_t len);
-    int Write(int fd, void* buf, size_t len);
+    int Read(int fd, void* buf,  uint32_t len);
+    int Write(int fd, void* buf, uint32_t len);
 
     int Read(int fd, Buffer* buf);
     int Write(int fd, Buffer* buf);
@@ -28,8 +28,5 @@ namespace ctm {
 
     int ReadAll(int fd, std::string & out);
 }
-
-void TestReadAll(const char* fileName);
-void TestReadFull(const char* fileName);
 
 #endif

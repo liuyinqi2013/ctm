@@ -1,8 +1,219 @@
 #include <unistd.h>
 #include <arpa/inet.h>
-
-#include "testdef.h"
 #include <algorithm>
+
+#include <cassert>
+#include <termios.h>
+#include <sys/sysmacros.h>
+#include <sys/stat.h>
+
+#include "define.h"
+
+void DrawRectangle(int x, int y, int w, int h)
+{
+	printf("\e[%d;%dH+", y, x);
+	for(int i = 1; i < w; i++)
+	{
+		printf("\e[%d;%dH-", y, x + i);
+		printf("\e[%d;%dH-", y + h, x + i);
+	}
+
+	for(int i = 1; i < h; i++)
+    {
+        printf("\e[%d;%dH|", y + i, x);
+        printf("\e[%d;%dH|", y + i, x + w);
+    }
+	
+
+	printf("\e[%d;%dH+", y, x);
+	printf("\e[%d;%dH+", y, x + w);
+	printf("\e[%d;%dH+", y + h, x);
+	printf("\e[%d;%dH+", y + h, x + w);		
+}
+
+void Move(int x, int y)
+{
+	printf("\e[%d;%dH", y, x);
+}
+
+DECLARE_FUNC(tcdemo)
+{
+	struct termios told;
+	struct termios tnew;
+
+	printf("■");
+	tcgetattr(0, &told);
+	tnew = told;
+
+	tnew.c_lflag &= ~(ICANON | ECHO | ECHOE | IEXTEN);
+	tnew.c_oflag &= ~ONLCR;
+	tnew.c_cc[VMIN] = 1;
+	tnew.c_cc[VTIME] = 0;
+	
+	
+	tcsetattr(0, TCSANOW, &tnew);
+
+	printf("\e[0;0H\e[2J");
+	DrawRectangle(10, 10, 40, 20);
+
+	Move(30, 20);
+
+	fflush(stdout);
+	int buf[2] = {0};
+	while (buf[0] != 'q')
+	{
+		read(0, buf, 1);
+		switch(buf[0])
+		{
+			case 'w':
+				printf("\e[1A");
+				break;
+			case 's':
+				printf("\e[1B");
+				break;
+			case 'a':
+				printf("\e[1D");
+				break;
+			case 'd':
+				printf("\e[1C");
+				break;
+			default:
+				;
+		}
+		fflush(stdout);
+	}
+
+
+	for(int i = 0; i < 10 ; i++)
+	{
+		printf("\e[35m%-3d%c\e[0m\e[4D\e[?25l", (i + 1) * 100 /10, '%');
+		fflush(stdout);
+		sleep(1);
+	}
+
+	printf("\e[?25h\n");
+		
+	Move(0, 31);
+
+	tcsetattr(0, TCSANOW, &told);
+
+	return 0;
+}
+
+void ShowStat(struct stat& sb)
+{
+	printf("---------------------------------------------------\n");
+
+	printf("ID of containing device:  [%lx,%lx]\n",
+	     (long) major(sb.st_dev), (long) minor(sb.st_dev));
+
+	printf("File type:                ");
+
+	switch (sb.st_mode & S_IFMT) {
+	case S_IFBLK:  printf("block device\n");            break;
+	case S_IFCHR:  printf("character device\n");        break;
+	case S_IFDIR:  printf("directory\n");               break;
+	case S_IFIFO:  printf("FIFO/pipe\n");               break;
+	case S_IFLNK:  printf("symlink\n");                 break;
+	case S_IFREG:  printf("regular file\n");            break;
+	case S_IFSOCK: printf("socket\n");                  break;
+	default:       printf("unknown?\n");                break;
+	}
+
+	printf("I-node number:            %ld\n", (long) sb.st_ino);
+
+	printf("Mode:                     %lo (octal)\n",
+	        (unsigned long) sb.st_mode);
+
+	printf("Link count:               %ld\n", (long) sb.st_nlink);
+	printf("Ownership:                UID=%ld   GID=%ld\n",
+	        (long) sb.st_uid, (long) sb.st_gid);
+
+	printf("Preferred I/O block size: %ld bytes\n",
+	        (long) sb.st_blksize);
+	printf("File size:                %lld bytes\n",
+	        (long long) sb.st_size);
+	printf("Blocks allocated:         %lld\n",
+	        (long long) sb.st_blocks);
+
+	printf("Last status change:       %s", ctime(&sb.st_ctime));
+	printf("Last file access:         %s", ctime(&sb.st_atime));
+	printf("Last file modification:   %s", ctime(&sb.st_mtime));
+
+	printf("---------------------------------------------------\n");
+}
+
+DECLARE_FUNC(iostat)
+{
+	struct stat sb;
+	if (argc >= 2)
+	{
+		if (stat(argv[1], &sb)) 
+		{
+			printf("get stat faild:%s\n", argv[1]);
+			return -1;
+		}
+	}
+	else
+	{
+		if(fstat(STDOUT_FILENO, &sb) == -1) 
+		{
+			printf("get stat faild:STDOUT");
+			return -1;
+		}
+	}
+
+	ShowStat(sb);
+
+	return 0;
+}
+
+DECLARE_FUNC(color)
+{
+	if (IsCharDevice(stdout))
+	{
+		printf("%s\n", ColorString("black", BLACK).c_str());
+		printf("%s\n", ColorString("red", RED).c_str());
+		printf("%s\n", ColorString("green", GREEN).c_str());
+		printf("%s\n", ColorString("yellow", YELLOW).c_str());
+		printf("%s\n", ColorString("bule", BLUE).c_str());
+		printf("%s\n", ColorString("purple", PURPLE).c_str());
+		printf("%s\n", ColorString("skybule", SKYBLUE).c_str());
+		printf("%s\n", ColorString("white", WHITE).c_str());
+	}
+	else
+	{
+		printf("%s\n", "black");
+		printf("%s\n", "red");
+		printf("%s\n", "green");
+		printf("%s\n", "yellow");
+		printf("%s\n", "bule");
+		printf("%s\n", "purple");
+		printf("%s\n", "skybule");
+		printf("%s\n", "white");
+	}
+	return 0;
+}
+
+int SumN(unsigned int n)
+{
+	float e = 0;
+	for (unsigned int i = 1; i <= n; i++)
+	{
+		e += 1.0 / (1 + i);
+	}
+
+	return e;
+}
+
+DECLARE_FUNC(sum_e)
+{
+	cout << "e = " << SumN(100000) << endl;
+	return 0;
+}
+
+
+
 
 CSafetyQueue<string> queue1;
 
@@ -109,54 +320,13 @@ DECLARE_FUNC(strtool)
 	return 0;
 }
 
-DECLARE_FUNC_EX(timetool)
-{
-	cout << Timestamp() << endl;
-	cout << MilliTimestamp() << endl;
-
-	cout << DateTime() << endl;
-	cout << DateTime(TDATE_FMT_1) << endl;
-	cout << DateTime(TDATE_FMT_2) << endl;
-	cout << DateTime(TDATE_FMT_3) << endl;
-	cout << DateTime(TDATE_FMT_4) << endl;
-	cout << DateTime(TDATE_FMT_5) << endl;
-
-	cout << DateTime(TDATE_FMT_1, TTIME_FMT_0) << endl;
-	cout << DateTime(TDATE_FMT_1, TTIME_FMT_1) << endl;
-	cout << DateTime(TDATE_FMT_1, TTIME_FMT_2) << endl;
-	cout << DateTime(TDATE_FMT_1, TTIME_FMT_3) << endl;
-
-	cout << Date(TDATE_FMT_0) << endl;
-	cout << Date(TDATE_FMT_1) << endl;
-	cout << Date(TDATE_FMT_2) << endl;
-	cout << Date(TDATE_FMT_3) << endl;
-	cout << Date(TDATE_FMT_4) << endl;
-	cout << Date(TDATE_FMT_5) << endl;
-
-	cout << Time(TTIME_FMT_0) << endl;
-	cout << Time(TTIME_FMT_1) << endl;
-	cout << Time(TTIME_FMT_2) << endl;
-	cout << Time(TTIME_FMT_3) << endl;
-
-	cout << DayOfWeek() << endl;
-	cout << WeekOfYear() << endl;
-	cout << Timezone() << endl;
-	cout << TodayBeginTime() << endl;
-	cout << TodayEndTime() << endl;
-	
-	return 0;
-}
-
 DECLARE_FUNC(addrinfo)
 {
 	struct addrinfo hints = { 0 };
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_protocol = IPPROTO_TCP;
 	struct addrinfo* res, *p;
-	char portstr[6];
-	snprintf(portstr, sizeof(portstr), "%d", 80);
 
 	if (getaddrinfo(argv[1], NULL, &hints, &res) < 0) {
 		cout << "getaddrinfo failed" << endl;
@@ -177,25 +347,12 @@ DECLARE_FUNC(addrinfo)
 		}
 
 		cout << "ip : " << ipbuf << endl;
-		cout << "canonname : " << p->ai_canonname << endl;
+		cout << "ai_next : " << p->ai_next << endl;
 	}
 
 	freeaddrinfo(res);
 	return 0;
 }
-
-DECLARE_FUNC(hostip)
-{
-	printf("hostname:%s\n", HostName().c_str());
-	std::vector<std::string> vecIps;
-	GetHostIPs("www.sina.com", vecIps);
-	for(size_t i = 0; i < vecIps.size(); ++i)
-	{
-		printf("ip%ld:%s\n", i + 1, vecIps[i].c_str());
-	}
-	return 0;
-}
-
 
 DECLARE_FUNC(message)
 {
@@ -328,28 +485,24 @@ DECLARE_FUNC(random)
 {
 	for (int i = 0; i < 2000; ++i)
 	{
-		DEBUG("ddddddddddddddddddddddddddddddddddddddddddddd %f", CRandom::Random0_1());
+		DEBUG("random0_1:%f", CRandom::Random0_1());
 	}
 
 	for (int i = 0; i < 2000; ++i)
 	{
-		WARN("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa %d", CRandom::IntRandom(30, 50));
-	}
-
-	for (int i = 0; i < 2000; ++i)
-	{
-		ERROR("cccccccccccccccccccccccccccccccccccccccccccccc %f", CRandom::Random0_1());
+		WARN("int random:%d", CRandom::IntRandom(30, 50));
 	}
 
 	for (int i = 0; i < 10000; ++i)
 	{
-		INFO("cccccccccccccccccccccccccccccccccccccccccccccc %u", CRandom::UIntRandom(0, 100));
+		INFO("uint random:%u", CRandom::UIntRandom(0, 100));
 	}
 
 	for (int i = 0; i < 300; ++i)
 	{
-		INFO("xxxxxxxxxxxxxxxxxxxxxxxxxxxxx %f", CRandom::DoubleRandom(0.5, 10.0));
+		INFO("double random:%f", CRandom::DoubleRandom(0.5, 10.0));
 	}
+
 	return 0;
 }
 
@@ -358,7 +511,6 @@ struct list_node
 	list_node(int _data, list_node* _next = NULL) :
 	 data(_data), next(_next)
 	{
-
 	}
 	int data;
 	list_node* next;
@@ -568,7 +720,7 @@ DECLARE_FUNC(ini)
 
 DECLARE_FUNC(timer)
 {
-	TestTimerEvent();
+	TestTimer();
 	return 0;
 }
 
@@ -759,7 +911,6 @@ void Test()
 DECLARE_FUNC(safepos)
 {
 	Test();
-	
 	return 0;
 }
 

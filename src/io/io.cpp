@@ -49,7 +49,7 @@ namespace ctm {
 		return close(fd);
 	}
 
-	int Read(int fd, void* buf,  size_t len)
+	int Read(int fd, void* buf,  uint32_t len)
 	{
 		int n = 0;
 		while(1) 
@@ -63,7 +63,7 @@ namespace ctm {
 		return n;
 	}
 
-    int Write(int fd, void* buf, size_t len)
+    int Write(int fd, void* buf, uint32_t len)
 	{
 		int n = 0;
 		while(1) 
@@ -90,7 +90,6 @@ namespace ctm {
 			} else if (err != IO_OK) {
 				return err;
 			}
-
 			buf->Use(n);
 			break;
 		}
@@ -111,7 +110,6 @@ namespace ctm {
 			} else if (err != IO_OK) {
 				return err;
 			}
-			
 			buf->Free(n);
 			break;
 		}
@@ -133,7 +131,6 @@ namespace ctm {
 			} else if (err != IO_OK) {
 				return err;
 			}
-			
 			buf->Use(n);
 		}
 
@@ -153,7 +150,6 @@ namespace ctm {
 			} else if (err != IO_OK) {
 				return err;
 			}
-
 			buf->Free(n);
 		}
 

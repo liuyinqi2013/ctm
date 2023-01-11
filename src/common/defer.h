@@ -5,57 +5,27 @@
 #include <memory>
 
 namespace ctm {
-    template <typename F, typename T>
-    class FuncArg1
+    template <typename F>
+    class Defer
     {
     public:
-        FuncArg1(F f, T arg) : _func(f), _arg(arg) { }
-        ~FuncArg1() { _func(_arg); }
+        Defer(F f) : _func(f) { }
+        ~Defer() { _func(); }
     private:
         F _func;
-        T _arg;
     };
 
-    template <typename F, typename T, typename T1>
-    class FuncArg2
-    {
-    public:
-        FuncArg2(F f, T arg, T1 arg1) : _func(f), _arg(arg), _arg1(arg1) { }
-        ~FuncArg2() { _func(_arg, _arg1); }
-    private:
-        F _func;
-        T _arg;
-        T1 _arg1;
-    };
-
-    template <typename O, typename F>
-    class ObjFunc
-    {
-    public:
-        ObjFunc(O& obj, F f) : _obj(obj), _f(f) { }
-        ~ObjFunc() { (_obj.*_f)(); }
-    private:
-        O& _obj;
-        F _f;
-    };
-
-    template <typename F, typename T>
-    FuncArg1<F, T> Defer(F f, T t) {
-        return FuncArg1<F, T>(f, t);
+    template <typename F>
+    std::shared_ptr<Defer<F> > MakeDefer(F && f) {
+        return std::make_shared<Defer<F> >(forward<F>(f));
     }
 
-    template <typename F, typename T, typename T1>
-    FuncArg2<F, T, T1> Defer(F f, T t, T1 t1) {
-        return FuncArg2<F, T, T1>(f, t, t1);
-    }
-
-    template <typename O, typename F>
-    std::shared_ptr<ObjFunc<O, F> >
-    DeferObj(O& o, F f) {
-        return std::make_shared<ObjFunc<O, F> >(o, f);
-    }
-
-    #define defer(o, f) auto df = DeferObj(o, f)
+    #define defer(f)   auto df  = MakeDefer(f)
+    #define defer1(f)  auto df1 = MakeDefer(f)
+    #define defer2(f)  auto df2 = MakeDefer(f)
+    #define defer3(f)  auto df3 = MakeDefer(f)
+    #define defer4(f)  auto df4 = MakeDefer(f)
+    #define defer5(f)  auto df5 = MakeDefer(f)
 }
 
 #endif

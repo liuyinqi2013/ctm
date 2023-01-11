@@ -1,9 +1,8 @@
 #include <unistd.h>
 
-#include "event/event.h"
 #include "common/com.h"
 #include "common/log.h"
-#include "io/io.h"
+#include "io/poller.h"
 #include "tcpconn.h"
 
 namespace ctm {
@@ -12,7 +11,7 @@ namespace ctm {
     { 
         int port;
         std::string ip;
-        ctm::GetSockName(m_fd, ip, port);
+        ctm::GetSockName(GetFd(), ip, port);
         return ip + ":" + I2S(port);
     }
 
@@ -20,7 +19,7 @@ namespace ctm {
     { 
         int port;
         std::string ip;
-        ctm::GetPeerName(m_fd, ip, port);
+        ctm::GetPeerName(GetFd(), ip, port);
         return ip + ":" + I2S(port);
     }
 
@@ -45,44 +44,25 @@ namespace ctm {
         return std::shared_ptr<TcpConn>(new TcpConn(fd));
     }
 
-    int TcpConnect(int fd, const IP& ip, int port)
+    int BaseConnect(int fd, const CAddr& addr)
     {
-        socklen_t len = 0;
-        struct sockaddr* addr = NULL;
-        struct sockaddr_in addr4 = {0};
-        struct sockaddr_in6 addr6 = {0};
-
-        if (ip.IsIPv4()) {
-            addr4.sin_family = AF_INET;
-            addr4.sin_port = htons(port);
-            addr4.sin_addr = ip.IPv4();
-            
-            len = sizeof(addr4);
-            addr = reinterpret_cast<struct sockaddr*>(&addr4);
-        } else {
-            addr6.sin6_family = AF_INET6;
-            addr6.sin6_port = htons(port);
-            addr6.sin6_addr = ip.IPv6();
-
-            len = sizeof(addr6);
-            addr = reinterpret_cast<struct sockaddr*>(&addr6);
-        }
-
+        int ret = 0;
         while(1) {
-            int ret = connect(fd, addr, len);
+            ret = connect(fd, addr.GetAddr(), addr.GetLen());
             if (ret == 0) {
-                DEBUG("connect ok. ip:%s, port:%d", ip.String().c_str(), port);
+                DEBUG("connect ok. addr:%s", addr.String().c_str());
                 return 0;
             }
 
-            int errcode = errno;
-            if (errcode == EINTR) {
+            ret = errno;
+            if (ret == EINTR) {
                 continue;
             }
 
-            return errcode;
+            break;
         }
-        return -1;
+
+        return ret;
     }
 
     std::shared_ptr<TcpConn> TcpConnect(const char* endpoint, int port)
@@ -94,126 +74,105 @@ namespace ctm {
         return std::shared_ptr<TcpConn>(new TcpConn(fd));
     }
 
-    AsynTcpConnector::AsynTcpConnector(const char* endpoint, uint16_t port, ConnCallBack cb, CEventMonitor* eventMonitor, uint32_t timeOutSecond) :
+    AsynTcpConnector::AsynTcpConnector(const char* endpoint, uint16_t port, ConnCallBack cb, CPoller* poller, uint32_t timeOut) :
     m_endpoint(endpoint),
     m_port(port),
     m_idx(-1),
-    m_sockfd(-1),
-    m_ips(std::vector<IP>()),
+    m_addrs(std::vector<CAddr>()),
     m_cb(cb),
-    m_eventMonitor(eventMonitor),
-    m_timeout(timeOutSecond),
-    m_connEv(NULL),
-    m_timeoutEv(NULL)
+    m_poller(poller),
+    m_timeout(timeOut),
+    m_conn(NULL),
+    m_timerId(0)
     {
         Start();
     }
 
     AsynTcpConnector::~AsynTcpConnector()
     {
-        StopTimer();
-        StopConnect();
+        m_poller->StopTimer(m_timerId);
     }
 
     void AsynTcpConnector::Start()
     {
-        if (Resolve(m_endpoint.c_str(), m_ips) < 0) {
+        if (CResolve::LookupIPAddr(m_endpoint.c_str(), m_addrs) < 0) {
+            ERROR("create socket failed.");
             m_cb(-1, "resolve failed", std::shared_ptr<TcpConn>(NULL));
             return;
         }
-
-        m_timeoutEv = m_eventMonitor->AddTimerEvent(1000*m_timeout, 1, AsynTcpConnector::OnEventCallBack, this);
-
+        m_timerId = m_poller->AddTimer(1000 * m_timeout, 1, AsynTcpConnector::OnTimer, this);
         Next();
     }
 
     void AsynTcpConnector::Next()
     {
-        if (m_sockfd != -1) {
-            close(m_sockfd);
-        }
-
-        int ret;
-        while (++m_idx < int(m_ips.size()))
+        int fd, ret;
+        while (++m_idx < int(m_addrs.size()))
         {
-            m_sockfd = socket(AF_INET, SOCK_STREAM, 0);
-            struct sockaddr_in sockAddrIn = {0};
-            sockAddrIn.sin_family = AF_INET;
-            sockAddrIn.sin_port = htons(m_port);
-            sockAddrIn.sin_addr = m_ips[m_idx].IPv4();
-
-            SetNonBlock(m_sockfd);
-
-            while(1) {
-                ret = connect(m_sockfd, (struct sockaddr*)&sockAddrIn, sizeof(sockAddrIn));
-                if (ret == 0) {
-                    DEBUG("connect ok. ip:%s, port:%d", m_ips[m_idx].String().c_str(), m_port);
-                    StopTimer();
-                    m_cb(0, "ok", std::shared_ptr<TcpConn>(new TcpConn(m_sockfd)));
-
-                    return;
-                }
-
-                int errcode = errno;
-                if (errcode == EINTR) {
-                    continue;
-                } else if (errcode == EINPROGRESS) {
-                    DEBUG("connecting ok. ip:%s, port:%d", m_ips[m_idx].String().c_str(), m_port);
-                    m_connEv = m_eventMonitor->AddIOEvent(m_sockfd, EVENT_READ|EVENT_WRITE, AsynTcpConnector::OnEventCallBack, this);
-                    return;
-                }
-
-                ERROR("connect failed. ip:%s, port:%d", m_ips[m_idx].String().c_str(), m_port);
-                close(m_sockfd);
+            fd = socket(m_addrs[m_idx].SaFamily(), SOCK_STREAM, 0);
+            if (fd == -1) {
+                ERROR("create socket failed.");
                 break;
             }
+
+            m_addrs[m_idx].SetPort(m_port);
+
+            auto conn = std::shared_ptr<TcpConn>(new TcpConn(fd, m_poller));
+            conn->SetNonBlock();
+            ret = BaseConnect(fd, m_addrs[m_idx]);
+            if (ret == 0) {
+                DEBUG("connect ok. addr:%s", m_addrs[m_idx].String().c_str());
+                m_poller->StopTimer(m_timerId);
+                m_cb(0, "ok", conn);
+                return;
+            } else if (ret == EINPROGRESS) {
+                DEBUG("connecting. addr:%s", m_addrs[m_idx].String().c_str());
+                conn->SetHandler(this);
+                conn->SetEvent(EvReadWrite);
+                m_conn = conn;
+                return;
+            }
+            ERROR("connect failed. addr:%s", m_addrs[m_idx].String().c_str());
         }
 
-        StopTimer();
-        m_cb(-1, "connect failed", std::shared_ptr<TcpConn>(NULL)); 
+        m_conn = NULL;
+        m_poller->StopTimer(m_timerId);
+        m_cb(-1, "connect failed", NULL); 
     }
 
-    void AsynTcpConnector::OnEventCallBack(Event* ev, int events, void* data)
+    void AsynTcpConnector::OnRead()
     {
-        DEBUG("on event call back. events:%d", events);
-        AsynTcpConnector* p = reinterpret_cast<AsynTcpConnector*>(data);
-        if (OR_RW(events)) {
-            p->HandlerConnEv(events);
-        } else {
-            p->HandlerTimeOutEv();
+        DEBUG("connect failed. ip:%s", m_addrs[m_idx].String().c_str());
+        m_conn->Detach();
+        Next();
+    }
+
+    void AsynTcpConnector::OnWrite()
+    {
+        DEBUG("connect ok. ip:%s", m_addrs[m_idx].String().c_str());
+        m_poller->StopTimer(m_timerId);
+        m_conn->Detach();
+        m_conn->SetHandler(NULL);
+        m_cb(0, "ok", m_conn); 
+    }
+
+    void AsynTcpConnector::OnError()
+    {
+        Next();
+    }
+
+    void AsynTcpConnector::OnTimer(uint64_t timerId, uint32_t remind, void* param)
+    {
+        DEBUG("on time out call back. id:%d, remind:%d", timerId, remind);
+        auto p = reinterpret_cast<AsynTcpConnector*>(param);
+
+        if (p->m_conn) {
+            p->m_conn->Detach();
+            p->m_conn = NULL;
         }
-    }
 
-    void AsynTcpConnector::HandlerConnEv(int events)
-    {
-        StopConnect();
-        if (AND_RW(events)) {
-            Next();
-        } else if (WR(events)) {
-            StopTimer();
-            m_cb(0, "ok", std::shared_ptr<TcpConn>(new TcpConn(m_sockfd)));
-        } 
-    }
-
-    void AsynTcpConnector::HandlerTimeOutEv()
-    {
-        StopConnect();
-        m_cb(-1, "connect failed", std::shared_ptr<TcpConn>(NULL)); 
-    }
-
-    void AsynTcpConnector::StopTimer()
-    {
-        if (m_timeoutEv) {
-            m_timeoutEv->Destroy();
-            m_timeoutEv = NULL;
-        }
-    }
-
-    void AsynTcpConnector::StopConnect()
-    {
-        if (m_connEv) {
-            m_connEv->Destroy();
-            m_connEv = NULL;
+        if (p->m_cb) {
+            p->m_cb(-1, "connect timeout", NULL); 
         }
     }
 }

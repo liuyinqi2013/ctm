@@ -4,14 +4,11 @@
 #include <memory>
 #include "common/macro.h"
 #include "socket.h"
-#include "conn.h"
+#include "io/file.h"
 #include "resolve.h"
 
 namespace ctm 
 {
-    class Event;
-    class CEventMonitor;
-
     class TcpConn;
     class AsynTcpConnector;
     class Acceptor;
@@ -19,82 +16,81 @@ namespace ctm
     std::shared_ptr<TcpConn> Accept(int fd);
     std::shared_ptr<TcpConn> TcpConnect(const char* endpoint, int port);
 
-    class TcpConn : public BaseConn {
+    class TcpConn : public CFile {
+        DISABLE_COPY_ASSIGN(TcpConn)
     public:
         virtual ~TcpConn() { }
 
-        void SetNoDelay() { ctm::SetNoDelay(m_fd); }
-        void SetKeepAlive(int interval) { ctm::SetKeepAlive(m_fd, interval); }
+        void SetNoDelay() 
+        { ctm::SetNoDelay(GetFd()); }
+        void SetKeepAlive(int interval) { ctm::SetKeepAlive(GetFd(), interval); }
 
-        int GetRecvLowat() { return ctm::GetRecvLowat(m_fd); }
-	    int GetSendLowat() { return ctm::GetSendLowat(m_fd); }
-        int GetTcpState() { return GetTCPState(m_fd); }
+        int GetRecvLowat() { return ctm::GetRecvLowat(GetFd()); }
+	    int GetSendLowat() { return ctm::GetSendLowat(GetFd()); }
+        int GetTcpState() { return GetTCPState(GetFd()); }
 
-        int SetRecvLowat(int val) { return ctm::SetRecvLowat(m_fd, val); }
-	    int SetSendLowat(int val) { return ctm::SetSendLowat(m_fd, val); }
+        int SetRecvLowat(int val) { return ctm::SetRecvLowat(GetFd(), val); }
+	    int SetSendLowat(int val) { return ctm::SetSendLowat(GetFd(), val); }
 
-	    int GetRecvBuf() { return ctm::GetRecvBuf(m_fd); }
-	    int GetSendBuf() { return ctm::GetSendBuf(m_fd); }
-	    int SetRecvBuf(int val) { return ctm::SetRecvBuf(m_fd, val); }
-	    int SetSendBuf(int val) { return ctm::SetSendBuf(m_fd, val); }
+	    int GetRecvBuf() { return ctm::GetRecvBuf(GetFd()); }
+	    int GetSendBuf() { return ctm::GetSendBuf(GetFd()); }
+	    int SetRecvBuf(int val) { return ctm::SetRecvBuf(GetFd(), val); }
+	    int SetSendBuf(int val) { return ctm::SetSendBuf(GetFd(), val); }
 
-        int GetLocalAddr(std::string& outIp, int& outPort) { return ctm::GetSockName(m_fd, outIp, outPort); }
-	    int GetRemoteAddr(std::string& outIp, int& outPort) { return ctm::GetPeerName(m_fd, outIp, outPort); }
+        int GetLocalAddr(std::string& outIp, int& outPort) { return ctm::GetSockName(GetFd(), outIp, outPort); }
+	    int GetRemoteAddr(std::string& outIp, int& outPort) { return ctm::GetPeerName(GetFd(), outIp, outPort); }
 
         std::string GetLocalAddr();
 	    std::string GetRemoteAddr();
         
         void Show();
+        void ShutDown(int row) { shutdown(GetFd(), row); }
 
     protected:
-        TcpConn(int fd) : BaseConn(fd) {}
+        TcpConn(int fd, CPoller* poller = NULL) : CFile(fd, poller) {}
 
         friend AsynTcpConnector;
         friend Acceptor;
         friend std::shared_ptr<TcpConn> Accept(int fd);
-        friend std::shared_ptr<TcpConn> TcpConnect(const char* endpoint, int port);;
+        friend std::shared_ptr<TcpConn> TcpConnect(const char* endpoint, int port);
     };
 
     std::shared_ptr<TcpConn> Accept(int fd);
-
-    int TcpConnect(int fd, const IP& ip, int port);
+    int BaseConnect(int fd, const CAddr& addr);
     std::shared_ptr<TcpConn> TcpConnect(const char* endpoint, int port);
-    
 
     typedef void (*ConnCallBack)(int code, const char* message, std::shared_ptr<TcpConn> conn);
 
-    class AsynTcpConnector
+    class AsynTcpConnector : public CFile::CHandler
     {
         DISABLE_COPY_ASSIGN(AsynTcpConnector)
     public:
-        AsynTcpConnector(const char* endpoint, uint16_t port, ConnCallBack cb, CEventMonitor* eventMonitor, uint32_t timeOutSecond = 10);
+        AsynTcpConnector(const char* endpoint, uint16_t port, ConnCallBack cb, CPoller* poller, uint32_t timeOut = 20);
         ~AsynTcpConnector();
 
     private:
         void Start(); 
         void Next();
 
-        void StopTimer();
-        void StopConnect();
+        virtual void OnRead();
+        virtual void OnWrite();
+        virtual void OnError();
 
-        void HandlerConnEv(int events);
-        void HandlerTimeOutEv();
+        static void OnTimer(uint64_t timerId, uint32_t remind, void* param);
 
-        static void OnEventCallBack(Event* ev, int events, void* data);
     private:
         std::string m_endpoint;
         uint16_t m_port;
         
         int m_idx;
-        int m_sockfd;
-        std::vector<IP> m_ips;
+        std::vector<CAddr> m_addrs;
         ConnCallBack m_cb;
 
-        CEventMonitor* m_eventMonitor;
+        CPoller* m_poller;
         uint32_t m_timeout;
 
-        Event* m_connEv;
-        Event* m_timeoutEv;
+        std::shared_ptr<TcpConn> m_conn;
+        int m_timerId;
     };
 }
 

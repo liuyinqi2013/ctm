@@ -5,7 +5,7 @@
 
 namespace ctm
 {
-    enum CharColor
+    enum Color
     {
         BLACK = 0x00,
         RED = 0x01,
@@ -23,37 +23,37 @@ namespace ctm
 
     inline std::string Red(const std::string& strIn) 
     {
-        return ColorString(strIn, CharColor::RED);
+        return ColorString(strIn, Color::RED);
     }
 
     inline std::string Black(const std::string& strIn) 
     {
-        return ColorString(strIn, CharColor::BLACK);
+        return ColorString(strIn, Color::BLACK);
     }
 
     inline std::string Green(const std::string& strIn) 
     {
-        return ColorString(strIn, CharColor::GREEN);
+        return ColorString(strIn, Color::GREEN);
     }
 
     inline std::string Yellow(const std::string& strIn) 
     {
-        return ColorString(strIn, CharColor::YELLOW);
+        return ColorString(strIn, Color::YELLOW);
     }
 
     inline std::string Blue(const std::string& strIn) 
     {
-        return ColorString(strIn, CharColor::BLUE);
+        return ColorString(strIn, Color::BLUE);
     }
 
     inline std::string SkyeBlue(const std::string& strIn) 
     {
-        return ColorString(strIn, CharColor::SKYBLUE);
+        return ColorString(strIn, Color::SKYBLUE);
     }
 
     inline std::string White(const std::string& strIn) 
     {
-        return ColorString(strIn, CharColor::WHITE);
+        return ColorString(strIn, Color::WHITE);
     }
 
 }

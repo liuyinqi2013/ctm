@@ -9,7 +9,7 @@ namespace ctm
     {
     public:
 
-        Buffer(size_t size) : r(0), w(0), cap(size), data(new char[size + 1]) 
+        Buffer(uint32_t size) : r(0), w(0), cap(size), data(new char[size + 1]) 
         {
         }
 
@@ -18,12 +18,12 @@ namespace ctm
             delete[] data; 
         }
 
-        size_t Len() 
+        uint32_t Len() 
         {
             return w - r; 
         }
 
-        size_t Cap() 
+        uint32_t Cap() 
         { 
             return cap; 
         }
@@ -48,7 +48,7 @@ namespace ctm
             return data;
         }
 
-        bool Use(size_t n) 
+        bool Use(uint32_t n) 
         {
             if (n > FreeLen()) return false;
 
@@ -56,7 +56,7 @@ namespace ctm
             return true;
         }
 
-        bool Free(size_t n) 
+        bool Free(uint32_t n) 
         {
             if (n > Len()) return false;
 
@@ -86,15 +86,15 @@ namespace ctm
             memset(data, 0, cap);
         }
 
-        size_t FreeLen() 
+        uint32_t FreeLen() 
         { 
            return cap - w; 
         }
 
     private:
-        size_t r;
-        size_t w;
-        size_t cap;
+        uint32_t r;
+        uint32_t w;
+        uint32_t cap;
         char *data;
     };
 }
