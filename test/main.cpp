@@ -10,6 +10,8 @@ void RegisterTestFunc(const string name, TestFuncion func)
 
 int Usage(int argc, char** argv)
 {
+    sigignore(SIGPIPE);
+
     printf("Usage:%s [cmd] [parm...]\n", argv[0]);
     printf("cmd list:");
 
@@ -38,7 +40,6 @@ int Usage(int argc, char** argv)
     }
 
     cmdtab.Print();
-
     return 0;
 }
 

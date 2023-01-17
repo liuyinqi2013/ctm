@@ -15,7 +15,7 @@
 
 namespace ctm
 {
-    CTimerMgr::CTimerItem::CTimerItem(uint64_t id, uint64_t milliSecond, int count, TimerCallBack cb, void* param)
+    CTimerMgr::CTimer::CTimer(uint64_t id, uint64_t milliSecond, int count, TimerCallBack cb, void* param)
     {
         Clean();
         m_id = id;
@@ -26,7 +26,7 @@ namespace ctm
         m_begin = MilliTimestamp();
     }
 
-    void CTimerMgr::CTimerItem::CTimerItem::Clean()
+    void CTimerMgr::CTimer::Clean()
     {
         m_id = 0;
         m_remind = 0;
@@ -51,7 +51,7 @@ namespace ctm
             return -1;
         }
 
-        CTimerItem *item = new CTimerItem(timerId, milliSecond, count, cb, param);
+        CTimer *item = new CTimer(timerId, milliSecond, count, cb, param);
         m_timerMap[timerId] = item;
         m_timerHeap.Push(item);
         
@@ -77,7 +77,7 @@ namespace ctm
 
         while(m_timerHeap.Len()) 
         {
-            auto item = dynamic_cast<CTimerItem*>(m_timerHeap.Top());
+            auto item = dynamic_cast<CTimer*>(m_timerHeap.Top());
             if (item->Expired() > currTime) {
                 sleepTime = item->Expired() - currTime;
                 break;
@@ -106,11 +106,9 @@ namespace ctm
 
     void CTimerMgr::Clear()
     {
-        auto it = m_timerMap.begin();
-        for (; it != m_timerMap.end(); it++) {
+        for (auto it = m_timerMap.begin(); it != m_timerMap.end(); it++) {
             delete it->second;
         }
-
         m_timerHeap.Clear();
         m_timerMap.clear();
     }

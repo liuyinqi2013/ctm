@@ -43,8 +43,8 @@ namespace ctm
             DEBUG("close file. fd:%d", m_fd);
             SetEvent(EvNone);
             ctm::Close(m_fd);
-            m_closed = true;
             m_fd = -1;
+            m_closed = true;
         }
     }
 }

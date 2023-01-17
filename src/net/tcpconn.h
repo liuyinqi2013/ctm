@@ -1,7 +1,6 @@
 #ifndef CTM_NET_TCPCONN_H__
 #define CTM_NET_TCPCONN_H__
 
-#include <memory>
 #include "common/macro.h"
 #include "socket.h"
 #include "io/file.h"
@@ -10,19 +9,17 @@
 namespace ctm 
 {
     class TcpConn;
-    class AsynTcpConnector;
-    class Acceptor;
-
-    std::shared_ptr<TcpConn> Accept(int fd);
-    std::shared_ptr<TcpConn> TcpConnect(const char* endpoint, int port);
+    class TcpConnector;
+    class TcpAcceptor;
+    class TcpConnHandler;
+    class TcpListener;
 
     class TcpConn : public CFile {
         DISABLE_COPY_ASSIGN(TcpConn)
     public:
         virtual ~TcpConn() { }
 
-        void SetNoDelay() 
-        { ctm::SetNoDelay(GetFd()); }
+        void SetNoDelay() { ctm::SetNoDelay(GetFd()); }
         void SetKeepAlive(int interval) { ctm::SetKeepAlive(GetFd(), interval); }
 
         int GetRecvLowat() { return ctm::GetRecvLowat(GetFd()); }
@@ -49,48 +46,72 @@ namespace ctm
     protected:
         TcpConn(int fd, CPoller* poller = NULL) : CFile(fd, poller) {}
 
-        friend AsynTcpConnector;
-        friend Acceptor;
-        friend std::shared_ptr<TcpConn> Accept(int fd);
-        friend std::shared_ptr<TcpConn> TcpConnect(const char* endpoint, int port);
+        friend TcpConnector;
+        friend TcpAcceptor;
+        friend TcpListener;
     };
 
-    std::shared_ptr<TcpConn> Accept(int fd);
-    int BaseConnect(int fd, const CAddr& addr);
-    std::shared_ptr<TcpConn> TcpConnect(const char* endpoint, int port);
-
-    typedef void (*ConnCallBack)(int code, const char* message, std::shared_ptr<TcpConn> conn);
-
-    class AsynTcpConnector : public CFile::CHandler
+    class TcpConnHandler
     {
-        DISABLE_COPY_ASSIGN(AsynTcpConnector)
     public:
-        AsynTcpConnector(const char* endpoint, uint16_t port, ConnCallBack cb, CPoller* poller, uint32_t timeOut = 20);
-        ~AsynTcpConnector();
+    virtual void OnConnect(int code, const char* message, TcpConn* conn);
+    };
+    
+    class TcpConnector : public CFile::CHandler
+    {
+        DISABLE_COPY_ASSIGN(TcpConnector);
+    public:
+        TcpConnector(CPoller* poller, TcpConnHandler* handler, const CAddr& addr,  uint32_t timeOut = 20);
+        TcpConnector(CPoller* poller, TcpConnHandler* handler, const char* endpoint, uint16_t port,  uint32_t timeOut = 20);
+        virtual ~TcpConnector();
 
     private:
+        int Connect(int fd, const CAddr& addr);
+        void Resolve(const char* endpoint, uint16_t port);
         void Start(); 
         void Next();
-
-        virtual void OnRead();
-        virtual void OnWrite();
-        virtual void OnError();
-
+        
+        virtual void OnRead(CFile* file);
+        virtual void OnWrite(CFile* file);
+        virtual void OnError(CFile* file);
         static void OnTimer(uint64_t timerId, uint32_t remind, void* param);
 
     private:
-        std::string m_endpoint;
-        uint16_t m_port;
+        CPoller* m_poller;
+        TcpConnHandler *m_handler;
         
         int m_idx;
         std::vector<CAddr> m_addrs;
-        ConnCallBack m_cb;
-
-        CPoller* m_poller;
         uint32_t m_timeout;
 
-        std::shared_ptr<TcpConn> m_conn;
+        TcpConn* m_conn;
         int m_timerId;
+    };
+
+    class TcpListener
+    {
+        DISABLE_COPY_ASSIGN(TcpListener)
+
+        class TcpAcceptor : public CFile, public CFile::CHandler
+        {
+        public:
+            TcpAcceptor(CPoller* poller, int fd, TcpConnHandler* handler);
+            virtual ~TcpAcceptor() {}
+        protected:
+            virtual void OnRead(CFile* file);
+            TcpConnHandler* m_handler;
+        };
+
+    public:
+        TcpListener(CPoller* poller, TcpConnHandler* handler, const CAddr& addr);
+        virtual ~TcpListener();
+
+        int Listen();
+    protected:
+        CPoller* m_poller;
+        TcpConnHandler* m_handler;
+        TcpAcceptor* m_acceptor;
+        CAddr m_addr;
     };
 }
 

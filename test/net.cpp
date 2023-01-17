@@ -12,131 +12,162 @@
 
 using namespace std;
 
+class EchoClient : public TcpConnHandler, public CFile::CHandler
+{
+public :
+	EchoClient(CPoller* poller) : m_conn(NULL), m_stdin(new CFile(0, poller)), m_buf(512)
+	{
+		m_stdin->SetHandler(this);
+	}
+
+	virtual void OnConnect(int code, const char* message, TcpConn* conn) 
+	{
+		if (code) {
+			TcpConnHandler::OnConnect(code, message, conn);
+			return;
+		}
+		m_conn = conn;
+		conn->Show();
+		conn->SetHandler(this);
+		conn->SetEvent(EvRead);
+		m_stdin->SetEvent(EvRead);
+	}
+
+	virtual void OnRead(CFile* file) 
+	{
+		int ret;
+		if (file == m_stdin) {
+			ret = m_stdin->Read(&m_buf);
+			if (ret != IO_OK) {
+				ERROR("read stdin failed. ret:%d, len:%d", ret, m_buf.Len());
+				exit(0);
+			}
+
+			m_conn->WriteFull(&m_buf);
+			if (ret != IO_OK) {
+				ERROR("write conn failed. ret:%d", ret);
+				exit(0);
+			}
+
+		} else {
+			ret = m_conn->Read(&m_buf);
+			if (ret != IO_OK) {
+				ERROR("read conn failed. ret:%d", ret);
+				exit(0);
+			}
+
+			m_stdin->WriteFull(&m_buf);
+			if (ret != IO_OK) {
+				ERROR("write stdin failed. ret:%d", ret);
+				exit(0);
+			}
+		}
+	}
+private:
+	TcpConn* m_conn;
+	CFile *m_stdin;
+	Buffer m_buf;
+};
+
+class EchoServer : public TcpConnHandler, public CFile::CHandler
+{
+public :
+	EchoServer(CPoller* poller) : m_buf(512)
+	{
+	}
+
+	virtual void OnConnect(int code, const char* message, TcpConn* conn) 
+	{
+		if (code) {
+			TcpConnHandler::OnConnect(code, message, conn);
+			return;
+		}
+		conn->Show();
+		conn->SetHandler(this);
+		conn->SetEvent(EvRead);
+		m_conns[conn->GetFd()] = conn;
+	}
+
+	virtual void OnRead(CFile* file) 
+	{
+		auto conn = reinterpret_cast<TcpConn*>(file);
+		int ret = conn->Read(&m_buf);
+		if (ret != IO_OK) {
+			Remove(conn);
+			ERROR("read failed. conn:%s, ret:%d", conn->GetRemoteAddr().c_str(), ret);
+			return;
+		}
+
+		conn->WriteFull(&m_buf);
+		if (ret != IO_OK) {
+			Remove(conn);
+			ERROR("write failed. conn:%s. ret:%d", conn->GetRemoteAddr().c_str(), ret);
+			return;
+		}
+	}
+
+	virtual void OnError(CFile* file)
+	{
+		DEBUG("on error. fd:%d", file->GetFd());
+		Remove(reinterpret_cast<TcpConn*>(file));
+	}
+
+	void Remove(TcpConn* conn)
+	{
+		m_conns.erase(conn->GetFd());
+		DELETE(conn);
+	}
+private:
+	Buffer m_buf;
+	unordered_map<int, TcpConn*> m_conns;
+};
+
+
 DECLARE_FUNC(echo_svr)
 {
-	int p = 6666;
-	int fd = Listen(AF_INET, argv[1], p);
-	if (fd < 0) {
-		ERROR("listen failed. host:%s, port:%d", argv[1], p);
-		return -1;
-	}
-
-	auto conn = Accept(fd);
-	if (!conn.get()) {
-		ERROR("accept failed. host:%s, port:%d", argv[1], p);
-		return -1;
-	}
-
-	conn->Show();
-	conn->ShutDown(1);
-
-	while(1);
-
-/*
-	int n;
-	Buffer buf(512);
-	while(1) {
-		n = conn->Read(&buf);
-		if (n != 0) {
-			ERROR("read failed. n:%d", buf.Len());
-			return -1;
-		}
-		DEBUG("read len:%d, buf:%s", buf.Len(), buf.Data());
-
-		n = conn->WriteFull(&buf);
-		if (n != 0) {
-			ERROR("write failed. n:%d", n);
-			return -1;
-		}
-
-		DEBUG("buf freelen:%d, len:%d", buf.FreeLen(), buf.Len());
-	}
-*/
-
-	return 0;
-}
-
-void OnConnCallBack(int code, const char* message, std::shared_ptr<TcpConn> conn) {
-	if (code == -1 ) {
-		ERROR("conn failed. code:%d, message:%s", code, message);
-		return;
-	}
-	
-	conn->Show();
-	int n;
-	char buf[512];
-	
-	while(1) {
-		string tmp;
-		cin>>tmp;
-		if (tmp.length() == 0) {
-			ERROR("end");
-			return;
-		}
-
-		n = conn->Write((void*)tmp.data(), tmp.length());
-		if (n <= 0) {
-			ERROR("write failed. n:%d", n);
-			return;
-		}
-
-		n = conn->Read(buf, 512);
-		if (n <= 0) {
-			ERROR("read failed. n:%d", n);
-			return;
-		}
-		buf[n] = '\0';
-		DEBUG("read len:%d, buf:%s", n, buf);
-	}
-
-	return;
-}
-
-DECLARE_FUNC(asyn_conn)
-{
 	CPoller p;
-	p.Init();
-	AsynTcpConnector connector(argv[1], atoi(argv[2]), OnConnCallBack, &p, 30);
+	int ret = p.Init();
+	if (ret) {
+		ERROR("poller init failed.");
+		return -1;
+	}
+
+	EchoServer server(&p);
+	TcpListener listener(&p, &server, CAddr(argv[1], atoi(argv[2])));
+	listener.Listen();
 	p.Run();
+
 	return 0;
 }
 
 DECLARE_FUNC(echo_cli)
 {
-	auto conn = TcpConnect(argv[1], atoi(argv[2]));
-	if (!conn.get()) {
-		ERROR("accept failed. host:%s, port:%d", argv[1], argv[2]);
+	CPoller p;
+	int ret = p.Init();
+	if (ret) {
+		ERROR("poller init failed.");
 		return -1;
 	}
 
-	conn->Show();
+	EchoClient handler(&p);
+	TcpConnector connector(&p, &handler, argv[1], atoi(argv[2]), 30);
+	p.Run();
 
-	int n;
-	char buf[512];
-	
-	while(1) {
-		string tmp;
-		cin>>tmp;
-		if (tmp.length() == 0) {
-			ERROR("end");
-			return -1;
-		}
+	return 0;
+}
 
-		n = conn->Write((void*)tmp.data(), tmp.length());
-		if (n <= 0) {
-			ERROR("write failed. n:%d", n);
-			return -1;
-		}
-
-		n = conn->Read(buf, 512);
-		if (n <= 0) {
-			ERROR("read failed. n:%d", n);
-			return -1;
-		}
-		buf[n] = '\0';
-		DEBUG("read len:%d, buf:%s", n, buf);
+DECLARE_FUNC(asyn_conn)
+{
+	CPoller p;
+	int ret = p.Init();
+	if (ret) {
+		ERROR("poller init failed.");
+		return -1;
 	}
 
+	TcpConnHandler handler;
+	TcpConnector connector(&p, &handler, argv[1], atoi(argv[2]), 30);
+	p.Run();
 	return 0;
 }
 

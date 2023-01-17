@@ -9,27 +9,30 @@ namespace ctm
 
     class CTimerMgr
     {
-        class CTimerItem : public HeapItem
+        class CTimer : public HeapItem
         {
         public:
             bool Less(const HeapItem* other) 
             {
-                const CTimerItem* o = dynamic_cast<const CTimerItem*>(other);
+                const CTimer* o = dynamic_cast<const CTimer*>(other);
                 return Expired() < o->Expired();
             }
+
             uint64_t Expired() const 
             {
                 return m_begin + m_interval;
             }
 
         private:
-            CTimerItem(uint64_t id, uint64_t milliSecond, int count, TimerCallBack cb, void* param);
+            CTimer(uint64_t id, uint64_t milliSecond, int count, TimerCallBack cb, void* param);
             void Clean();
 
-            void ResetBegin() {
+            void ResetBegin() 
+            {
                 m_begin += m_interval;
                 Fix();
             }
+
         private:
             uint64_t m_id;
             uint32_t m_remind;
@@ -57,7 +60,7 @@ namespace ctm
         uint64_t m_id;
         Heap m_timerHeap;
 
-        std::unordered_map<uint64_t, CTimerItem*> m_timerMap;
+        std::unordered_map<uint64_t, CTimer*> m_timerMap;
     };
 
     void TestTimer();

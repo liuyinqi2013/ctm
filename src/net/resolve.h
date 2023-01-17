@@ -38,6 +38,7 @@ namespace ctm
         void SetPort(uint16_t port);
 
         const sockaddr* GetAddr() const { return &m_addr.addr; }
+        sockaddr* GetAddr() { return &m_addr.addr; }
         socklen_t GetLen() const  
         {
             switch (SaFamily())
@@ -46,8 +47,10 @@ namespace ctm
                 return sizeof(sockaddr_in);
             case AF_INET6:
                 return sizeof(sockaddr_in6);
+            case AF_UNIX:
+                return sizeof(sockaddr_un);
             }
-            return sizeof(sockaddr_un);
+            return sizeof(sockaddr);
         }
 
     protected:

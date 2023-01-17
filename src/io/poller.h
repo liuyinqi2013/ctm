@@ -1,5 +1,5 @@
-#ifndef CTM_IO_POLLer_H__
-#define CTM_IO_POLLer_H__
+#ifndef CTM_IO_POLLER_H__
+#define CTM_IO_POLLER_H__
 
 #include <unordered_map>
 #include "timer.h"
@@ -17,15 +17,13 @@ namespace ctm
         int Dispatch();
         void Run();
 
-        int AddFile(CFile *ev, Event event);
-        int UpdateFile(CFile* ev, Event event);
-        int RemoveFile(CFile* ev); 
+        int AddFile(CFile *file, Event event);
+        int UpdateFile(CFile* file, Event event);
+        int RemoveFile(CFile* file); 
         
         virtual uint64_t AddTimer(uint64_t milliSecond, int count, TimerCallBack cb, void* param);
         
-        virtual void OnRead();
-        virtual void OnWrite() {};
-        virtual void OnError() {};
+        virtual void OnRead(CFile* file);
     private:
         int ToEpollEv(Event events);
         int Wakeup();

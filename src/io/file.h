@@ -22,53 +22,66 @@ namespace ctm
         class CHandler 
         {
         public:
-            CHandler() : m_file(NULL) {}
             virtual ~CHandler() {}
-            void SetFile(CFile* file) { m_file = file; }
-            CFile* GetFile() { return m_file; }
 
-            virtual void OnRead() = 0;
-            virtual void OnWrite() = 0;
-            virtual void OnError() = 0;
-        protected:
-            CFile* m_file;
+            virtual void OnRead(CFile* file)  { DEBUG("on read. fd:%d", file->GetFd()); }
+            virtual void OnWrite(CFile* file) { DEBUG("on write. fd:%d", file->GetFd()); };
+            virtual void OnError(CFile* file) { DEBUG("on error. fd:%d", file->GetFd()); file->Close(); };
         };
 
-        CFile(int fd, CPoller* poller = NULL) : m_fd(fd), m_closed(false), m_poller(poller), m_event(EvNone), m_handler(NULL) {}
-        virtual ~CFile() { Close(); }
+        CFile(int fd, CPoller* poller = NULL) : m_fd(fd), m_closed(false), m_event(EvNone), m_poller(poller), m_handler(NULL) {}
+        virtual ~CFile() 
+        { 
+            Close();
+        }
 
         virtual void OnRead() 
         {
-            if (m_handler) m_handler->OnRead();
+            if (m_handler) m_handler->OnRead(this);
         }
 
         virtual void OnWrite() 
         {
-            if (m_handler) m_handler->OnWrite();
+            if (m_handler) m_handler->OnWrite(this);
         }
 
         virtual void OnError()
         {
-            if (m_handler) m_handler->OnError();
+            if (m_handler) m_handler->OnError(this);
         }
 
-        int GetFd() { return m_fd; }
+        int GetFd() 
+        { 
+            return m_fd; 
+        }
 
-        Event GetEvent () const { return m_event; } 
+        Event GetEvent () const 
+        { 
+            return m_event; 
+        } 
         bool SetEvent(Event events);
 
-        CPoller* GetPoller() { return m_poller; }
-        void SetPoller(CPoller* poller) { m_poller = poller; }
+        CPoller* GetPoller() 
+        { 
+            return m_poller; 
+        }
+        
+        void SetPoller(CPoller* poller) 
+        { 
+            m_poller = poller; 
+        }
         
         void SetHandler(CHandler* handler) 
         { 
-            if (handler) handler->SetFile(this);
             m_handler = handler; 
         }
 
         void Close();
         
-        int SetNonBlock() {  return ctm::SetNonBlock(m_fd); }
+        int SetNonBlock() 
+        {  
+            return ctm::SetNonBlock(m_fd); 
+        }
 
         int Read(void* buf,  uint32_t len) 
         { 
@@ -113,21 +126,21 @@ namespace ctm
         }
 
         bool IsClosed() const 
-        {
-            return m_closed;
+        { 
+            return m_closed; 
         }
 
         void Detach() 
-        {
-            SetEvent(EvNone);
+        { 
+            SetEvent(EvNone); 
         }
 
     private:
         int m_fd;
         bool m_closed; 
 
-        CPoller *m_poller;
         Event m_event;
+        CPoller* m_poller;
         CHandler* m_handler;
     };
 }

@@ -177,13 +177,12 @@ namespace ctm
         ev.data.fd = file->GetFd();
         ev.events = ToEpollEv(event);
 
-        int ret = epoll_ctl(m_epollFd, EPOLL_CTL_MOD, file->GetFd(), &ev);
-        if (ret == -1) {
+        if (epoll_ctl(m_epollFd, EPOLL_CTL_MOD, file->GetFd(), &ev) < 0) {
             int err = errno;
             ERROR("epoll_ctl failed %d:%s", err, strerror(err));
-            m_files.erase(file->GetFd());
             return -1;
         }
+
         return 0;
     }
 
@@ -231,15 +230,15 @@ namespace ctm
         return n;
     }
 
-    void CPoller::OnRead()
+    void CPoller::OnRead(CFile* file)
     {
         char buf[1024];
-        int n = m_file->Read(buf, 1024);
+        int n = file->Read(buf, 1024);
         if (n < 0) {
             int err = errno;
-            ERROR("read failed. fd:%d, %d:%s", m_file->GetFd(), err, strerror(err));
+            ERROR("read failed. fd:%d, %d:%s", file->GetFd(), err, strerror(err));
         }
-        DEBUG("pipe read fd:%d, len:%d", m_file->GetFd(), n);
+        DEBUG("pipe read fd:%d, len:%d", file->GetFd(), n);
     }
 
     int CPoller::ToEpollEv(Event events)
@@ -252,33 +251,34 @@ namespace ctm
         if (events & EvWrite) {
             epollEvents |= EPOLLOUT;
         }
+
         return epollEvents;
     }
 
     void Milli1(uint64_t timerId, uint32_t remind, void* param)
-    {
-        DEBUG("Milli 1 id:%d, remind:%d", timerId, remind);
-    }
+        {
+            DEBUG("Milli 1 id:%d, remind:%d", timerId, remind);
+        }
 
     void Milli10(uint64_t timerId, uint32_t remind, void* param)
-    {
-        DEBUG("Milli 10 id:%d, remind:%d", timerId, remind);
-    }
+        {
+            DEBUG("Milli 10 id:%d, remind:%d", timerId, remind);
+        }
 
     void Second(uint64_t timerId, uint32_t remind, void* param)
-    {
-        DEBUG("Second 1 id:%d, remind:%d", timerId, remind);
-    }
+        {
+            DEBUG("Second 1 id:%d, remind:%d", timerId, remind);
+        }
 
     void Second5(uint64_t timerId, uint32_t remind, void* param)
-    {
-        DEBUG("Second 5 id:%d, remind:%d", timerId, remind);
-    }
+        {
+            DEBUG("Second 5 id:%d, remind:%d", timerId, remind);
+        }
 
     void Second10(uint64_t timerId, uint32_t remind, void* param)
-    {
-        DEBUG("Second 10 id:%d, remind:%d", timerId, remind);
-    }
+        {
+            DEBUG("Second 10 id:%d, remind:%d", timerId, remind);
+        }
 
     void TestTimer()
     {
